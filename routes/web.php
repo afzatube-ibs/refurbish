@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LogsController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductMapController;
 use App\Http\Controllers\Settings\ConnectionController;
@@ -25,6 +26,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [ProductMapController::class, 'index'])->name('index');
         Route::post('/load', [ProductMapController::class, 'load'])->name('load');
         Route::post('/refresh', [ProductMapController::class, 'refresh'])->name('refresh');
+        Route::post('/control', [ProductMapController::class, 'saveControl'])->name('control.save');
+        Route::post('/clear-logs', [LogsController::class, 'clearProductMap'])->name('clear-logs');
     });
 
     Route::middleware(['module:order_map'])->prefix('order-map')->name('order-map.')->group(function () {

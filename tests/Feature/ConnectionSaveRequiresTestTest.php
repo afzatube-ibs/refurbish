@@ -168,9 +168,11 @@ class ConnectionSaveRequiresTestTest extends TestCase
         $this->actingAs($admin)->post(route('connection.test'), $payload);
 
         $this->actingAs($admin)
+            ->from(route('connection.edit'))
             ->post(route('connection.clear-logs'))
             ->assertRedirect(route('connection.edit'))
             ->assertSessionMissing('test_results')
-            ->assertSessionHas('info');
+            ->assertSessionHas('info')
+            ->assertSessionHas('logs_tab', 'connection');
     }
 }

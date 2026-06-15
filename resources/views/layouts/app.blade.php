@@ -80,9 +80,15 @@
                             <p class="text-sm text-slate-500 mt-1">@yield('page-subtitle')</p>
                         @endif
                     </div>
-                    @hasSection('page-badge')
-                        <div class="shrink-0">@yield('page-badge')</div>
-                    @endif
+                    <div class="flex flex-wrap items-center gap-2 shrink-0 page-header-actions">
+                        @hasSection('page-actions')
+                            @yield('page-actions')
+                        @endif
+                        <x-logs-drawer :drawer="$logsDrawer ?? []" />
+                        @hasSection('page-badge')
+                            @yield('page-badge')
+                        @endif
+                    </div>
                 </div>
             </header>
 

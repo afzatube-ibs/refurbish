@@ -7,9 +7,11 @@ use App\Models\Order;
 use App\Models\SupplierProduct;
 use App\Policies\OrderPolicy;
 use App\Policies\SupplierProductPolicy;
+use App\Services\LogsDiagnosticsService;
 use App\Services\OpenCart\ConnectionService;
 use App\Services\OpenCart\OpenCartHttpClient;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -27,5 +29,9 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::policy(Order::class, OrderPolicy::class);
         Gate::policy(SupplierProduct::class, SupplierProductPolicy::class);
+
+        View::composer('layouts.app', function ($view) {
+            $view->with('logsDrawer', app(LogsDiagnosticsService::class)->build(request()));
+        });
     }
 }

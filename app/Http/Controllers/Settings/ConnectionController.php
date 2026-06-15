@@ -118,8 +118,9 @@ class ConnectionController extends Controller
         session()->forget('test_results');
 
         return redirect()
-            ->route('connection.edit')
-            ->with('info', 'Local connection test logs cleared.');
+            ->back()
+            ->with('info', 'Connection test logs cleared.')
+            ->with('logs_tab', 'connection');
     }
 
     protected function hasSavedConnection(Connection $connection): bool

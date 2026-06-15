@@ -46,7 +46,6 @@
 
     $lastTestAt = $connection->last_connection_test_at;
     $lastTestStatus = $connection->last_connection_test_status;
-    $hasSessionLogs = $results && (($testDiagnostics ?? null) || ($testMeta ?? null) || ($testSample ?? null));
 @endphp
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -93,63 +92,6 @@
                         </div>
                     </dl>
                 </div>
-
-                <details class="border-t border-slate-100 group">
-                    <summary class="cursor-pointer px-6 py-4 text-sm font-medium text-slate-700 hover:text-slate-900 list-none flex items-center justify-between">
-                        <span>Advanced Diagnostics</span>
-                        <svg class="w-4 h-4 text-slate-400 transition group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </summary>
-                    <div class="px-6 pb-6 pt-0 space-y-4">
-                        <dl class="text-sm space-y-3">
-                            <div class="flex justify-between gap-4">
-                                <dt class="text-slate-500">Last test time</dt>
-                                <dd class="text-slate-800 text-right">{{ $lastTestAt?->format('M j, Y g:i A') ?? '—' }}</dd>
-                            </div>
-                            <div class="flex justify-between gap-4">
-                                <dt class="text-slate-500">Last test status</dt>
-                                <dd class="text-right">
-                                    @if ($lastTestStatus === 'passed')
-                                        <span class="text-emerald-700 font-medium">Passed</span>
-                                    @elseif ($lastTestStatus === 'failed')
-                                        <span class="text-red-700 font-medium">Failed</span>
-                                    @else
-                                        <span class="text-slate-500">—</span>
-                                    @endif
-                                </dd>
-                            </div>
-                            <div>
-                                <dt class="text-slate-500 mb-1">Last message</dt>
-                                <dd class="text-slate-800">{{ $connection->last_connection_test_message ?? '—' }}</dd>
-                            </div>
-                            <div class="flex justify-between gap-4">
-                                <dt class="text-slate-500">Connector version</dt>
-                                <dd class="text-slate-800">{{ $connection->last_connector_version ?? '—' }}</dd>
-                            </div>
-                            <div>
-                                <dt class="text-slate-500 mb-1">Option image support</dt>
-                                <dd class="text-slate-800">{{ $connection->last_option_image_summary ?? '—' }}</dd>
-                            </div>
-                        </dl>
-
-                        <form method="POST" action="{{ route('connection.clear-logs') }}">
-                            @csrf
-                            <button type="submit"
-                                    class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">
-                                Clear Logs
-                            </button>
-                            <p class="mt-1 text-xs text-slate-400">Clears local DropFlow test logs only. Does not change OpenCart or saved credentials.</p>
-                        </form>
-
-                        @if ($hasSessionLogs)
-                            @include('settings.partials.connection-diagnostics-detail', [
-                                'results' => $results,
-                                'testMeta' => $testMeta ?? null,
-                                'testDiagnostics' => $testDiagnostics ?? null,
-                                'testSample' => $testSample ?? null,
-                            ])
-                        @endif
-                    </div>
-                </details>
             @else
                 <form method="POST" action="{{ route('connection.update') }}" id="connection-form" class="p-6 space-y-5">
                     @csrf
@@ -276,32 +218,6 @@
                 <p class="mt-2 text-sm text-slate-500">Run Test Connection to verify your store settings.</p>
             @endif
         </div>
-
-        @if ($isEditing && $hasSessionLogs)
-            <details class="bg-white rounded-lg border border-slate-200 group">
-                <summary class="cursor-pointer px-6 py-4 text-sm font-medium text-slate-700 hover:text-slate-900 list-none flex items-center justify-between">
-                    <span>Advanced Diagnostics</span>
-                    <svg class="w-4 h-4 text-slate-400 transition group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                </summary>
-                <div class="px-6 pb-6 pt-0 space-y-4 border-t border-slate-100">
-                    <form method="POST" action="{{ route('connection.clear-logs') }}">
-                        @csrf
-                        <button type="submit"
-                                class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">
-                            Clear Logs
-                        </button>
-                        <p class="mt-1 text-xs text-slate-400">Clears local DropFlow test logs only. Does not change OpenCart or saved credentials.</p>
-                    </form>
-
-                    @include('settings.partials.connection-diagnostics-detail', [
-                        'results' => $results,
-                        'testMeta' => $testMeta ?? null,
-                        'testDiagnostics' => $testDiagnostics ?? null,
-                        'testSample' => $testSample ?? null,
-                    ])
-                </div>
-            </details>
-        @endif
     </div>
 </div>
 

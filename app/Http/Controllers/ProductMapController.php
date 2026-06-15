@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ProductMapControlSaveRequest;
 use App\Services\OpenCart\ConnectionService;
 use App\Services\OpenCart\ProductPreviewService;
+use App\Services\ProductMap\ProductMapLocalControlService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -12,6 +15,7 @@ class ProductMapController extends Controller
     public function __construct(
         private readonly ProductPreviewService $previewService,
         private readonly ConnectionService $connectionService,
+        private readonly ProductMapLocalControlService $localControlService,
     ) {}
 
     public function index(): View
@@ -27,7 +31,49 @@ class ProductMapController extends Controller
             'previewMeta' => is_array($preview) ? ($preview['meta'] ?? null) : null,
             'previewSummary' => is_array($preview) ? ($preview['summary'] ?? null) : null,
             'previewDiagnostics' => is_array($preview) ? ($preview['diagnostics'] ?? null) : null,
+            'previewActivity' => is_array($preview) ? ($preview['activity'] ?? []) : [],
         ]);
+    }
+
+    public function saveControl(ProductMapControlSaveRequest $request): JsonResponse
+    {
+        $preview = session('product_preview');
+
+        if (! is_array($preview) || empty($preview['products'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Load products before saving local control changes.',
+            ], 422);
+        }
+
+        try {
+            $productIndex = (int) $request->validated('product_index');
+            $preview = $this->localControlService->save(
+                $preview,
+                $productIndex,
+                $request->only(['parent', 'variants']),
+                $request->user(),
+            );
+
+            session()->put('product_preview', $preview);
+
+            $product = $preview['products'][$productIndex] ?? null;
+            $productId = (string) ($product['product_id'] ?? $product['oc_product_id'] ?? '');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Product control saved locally.',
+                'product_index' => $productIndex,
+                'product' => $product,
+                'summary' => $preview['summary'] ?? [],
+                'activity' => $this->localControlService->activityForProduct($preview, $productId),
+            ]);
+        } catch (\Throwable $exception) {
+            return response()->json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+            ], 422);
+        }
     }
 
     public function load(): RedirectResponse

@@ -99,23 +99,43 @@ class ProductPreviewServiceTest extends TestCase
         {
             public function healthFor(array $product, OpenCartImageContext $context): array
             {
-                return $this->normalizeProduct($product, $context)['health'];
+                $normalized = $this->normalizeProduct($product, $context);
+
+                return $this->applyHealthRules([$normalized])[0]['health'];
+            }
+
+            public function optionHealthFor(array $product, OpenCartImageContext $context): array
+            {
+                $normalized = $this->normalizeProduct($product, $context);
+
+                return $this->applyHealthRules([$normalized])[0]['options'][0]['health'];
             }
         };
 
+        $context = OpenCartImageContext::fromStoreUrl('https://www.staging.lokkisona.com');
+
         $health = $service->healthFor([
-            'model' => '',
+            'model' => 'PARENT-1',
             'image' => '',
             'stock' => 5,
-            'options' => [
-                ['option_name' => 'Color', 'option_value' => 'Red'],
-            ],
-        ], OpenCartImageContext::fromStoreUrl('https://www.staging.lokkisona.com'));
+            'options' => [],
+        ], $context);
 
         $this->assertContains('Missing IBS model', $health['issues']);
-        $this->assertContains('Missing image', $health['issues']);
-        $this->assertContains('Missing variant model', $health['issues']);
-        $this->assertContains('Missing option image', $health['issues']);
+        $this->assertContains('Missing main image', $health['issues']);
+
+        $optionHealth = $service->optionHealthFor([
+            'model' => 'PARENT-2',
+            'ibs_model' => 'IBS-PARENT-2',
+            'image' => 'catalog/p.jpg',
+            'stock' => 10,
+            'options' => [
+                ['option_name' => 'Color', 'option_value' => 'Red', 'model' => 'VAR-1'],
+            ],
+        ], $context);
+
+        $this->assertContains('Missing IBS model', $optionHealth['issues']);
+        $this->assertContains('Missing option image', $optionHealth['issues']);
     }
 
     public function test_store_image_url_uses_image_prefix_and_encodes_spaces(): void

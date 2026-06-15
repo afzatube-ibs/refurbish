@@ -60,8 +60,11 @@ class ProductMapPreviewTest extends TestCase
         $this->actingAs($this->adminUser())
             ->get(route('product-map.index'))
             ->assertOk()
+            ->assertSee('Product Mapping Center')
             ->assertSee('Load Products')
-            ->assertSee('No preview loaded');
+            ->assertSee('No products loaded')
+            ->assertDontSee('Parent View')
+            ->assertDontSee('Variant View');
     }
 
     public function test_load_preview_fetches_all_pages_until_has_next_false(): void
@@ -95,11 +98,18 @@ class ProductMapPreviewTest extends TestCase
         $first = $preview['products'][0] ?? null;
 
         $this->assertNotNull($first);
-        $this->assertSame('E-601-GREEN', $first['ibs_model'] ?? '');
+        $this->assertSame('E-601-GREEN', $first['model'] ?? '');
+        $this->assertSame('IBS-E601', $first['ibs_model'] ?? '');
         $this->assertSame('variable', $first['type'] ?? '');
+        $this->assertNull($first['rate'] ?? 'unset');
+        $this->assertSame(5, $first['low_warning'] ?? null);
+        $this->assertNull($first['ibs_stock'] ?? 'unset');
+        $this->assertSame('', $first['sm_model'] ?? 'unset');
         $this->assertCount(5, $first['options'] ?? []);
         $this->assertNotEmpty($first['options'][0]['image'] ?? null);
         $this->assertSame('E-601-GREEN-1', $first['options'][0]['model'] ?? '');
+        $this->assertNull($first['options'][0]['rate'] ?? 'unset');
+        $this->assertNull($first['options'][0]['low_warning'] ?? 'unset');
     }
 
     public function test_summary_counts_option_images_and_models_by_row(): void
@@ -129,7 +139,7 @@ class ProductMapPreviewTest extends TestCase
             ->get(route('product-map.index'))
             ->assertOk()
             ->assertSee('E-601-GREEN')
-            ->assertSee('42 warehouse product(s)');
+            ->assertSee('Products');
     }
 
     public function test_refresh_preview_reloads_products(): void
@@ -150,7 +160,7 @@ class ProductMapPreviewTest extends TestCase
         $this->assertNotEmpty($preview['meta']['loaded_at'] ?? null);
     }
 
-    public function test_preview_listing_shows_required_columns_and_variants_button(): void
+    public function test_preview_listing_shows_required_columns_and_variable_button(): void
     {
         $this->activeConnection();
         $user = $this->adminUser();
@@ -161,26 +171,141 @@ class ProductMapPreviewTest extends TestCase
         $this->actingAs($user)
             ->get(route('product-map.index'))
             ->assertOk()
-            ->assertSee('OC Product ID')
-            ->assertSee('Product Image')
-            ->assertSee('Variants / Action')
-            ->assertSee('Variants (5)')
-            ->assertDontSee('Advanced Diagnostics');
+            ->assertSee('Load Products')
+            ->assertSee('Refresh Preview')
+            ->assertSee('Product ID')
+            ->assertSee('Main Image')
+            ->assertSee('IBS Model')
+            ->assertSee('SM Model')
+            ->assertSee('IBS Stock')
+            ->assertSee('Product Type')
+            ->assertSee('History')
+            ->assertSee('Variable (5)')
+            ->assertDontSee('Advanced Diagnostics')
+            ->assertDontSee('Option Name')
+            ->assertDontSee('Option Value');
     }
 
-    public function test_negative_stock_marks_health_review(): void
+    public function test_parent_health_rolls_up_variant_negative_stock_but_not_missing_option_image(): void
+    {
+        $service = new class(app(\App\Services\OpenCart\OpenCartHttpClient::class), app(\App\Services\OpenCart\ConnectionService::class)) extends \App\Services\OpenCart\ProductPreviewService
+        {
+            public function normalizeForTest(array $product): array
+            {
+                $normalized = $this->normalizeProduct($product, OpenCartImageContext::fromStoreUrl('https://example.com'));
+
+                return $this->applyHealthRules([$normalized])[0];
+            }
+        };
+
+        $negativeVariant = $service->normalizeForTest([
+            'model' => 'PARENT-1',
+            'ibs_model' => 'IBS-PARENT-1',
+            'image' => 'catalog/p.jpg',
+            'stock' => 10,
+            'options' => [
+                ['model' => 'OPT-1', 'quantity' => -1, 'image' => 'catalog/opt.jpg', 'ibs_model' => 'IBS-OPT-1'],
+            ],
+        ]);
+
+        $this->assertSame('needs_attention', $negativeVariant['health']['status']);
+        $this->assertContains('Negative stock', $negativeVariant['health']['issues']);
+
+        $missingOptionImage = $service->normalizeForTest([
+            'model' => 'PARENT-2',
+            'ibs_model' => 'IBS-PARENT-2',
+            'image' => 'catalog/p.jpg',
+            'stock' => 10,
+            'options' => [
+                ['model' => 'OPT-2', 'quantity' => 10, 'image' => null, 'ibs_model' => 'IBS-OPT-2'],
+            ],
+        ]);
+
+        $this->assertSame('ok', $missingOptionImage['health']['status']);
+        $this->assertSame('needs_attention', $missingOptionImage['options'][0]['health']['status']);
+        $this->assertContains('Missing option image', $missingOptionImage['options'][0]['health']['issues']);
+    }
+
+    public function test_low_warning_marks_parent_and_variant_low(): void
+    {
+        $service = new class(app(\App\Services\OpenCart\OpenCartHttpClient::class), app(\App\Services\OpenCart\ConnectionService::class)) extends \App\Services\OpenCart\ProductPreviewService
+        {
+            public function normalizeForTest(array $product): array
+            {
+                $normalized = $this->normalizeProduct($product, OpenCartImageContext::fromStoreUrl('https://example.com'));
+
+                return $this->applyHealthRules([$normalized])[0];
+            }
+        };
+
+        $product = $service->normalizeForTest([
+            'model' => 'PARENT-LOW',
+            'ibs_model' => 'IBS-PARENT-LOW',
+            'image' => 'catalog/p.jpg',
+            'stock' => 20,
+            'options' => [
+                ['model' => 'OPT-LOW', 'quantity' => 3, 'image' => 'catalog/opt.jpg', 'ibs_model' => 'IBS-OPT-LOW'],
+            ],
+        ]);
+
+        $this->assertSame('low', $product['health']['status']);
+        $this->assertContains('Stock below low warning', $product['health']['issues']);
+        $this->assertSame('low', $product['options'][0]['health']['status']);
+    }
+
+    public function test_duplicate_ibs_model_marks_review(): void
+    {
+        $service = new class(app(\App\Services\OpenCart\OpenCartHttpClient::class), app(\App\Services\OpenCart\ConnectionService::class)) extends \App\Services\OpenCart\ProductPreviewService
+        {
+            public function applyForTest(array $products): array
+            {
+                $normalized = array_map(
+                    fn (array $product) => $this->normalizeProduct($product, OpenCartImageContext::fromStoreUrl('https://example.com')),
+                    $products
+                );
+
+                return $this->applyHealthRules($normalized);
+            }
+        };
+
+        $products = $service->applyForTest([
+            [
+                'model' => 'PARENT-A',
+                'ibs_model' => 'IBS-DUP',
+                'image' => 'catalog/a.jpg',
+                'stock' => 10,
+                'options' => [],
+            ],
+            [
+                'model' => 'PARENT-B',
+                'ibs_model' => 'IBS-DUP',
+                'image' => 'catalog/b.jpg',
+                'stock' => 10,
+                'options' => [],
+            ],
+        ]);
+
+        $this->assertSame('needs_attention', $products[0]['health']['status']);
+        $this->assertContains('Duplicate IBS model', $products[0]['health']['issues']);
+        $this->assertSame('needs_attention', $products[1]['health']['status']);
+    }
+
+    public function test_negative_stock_marks_parent_health_review(): void
     {
         $service = new class(app(\App\Services\OpenCart\OpenCartHttpClient::class), app(\App\Services\OpenCart\ConnectionService::class)) extends \App\Services\OpenCart\ProductPreviewService
         {
             public function healthFor(array $product): array
             {
-                return $this->normalizeProduct($product, OpenCartImageContext::fromStoreUrl('https://example.com'))['health'];
+                $normalized = $this->normalizeProduct($product, OpenCartImageContext::fromStoreUrl('https://example.com'));
+
+                return $this->applyHealthRules([$normalized])[0]['health'];
             }
         };
 
         $health = $service->healthFor([
             'model' => 'NEG-001',
-            'image_url' => 'https://example.com/p.jpg',
+            'ibs_model' => 'IBS-NEG-001',
+            'image' => 'catalog/p.jpg',
             'stock' => -3,
             'options' => [],
         ]);
@@ -231,3 +356,4 @@ class ProductMapPreviewTest extends TestCase
             ->assertSessionHas('error');
     }
 }
+

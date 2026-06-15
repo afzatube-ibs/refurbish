@@ -1,0 +1,62 @@
+/* DropFlow SFM — minimal layout helpers (Tailwind via CDN handles most styling) */
+
+[x-cloak] {
+    display: none !important;
+}
+
+.sidebar-link-active {
+    background-color: rgb(30 41 59);
+    color: rgb(248 250 252);
+}
+
+.table-compact th,
+.table-compact td {
+    padding: 0.5rem 0.75rem;
+}
+
+.product-map-table th,
+.product-map-table td {
+    vertical-align: middle;
+}
+
+.product-map-table .col-center {
+    text-align: center;
+}
+
+.product-map-table .product-thumb {
+    width: 2.75rem;
+    height: 2.75rem;
+    object-fit: cover;
+    border-radius: 0.375rem;
+    background-color: rgb(241 245 249);
+    margin: 0 auto;
+    display: block;
+}
+
+.product-map-table .variants-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 6.5rem;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    color: rgb(15 23 42);
+    background-color: rgb(255 255 255);
+    border: 1px solid rgb(203 213 225);
+    border-radius: 0.375rem;
+}
+
+.product-map-table .variants-btn:hover {
+    background-color: rgb(248 250 252);
+}
+
+.product-map-table .variants-btn.is-open {
+    background-color: rgb(241 245 249);
+}
+
+.product-map-table .stock-negative {
+    color: rgb(180 83 9);
+    font-weight: 600;
+}

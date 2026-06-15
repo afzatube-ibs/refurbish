@@ -1,0 +1,63 @@
+{
+    "success": true,
+    "pagination": {
+        "page": 1,
+        "limit": 50,
+        "total": 120,
+        "has_more": true
+    },
+    "products": [
+        {
+            "source_product_id": "101",
+            "supplier": "ex-a",
+            "from_warehouse": 1,
+            "image": "https://via.placeholder.com/80?text=101",
+            "model": "EXA-WH-001",
+            "name": "Wireless Bluetooth Headphones",
+            "type": "simple",
+            "stock": 45,
+            "variants": []
+        },
+        {
+            "source_product_id": "102",
+            "supplier": "ex-a",
+            "from_warehouse": 1,
+            "image": "https://via.placeholder.com/80?text=102",
+            "model": "EXA-TS-002",
+            "name": "Cotton T-Shirt",
+            "type": "variable",
+            "stock": 120,
+            "variants": [
+                {
+                    "source_variant_key": "opt_size_m",
+                    "option_name": "Size",
+                    "option_value": "M",
+                    "option_model": "EXA-TS-002-M",
+                    "option_label": "Size: M",
+                    "option_image": "https://via.placeholder.com/40?text=M",
+                    "stock": 40
+                },
+                {
+                    "source_variant_key": "opt_size_l",
+                    "option_name": "Size",
+                    "option_value": "L",
+                    "option_model": "EXA-TS-002-L",
+                    "option_label": "Size: L",
+                    "option_image": "https://via.placeholder.com/40?text=L",
+                    "stock": 35
+                }
+            ]
+        },
+        {
+            "source_product_id": "103",
+            "supplier": "ex-a",
+            "from_warehouse": 1,
+            "image": "https://via.placeholder.com/80?text=103",
+            "model": "EXA-PB-003",
+            "name": "Portable Power Bank 10000mAh",
+            "type": "simple",
+            "stock": 8,
+            "variants": []
+        }
+    ]
+}

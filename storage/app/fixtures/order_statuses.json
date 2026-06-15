@@ -1,0 +1,13 @@
+{
+    "success": true,
+    "statuses": [
+        { "id": 1, "name": "Pending" },
+        { "id": 2, "name": "Processing" },
+        { "id": 3, "name": "On Hold" },
+        { "id": 4, "name": "Cancelled" },
+        { "id": 5, "name": "Shipped" },
+        { "id": 6, "name": "Delivered" },
+        { "id": 7, "name": "Returned" },
+        { "id": 8, "name": "Failed Delivery" }
+    ]
+}

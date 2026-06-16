@@ -68,6 +68,16 @@ class OrderMapLoadTest extends TestCase
         ]);
     }
 
+    public function test_load_summary_includes_pagination_fields(): void
+    {
+        $user = $this->adminUser('order-map');
+        $result = app(OrderSyncService::class)->loadNewOrders($user);
+
+        $this->assertArrayHasKey('pages_fetched', $result);
+        $this->assertArrayHasKey('connector_total', $result);
+        $this->assertGreaterThanOrEqual(1, $result['pages_fetched']);
+    }
+
     public function test_mapped_status_imports_as_ibs_new(): void
     {
         $user = $this->adminUser('order-map');

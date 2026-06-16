@@ -7,6 +7,7 @@ use App\Models\DispatchReport;
 use App\Models\DispatchReportItem;
 use App\Models\Order;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 class DispatchService
 {
@@ -17,6 +18,17 @@ class DispatchService
         ?\DateTimeInterface $dispatchDate = null,
         ?int $userId = null
     ): DispatchReport {
+        $courier = trim($courier);
+        $consignmentId = trim($consignmentId);
+
+        if ($courier === '') {
+            throw new InvalidArgumentException('Courier is required for dispatch.');
+        }
+
+        if ($consignmentId === '') {
+            throw new InvalidArgumentException('Consignment ID is required for dispatch.');
+        }
+
         return DB::transaction(function () use ($order, $courier, $consignmentId, $dispatchDate, $userId) {
             $dispatchDate = $dispatchDate ?? now();
             $userId = $userId ?? auth()->id();

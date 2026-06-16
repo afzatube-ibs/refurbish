@@ -38,6 +38,16 @@ class OrderMapStockService
 
     public function restoreForOrder(Order $order, User $user): void
     {
+        $this->restoreDeductedStock($order, $user, 'Order rejected #'.$order->source_order_id);
+    }
+
+    public function restoreForReturnReceived(Order $order, User $user): void
+    {
+        $this->restoreDeductedStock($order, $user, 'Order return received #'.$order->source_order_id);
+    }
+
+    protected function restoreDeductedStock(Order $order, User $user, string $note): void
+    {
         if (! $order->stock_deducted) {
             return;
         }
@@ -49,7 +59,7 @@ class OrderMapStockService
                 continue;
             }
 
-            $this->adjustItemStock($order, $item, (int) $item->quantity, $user, 'Order rejected #'.$order->source_order_id);
+            $this->adjustItemStock($order, $item, (int) $item->quantity, $user, $note);
         }
 
         $order->update(['stock_deducted' => false]);

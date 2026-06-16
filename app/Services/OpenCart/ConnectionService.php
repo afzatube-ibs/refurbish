@@ -415,13 +415,17 @@ class ConnectionService
 
         $connectionTestOk = $connectionTest['success']
             && (($connectionTestBody['success'] ?? true) === true);
+        $ordersFilterMode = (string) ($connectionTestBody['orders_filter_mode'] ?? '');
+        $ordersFilterModeOk = $ordersFilterMode === '' || $ordersFilterMode === 'queue_status_only';
         $productApiOk = $productRead['success'] && is_array($productBody['products'] ?? null);
         $orderApiOk = $orderRead['success'] && is_array($orderBody['orders'] ?? null);
+        $orderFilterApplied = (string) ($orderBody['filter_applied'] ?? '');
+        $orderFilterOk = $orderFilterApplied === '' || $orderFilterApplied === 'queue_status_only';
         $statusApiOk = $statusRead['success'] === true
             && (($statusBody['success'] ?? true) === true);
         $supplierFilterOk = SupplierProductFilter::connectionTestPassed($products, $productApiOk);
 
-        $tokenValid = $connectionTestOk && ! $has401;
+        $tokenValid = $connectionTestOk && ! $has401 && $ordersFilterModeOk;
 
         $optionCheck = $this->optionImageCheck($connectionTestBody);
 
@@ -440,9 +444,11 @@ class ConnectionService
                 message: $tokenValid ? 'Connected' : 'Failed',
                 detail: $has401
                     ? 'API token was rejected (401).'
-                    : ($tokenValid
-                        ? 'Token accepted via IBS connection test.'
-                        : 'IBS connection test did not succeed.'),
+                    : (! $ordersFilterModeOk
+                        ? 'Connector orders_filter_mode must be queue_status_only (got: '.$ordersFilterMode.').'
+                        : ($tokenValid
+                            ? 'Token accepted via IBS connection test.'
+                            : 'IBS connection test did not succeed.')),
             ),
             $this->buildCheck(
                 key: 'product_api',
@@ -454,9 +460,11 @@ class ConnectionService
             $this->buildCheck(
                 key: 'order_api',
                 label: 'Order API',
-                passed: $orderApiOk,
-                message: $orderApiOk ? 'Connected' : 'Failed',
-                detail: $orderRead['message'] ?? null,
+                passed: $orderApiOk && $orderFilterOk,
+                message: ($orderApiOk && $orderFilterOk) ? 'Connected' : 'Failed',
+                detail: ! $orderFilterOk
+                    ? 'Orders API filter_applied must be queue_status_only (got: '.$orderFilterApplied.').'
+                    : ($orderRead['message'] ?? null),
             ),
             $this->buildCheck(
                 key: 'order_status_api',

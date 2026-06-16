@@ -38,4 +38,11 @@ class OrderStatusEngine
 
         return $status->allowsSourceUpdate();
     }
+
+    public function canEditOrder(Order $order): bool
+    {
+        $status = $order->sfm_status ?? SfmOrderStatus::New;
+
+        return in_array($status, [SfmOrderStatus::Accepted, SfmOrderStatus::Packed], true);
+    }
 }

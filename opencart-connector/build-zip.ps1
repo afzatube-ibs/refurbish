@@ -1,4 +1,4 @@
-$packageRoot = Join-Path $PSScriptRoot "."
+$packageRoot = $PSScriptRoot
 $uploadRoot = Join-Path $packageRoot "upload"
 $zipPath = Join-Path (Split-Path $packageRoot -Parent) "ibs-opencart-sync-connector-v2.ocmod.zip"
 

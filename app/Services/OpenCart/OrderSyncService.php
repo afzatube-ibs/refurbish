@@ -203,6 +203,9 @@ class OrderSyncService
             'unmatched_lines' => $unmatchedLines,
             'requested_status_ids' => $requestedStatusIds,
             'connector_raw_count' => $fetchResult['raw_orders_count'],
+            'connector_total' => $fetchResult['connector_total'] ?? $fetchResult['raw_orders_count'],
+            'pages_fetched' => $fetchResult['pages_fetched'] ?? 1,
+            'filter_applied' => $fetchResult['filter_applied'] ?? null,
             'connector_orders' => $fetchResult['connector_orders'],
             'skip_log' => $skipLog,
         ];
@@ -329,6 +332,9 @@ class OrderSyncService
             'locked_skipped' => $lockedSkipped,
             'requested_status_ids' => $fetchResult['requested_status_ids'],
             'connector_raw_count' => $fetchResult['raw_orders_count'],
+            'connector_total' => $fetchResult['connector_total'] ?? $fetchResult['raw_orders_count'],
+            'pages_fetched' => $fetchResult['pages_fetched'] ?? 1,
+            'filter_applied' => $fetchResult['filter_applied'] ?? null,
             'connector_orders' => $fetchResult['connector_orders'],
             'skip_log' => $skipLog,
         ];
@@ -385,6 +391,9 @@ class OrderSyncService
      *     orders: list<array<string, mixed>>,
      *     requested_status_ids: list<int>,
      *     raw_orders_count: int,
+     *     connector_total: int,
+     *     pages_fetched: int,
+     *     filter_applied: ?string,
      *     connector_orders: list<array{order_id: string, order_status_id: int, order_status_name: string}>
      * }
      */
@@ -405,22 +414,68 @@ class OrderSyncService
                 'orders' => [],
                 'requested_status_ids' => [],
                 'raw_orders_count' => 0,
+                'connector_total' => 0,
+                'pages_fetched' => 0,
+                'filter_applied' => null,
                 'connector_orders' => [],
             ];
         }
 
         $connection = Connection::getInstance();
+        $pageSize = max(1, (int) config('dropflow.order_import_page_size', 20));
+        $maxPages = 50;
+        $page = 1;
+        $allOrders = [];
+        $connectorTotal = 0;
+        $filterApplied = null;
+        $pagesFetched = 0;
 
         Log::info('order_map.sync.fetch', [
             'mode' => $mode,
             'status_ids' => $statusIds,
+            'page_size' => $pageSize,
         ]);
 
-        $response = $this->client->get($connection->order_api_endpoint, [
-            'status_ids' => $statusIds,
-        ]);
+        do {
+            $response = $this->client->get($connection->order_api_endpoint, [
+                'status_ids' => $statusIds,
+                'page' => $page,
+                'limit' => $pageSize,
+            ]);
 
-        $rawOrders = is_array($response['orders'] ?? null) ? $response['orders'] : [];
+            $pagesFetched++;
+            $rawOrders = is_array($response['orders'] ?? null) ? $response['orders'] : [];
+            $allOrders = array_merge($allOrders, $rawOrders);
+
+            if ($filterApplied === null && isset($response['filter_applied'])) {
+                $filterApplied = (string) $response['filter_applied'];
+            }
+
+            if (isset($response['total'])) {
+                $connectorTotal = max($connectorTotal, (int) $response['total']);
+            }
+
+            $hasNext = (bool) ($response['has_next'] ?? false);
+            if (! $hasNext && $connectorTotal === 0) {
+                $connectorTotal = count($allOrders);
+            }
+
+            Log::info('order_map.sync.fetch_page', [
+                'mode' => $mode,
+                'page' => $page,
+                'page_count' => count($rawOrders),
+                'has_next' => $hasNext,
+                'filter_applied' => $response['filter_applied'] ?? null,
+                'connector_total' => $response['total'] ?? null,
+            ]);
+
+            if ($rawOrders === []) {
+                break;
+            }
+
+            $page++;
+        } while ($hasNext && $page <= $maxPages);
+
         $connectorOrders = array_values(array_map(function ($order) {
             if (! is_array($order)) {
                 return [
@@ -435,19 +490,25 @@ class OrderSyncService
                 'order_status_id' => (int) ($order['current_oc_status_id'] ?? $order['order_status_id'] ?? 0),
                 'order_status_name' => (string) ($order['current_oc_status'] ?? $order['order_status_name'] ?? ''),
             ];
-        }, $rawOrders));
+        }, $allOrders));
 
         Log::info('order_map.sync.connector_response', [
             'mode' => $mode,
             'requested_status_ids' => $statusIds,
-            'raw_orders_count' => count($rawOrders),
+            'raw_orders_count' => count($allOrders),
+            'connector_total' => $connectorTotal > 0 ? $connectorTotal : count($allOrders),
+            'pages_fetched' => $pagesFetched,
+            'filter_applied' => $filterApplied,
             'orders' => $connectorOrders,
         ]);
 
         return [
-            'orders' => $rawOrders,
+            'orders' => $allOrders,
             'requested_status_ids' => $statusIds,
-            'raw_orders_count' => count($rawOrders),
+            'raw_orders_count' => count($allOrders),
+            'connector_total' => $connectorTotal > 0 ? $connectorTotal : count($allOrders),
+            'pages_fetched' => $pagesFetched,
+            'filter_applied' => $filterApplied,
             'connector_orders' => $connectorOrders,
         ];
     }
@@ -496,10 +557,14 @@ class OrderSyncService
         }
 
         if ($newStatus === SfmOrderStatus::ReturnReceived && $previousStatus !== SfmOrderStatus::ReturnReceived) {
-            Log::warning('order_map.update.return_received_stock', [
-                'order_id' => $order->source_order_id,
-                'message' => 'Return received stock restore not yet automated.',
-            ]);
+            try {
+                $this->stockService->restoreForReturnReceived($order, $user);
+            } catch (\Throwable $exception) {
+                Log::warning('order_map.update.return_received_stock_failed', [
+                    'order_id' => $order->source_order_id,
+                    'message' => $exception->getMessage(),
+                ]);
+            }
         }
     }
 

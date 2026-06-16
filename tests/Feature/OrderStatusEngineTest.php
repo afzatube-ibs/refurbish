@@ -30,4 +30,14 @@ class OrderStatusEngineTest extends TestCase
         $this->assertTrue($engine->canUpdateFromSource($accepted));
         $this->assertFalse($engine->canUpdateFromSource($new));
     }
+
+    public function test_can_edit_order_only_for_accepted_and_packed(): void
+    {
+        $engine = new OrderStatusEngine;
+
+        $this->assertTrue($engine->canEditOrder(new \App\Models\Order(['sfm_status' => SfmOrderStatus::Accepted])));
+        $this->assertTrue($engine->canEditOrder(new \App\Models\Order(['sfm_status' => SfmOrderStatus::Packed])));
+        $this->assertFalse($engine->canEditOrder(new \App\Models\Order(['sfm_status' => SfmOrderStatus::New])));
+        $this->assertFalse($engine->canEditOrder(new \App\Models\Order(['sfm_status' => SfmOrderStatus::Dispatched])));
+    }
 }

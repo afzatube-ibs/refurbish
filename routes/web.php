@@ -4,6 +4,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LogsController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductMapController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\Settings\ConnectionController;
 use App\Http\Controllers\Settings\OrderStatusMappingController;
 use App\Models\ReturnModel;
@@ -43,14 +44,19 @@ Route::middleware(['auth'])->group(function () {
 
     Route::middleware(['module:order_map'])->prefix('order-map')->name('order-map.')->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index');
-        Route::get('/{order}/print-invoice', [OrderController::class, 'printInvoice'])->name('print-invoice');
-        Route::get('/{order}', [OrderController::class, 'show'])->name('show');
 
         Route::middleware(['admin'])->group(function () {
+            Route::get('/create', [OrderController::class, 'create'])->name('create');
+            Route::post('/create', [OrderController::class, 'store'])->name('store');
             Route::post('/load', [OrderController::class, 'load'])->name('load');
             Route::post('/sync-updates', [OrderController::class, 'syncStatusUpdates'])->name('sync-updates');
             Route::post('/sync', [OrderController::class, 'sync'])->name('sync');
         });
+
+        Route::get('/{order}/print-invoice', [OrderController::class, 'printInvoice'])->name('print-invoice');
+        Route::get('/{order}/panel', [OrderController::class, 'panel'])->name('panel');
+        Route::put('/{order}', [OrderController::class, 'update'])->name('update');
+        Route::get('/{order}', [OrderController::class, 'show'])->name('show');
 
         Route::middleware(['supplier'])->group(function () {
             Route::post('/{order}/accept', [OrderController::class, 'accept'])->name('accept');
@@ -61,6 +67,20 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/{order}/return-received', [OrderController::class, 'returnReceived'])->name('return-received');
             Route::post('/{order}/complete', [OrderController::class, 'complete'])->name('complete');
             Route::post('/{order}/cancel', [OrderController::class, 'reject'])->name('cancel');
+        });
+    });
+
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/dispatch', [ReportController::class, 'dispatch'])->name('dispatch');
+        Route::get('/returns', [ReportController::class, 'returns'])->name('returns');
+
+        Route::middleware(['admin'])->group(function () {
+            Route::get('/ledger', [ReportController::class, 'ledger'])->name('ledger');
+            Route::get('/payables', [ReportController::class, 'payables'])->name('payables');
+            Route::get('/product-movement', [ReportController::class, 'productMovement'])->name('product-movement');
+            Route::get('/profit-cost', [ReportController::class, 'profitCost'])->name('profit-cost');
+            Route::get('/stock', [ReportController::class, 'stock'])->name('stock');
+            Route::get('/orders', [ReportController::class, 'orders'])->name('orders');
         });
     });
 });

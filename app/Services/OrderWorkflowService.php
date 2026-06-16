@@ -43,6 +43,17 @@ class OrderWorkflowService
             throw new RuntimeException('Dispatch transition is not allowed.');
         }
 
+        $courier = trim($courier);
+        $consignmentId = trim($consignmentId);
+
+        if ($courier === '') {
+            throw new InvalidArgumentException('Courier is required for dispatch.');
+        }
+
+        if ($consignmentId === '') {
+            throw new InvalidArgumentException('Consignment ID is required for dispatch.');
+        }
+
         return DB::transaction(function () use ($order, $courier, $consignmentId, $dispatchDate) {
             $this->dispatchService->create($order, $courier, $consignmentId, $dispatchDate);
 
@@ -95,9 +106,31 @@ class OrderWorkflowService
         return $this->transition($order, SfmOrderStatus::ReturnQueue, 'order.return_queue');
     }
 
-    public function markReturnReceived(Order $order): Order
+    public function markReturnReceived(Order $order, ?User $user = null): Order
     {
-        return $this->transition($order, SfmOrderStatus::ReturnReceived, 'order.return_received');
+        $user ??= auth()->user();
+
+        return DB::transaction(function () use ($order, $user) {
+            $from = $order->sfm_status ?? SfmOrderStatus::New;
+
+            if (! $this->statusEngine->canTransition($from, SfmOrderStatus::ReturnReceived)) {
+                throw new InvalidArgumentException(
+                    sprintf('Cannot mark return received from %s.', $from->label())
+                );
+            }
+
+            if ($user instanceof User) {
+                $this->stockService->restoreForReturnReceived($order, $user);
+            }
+
+            $order->update(['sfm_status' => SfmOrderStatus::ReturnReceived]);
+
+            $this->activityLog->log('order.return_received', Order::class, $order->id, [
+                'from' => $from->value,
+            ]);
+
+            return $order->fresh();
+        });
     }
 
     public function complete(Order $order): Order

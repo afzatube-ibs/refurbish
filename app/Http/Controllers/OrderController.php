@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\DispatchOrderRequest;
+use App\Http\Requests\UpdateOrderRequest;
+use App\Http\Requests\StoreManualOrderRequest;
 use App\Models\ActivityLog;
 use App\Models\Order;
 use App\Services\OpenCart\OrderSyncService;
+use App\Services\OrderMap\ManualOrderService;
 use App\Services\OrderMap\OrderMapLoadLogService;
 use App\Services\OrderMap\OrderQueuePresenter;
 use App\Services\OrderStatusEngine;
@@ -22,6 +25,7 @@ class OrderController extends Controller
         private readonly OrderStatusEngine $statusEngine,
         private readonly OrderQueuePresenter $queuePresenter,
         private readonly OrderMapLoadLogService $loadLogService,
+        private readonly ManualOrderService $manualOrderService,
     ) {}
 
     public function index(Request $request): View
@@ -72,7 +76,48 @@ class OrderController extends Controller
             'availableTransitions' => $this->statusEngine->availableSupplierTransitions(
                 $order->sfm_status ?? \App\Enums\SfmOrderStatus::New
             ),
+            'canEdit' => $this->statusEngine->canEditOrder($order),
         ]);
+    }
+
+    public function panel(Order $order): View
+    {
+        $this->authorize('view', $order);
+
+        $order->load(['supplier', 'items']);
+
+        return view('order-map.partials.detail-panel', [
+            'order' => $order,
+            'queueRow' => $this->queuePresenter->present($order),
+            'availableTransitions' => $this->statusEngine->availableSupplierTransitions(
+                $order->sfm_status ?? \App\Enums\SfmOrderStatus::New
+            ),
+            'canEdit' => $this->statusEngine->canEditOrder($order),
+            'compactHeader' => true,
+        ]);
+    }
+
+    public function update(UpdateOrderRequest $request, Order $order): RedirectResponse
+    {
+        $order->update($request->validated());
+
+        return redirect()->back()->with('success', 'Order updated.');
+    }
+
+    public function create(): View
+    {
+        $this->authorize('viewAny', Order::class);
+
+        return view('order-map.create');
+    }
+
+    public function store(StoreManualOrderRequest $request): RedirectResponse
+    {
+        $order = $this->manualOrderService->create($request->validated(), $request->user());
+
+        return redirect()
+            ->route('order-map.show', $order)
+            ->with('success', 'Manual order '.$order->source_order_id.' created.');
     }
 
     public function load(): RedirectResponse

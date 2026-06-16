@@ -15,6 +15,7 @@ class Order extends Model
         'customer_name',
         'customer_phone',
         'customer_address',
+        'notes',
         'sale_amount',
         'current_oc_status',
         'current_oc_status_id',

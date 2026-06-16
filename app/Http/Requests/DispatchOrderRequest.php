@@ -11,6 +11,14 @@ class DispatchOrderRequest extends FormRequest
         return $this->user()?->isSupplier() ?? false;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'courier' => is_string($this->courier) ? trim($this->courier) : $this->courier,
+            'consignment_id' => is_string($this->consignment_id) ? trim($this->consignment_id) : $this->consignment_id,
+        ]);
+    }
+
     public function rules(): array
     {
         return [

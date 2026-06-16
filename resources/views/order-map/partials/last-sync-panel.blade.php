@@ -35,6 +35,11 @@
                     </dd>
                 </div>
                 <div><dt>Connector returned</dt><dd>{{ (int) ($lastSync['connector_raw_count'] ?? $lastSync['fetched'] ?? 0) }} orders</dd></div>
+                <div><dt>Connector total</dt><dd>{{ (int) ($lastSync['connector_total'] ?? $lastSync['connector_raw_count'] ?? 0) }}</dd></div>
+                <div><dt>Pages fetched</dt><dd>{{ (int) ($lastSync['pages_fetched'] ?? 1) }}</dd></div>
+                @if (! empty($lastSync['filter_applied']))
+                    <div><dt>Filter applied</dt><dd>{{ $lastSync['filter_applied'] }}</dd></div>
+                @endif
             </dl>
         </div>
 

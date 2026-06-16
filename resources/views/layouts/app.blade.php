@@ -66,6 +66,32 @@
                             Order Map <span class="ml-1 text-[10px] uppercase text-amber-400">Step 3</span>
                         </span>
                     @endif
+
+                    <div class="pt-4 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Reports</div>
+                    <a href="{{ route('reports.dispatch') }}"
+                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.dispatch') ? 'sidebar-link-active' : '' }}">
+                        Dispatch Report
+                    </a>
+                    <a href="{{ route('reports.returns') }}"
+                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.returns') ? 'sidebar-link-active' : '' }}">
+                        Returns Report
+                    </a>
+                    <a href="{{ route('reports.ledger') }}"
+                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.ledger') ? 'sidebar-link-active' : '' }}">
+                        Supplier Ledger
+                    </a>
+                    <a href="{{ route('reports.payables') }}"
+                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.payables') ? 'sidebar-link-active' : '' }}">
+                        Payables
+                    </a>
+                    <a href="{{ route('reports.product-movement') }}"
+                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.product-movement') ? 'sidebar-link-active' : '' }}">
+                        Product Movement
+                    </a>
+                    <a href="{{ route('reports.profit-cost') }}"
+                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.profit-cost') ? 'sidebar-link-active' : '' }}">
+                        Profit &amp; Cost
+                    </a>
                 @endif
             </nav>
 

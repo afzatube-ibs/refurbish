@@ -1861,18 +1861,182 @@ body {
     gap: 0.25rem;
 }
 
+.order-map-panel-modal {
+    max-width: min(64rem, 98vw);
+    max-height: min(92vh, 100dvh - 1.5rem);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.order-map-panel-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgb(226 232 240);
+}
+
+.order-map-panel-modal-title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: rgb(15 23 42);
+}
+
+.order-map-panel-modal-body {
+    padding: 1.25rem;
+    overflow-y: auto;
+}
+
 .order-map-invoice-placeholder {
     background: rgb(248 250 252);
     padding: 2rem;
 }
 
+.order-map-invoice-page {
+    background: rgb(248 250 252);
+    padding: 1.5rem;
+    min-height: 100vh;
+}
+
+.order-map-invoice-toolbar {
+    max-width: 48rem;
+    margin: 0 auto 1rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
 .order-map-invoice-sheet {
-    max-width: 40rem;
+    max-width: 48rem;
     margin: 0 auto;
     background: white;
     border: 1px solid rgb(226 232 240);
     border-radius: 0.5rem;
     padding: 2rem;
+}
+
+.order-map-invoice-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    border-bottom: 1px solid rgb(226 232 240);
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.order-map-invoice-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: rgb(15 23 42);
+    margin-top: 0.25rem;
+}
+
+.order-map-invoice-meta {
+    font-size: 0.875rem;
+    color: rgb(100 116 139);
+    margin-top: 0.25rem;
+}
+
+.order-map-invoice-consignment dl {
+    text-align: right;
+    font-size: 0.875rem;
+}
+
+.order-map-invoice-consignment dt {
+    color: rgb(100 116 139);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.order-map-invoice-consignment dd {
+    font-weight: 600;
+    color: rgb(15 23 42);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    margin-bottom: 0.5rem;
+}
+
+.order-map-invoice-ship-to,
+.order-map-invoice-lines {
+    margin-bottom: 1.5rem;
+}
+
+.order-map-invoice-ship-to h2,
+.order-map-invoice-lines h2 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgb(100 116 139);
+    margin-bottom: 0.5rem;
+}
+
+.order-map-invoice-customer-name {
+    font-weight: 600;
+    color: rgb(15 23 42);
+}
+
+.order-map-invoice-customer-phone,
+.order-map-invoice-customer-address {
+    font-size: 0.875rem;
+    color: rgb(51 65 85);
+    margin-top: 0.25rem;
+    white-space: pre-line;
+}
+
+.order-map-invoice-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.order-map-invoice-table th,
+.order-map-invoice-table td {
+    border-bottom: 1px solid rgb(226 232 240);
+    padding: 0.5rem 0.25rem;
+    text-align: left;
+    vertical-align: top;
+}
+
+.order-map-invoice-table thead th {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgb(100 116 139);
+}
+
+.order-map-invoice-num {
+    text-align: right !important;
+    white-space: nowrap;
+}
+
+.order-map-invoice-product-name {
+    display: block;
+    font-weight: 500;
+}
+
+.order-map-invoice-unmatched {
+    display: inline-block;
+    margin-top: 0.125rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: rgb(153 27 27);
+    background: rgb(254 226 226);
+    border-radius: 9999px;
+    padding: 0.0625rem 0.375rem;
+}
+
+.order-map-invoice-footer {
+    border-top: 1px solid rgb(226 232 240);
+    padding-top: 1rem;
+    font-size: 0.875rem;
+    color: rgb(51 65 85);
+}
+
+.order-map-manual-form .order-map-manual-line + .order-map-manual-line {
+    margin-top: 0.75rem;
 }
 
 .order-map-invoice-tag {

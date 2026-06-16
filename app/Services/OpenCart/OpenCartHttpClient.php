@@ -251,7 +251,9 @@ class OpenCartHttpClient
             if ($fixture === 'inline:connection_test') {
                 return [
                     'success' => true,
-                    'connector_version' => '1.1.0',
+                    'connector_version' => '1.1.1',
+                    'connector_build' => 'v2-queue-status-only-audit2',
+                    'orders_filter_mode' => 'queue_status_only',
                     'routes' => IbsRouteResolver::defaultRoutes(),
                     'poip_detected' => true,
                     'join_active' => true,
@@ -278,6 +280,21 @@ class OpenCartHttpClient
 
         if (isset($params['limit']) && isset($data['orders']) && is_array($data['orders'])) {
             $data['orders'] = array_slice($data['orders'], 0, (int) $params['limit']);
+        }
+
+        if (isset($data['orders']) && is_array($data['orders'])) {
+            $data['filter_applied'] = $data['filter_applied'] ?? 'queue_status_only';
+            $data['orders_filter_mode'] = $data['orders_filter_mode'] ?? 'queue_status_only';
+            $page = max(1, (int) ($params['page'] ?? 1));
+            $limit = max(1, (int) ($params['limit'] ?? count($data['orders'])));
+            $total = count($data['orders']);
+            $offset = ($page - 1) * $limit;
+            $data['orders'] = array_slice($data['orders'], $offset, $limit);
+            $data['page'] = $page;
+            $data['limit'] = $limit;
+            $data['total'] = $total;
+            $data['has_next'] = ($offset + $limit) < $total;
+            $data['has_previous'] = $page > 1;
         }
 
         return $this->applyOrderStatusFilter($data, $params);

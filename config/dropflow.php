@@ -25,6 +25,7 @@ return [
     'connection_test_limit' => 1,
     'connection_test_timeout' => (int) env('DROPflow_CONNECTION_TEST_TIMEOUT', 8),
     'connection_ping_timeout' => (int) env('DROPflow_CONNECTION_PING_TIMEOUT', 5),
+    'order_import_page_size' => (int) env('DROPflow_ORDER_IMPORT_PAGE_SIZE', 20),
 
     'ibs_endpoints' => [
         'connection_test' => 'index.php?route=api/ibs/connection_test',

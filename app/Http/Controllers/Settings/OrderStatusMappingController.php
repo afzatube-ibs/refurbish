@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\Enums\OrderSyncRole;
 use App\Enums\SfmOrderStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\UpdateOrderStatusMappingsRequest;
@@ -63,7 +64,14 @@ class OrderStatusMappingController extends Controller
                 ? (string) $mappingData['sfm_status']
                 : SfmOrderStatus::Ignore->value;
 
-            $mapping->update(['sfm_status' => $status]);
+            $syncRole = $mapping->oc_selected
+                ? (string) $mappingData['sync_role']
+                : OrderSyncRole::Ignore->value;
+
+            $mapping->update([
+                'sfm_status' => $status,
+                'sync_role' => $syncRole,
+            ]);
         }
 
         return redirect()

@@ -2,6 +2,7 @@
 
 namespace App\Services\OpenCart;
 
+use App\Enums\OrderSyncRole;
 use App\Enums\SfmOrderStatus;
 use App\Models\Connection;
 use App\Models\OrderStatusMapping;
@@ -32,6 +33,7 @@ class OrderStatusService
 
             if (! $mapping->exists) {
                 $mapping->sfm_status = SfmOrderStatus::Ignore;
+                $mapping->sync_role = OrderSyncRole::Ignore;
             }
 
             $mapping->save();
@@ -111,13 +113,24 @@ class OrderStatusService
         ];
     }
 
-    public function applyMapping(int $statusId): SfmOrderStatus
+    public function findMapping(int $statusId): ?OrderStatusMapping
     {
         $mapping = OrderStatusMapping::query()
             ->where('source_status_id', $statusId)
             ->first();
 
         if (! $mapping || ! $mapping->oc_selected) {
+            return null;
+        }
+
+        return $mapping;
+    }
+
+    public function applyMapping(int $statusId): SfmOrderStatus
+    {
+        $mapping = $this->findMapping($statusId);
+
+        if (! $mapping || $mapping->effectiveSyncRole() === OrderSyncRole::Ignore) {
             return SfmOrderStatus::Ignore;
         }
 

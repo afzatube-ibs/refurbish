@@ -31,5 +31,6 @@ class OrderStatusMappingGuideTest extends TestCase
         $this->assertCount(5, $rows);
         $this->assertSame(25, $rows[0]['oc_id']);
         $this->assertSame(SfmOrderStatus::New, $rows[0]['ibs']);
+        $this->assertSame(\App\Enums\OrderSyncRole::ImportTrigger, $rows[0]['sync_role']);
     }
 }

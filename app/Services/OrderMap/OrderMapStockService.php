@@ -9,7 +9,7 @@ use App\Models\ProductMap\ProductControlVariant;
 use App\Models\ProductMap\StockAdjustmentHistory;
 use App\Models\User;
 use App\Services\ProductMap\ProductControlPersistenceService;
-use InvalidArgumentException;
+use Illuminate\Support\Facades\Log;
 
 class OrderMapStockService
 {
@@ -102,9 +102,15 @@ class OrderMapStockService
         $newStock = $baseStock + $delta;
 
         if ($newStock < 0) {
-            throw new InvalidArgumentException(
-                sprintf('Insufficient IBS stock for product %s (%s).', $sourceProductId, $variantKey)
-            );
+            Log::warning('order_map.stock.insufficient', [
+                'product_id' => $sourceProductId,
+                'variant_key' => $variantKey,
+                'order_id' => $order->source_order_id,
+                'requested_delta' => $delta,
+                'available' => $baseStock,
+            ]);
+
+            return;
         }
 
         $variant->ibs_stock = $newStock;

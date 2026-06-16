@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Connection;
 use App\Services\OpenCart\ConnectionService;
+use App\Services\OrderMap\OrderMapLoadLogService;
 use App\Services\ProductMap\ProductMapLogsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -13,6 +14,7 @@ class LogsDiagnosticsService
     public function __construct(
         private readonly ConnectionService $connectionService,
         private readonly ProductMapLogsService $productMapLogsService,
+        private readonly OrderMapLoadLogService $orderMapLoadLogService,
     ) {}
 
     /**
@@ -46,6 +48,10 @@ class LogsDiagnosticsService
 
         if ($request->routeIs('product-map.*')) {
             return 'product-map';
+        }
+
+        if ($request->routeIs('order-map.*')) {
+            return 'current';
         }
 
         return 'current';
@@ -439,6 +445,18 @@ class LogsDiagnosticsService
                 'preview_loaded' => is_array($preview),
                 'product_count' => is_array($preview) ? count($preview['products'] ?? []) : 0,
             ];
+        }
+
+        if (str_starts_with($routeName, 'order-map.')) {
+            $lastSync = $this->orderMapLoadLogService->last();
+            $context = [];
+
+            if ($lastSync !== []) {
+                $context['last_sync'] = $this->orderMapLoadLogService->diagnosticsSummary();
+                $context['skip_log'] = $lastSync['skip_log'] ?? [];
+            }
+
+            return $context;
         }
 
         return [];

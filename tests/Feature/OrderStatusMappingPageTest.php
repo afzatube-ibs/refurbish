@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\OrderSyncRole;
 use App\Enums\SfmOrderStatus;
 use App\Models\OrderStatusMapping;
 use App\Services\OpenCart\OrderStatusService;
@@ -30,6 +31,7 @@ class OrderStatusMappingPageTest extends TestCase
             'source_status_name' => 'From Warehouse',
             'oc_selected' => true,
             'sfm_status' => SfmOrderStatus::New,
+            'sync_role' => OrderSyncRole::ImportTrigger,
         ]);
 
         OrderStatusMapping::query()->create([
@@ -37,6 +39,7 @@ class OrderStatusMappingPageTest extends TestCase
             'source_status_name' => 'Processing',
             'oc_selected' => false,
             'sfm_status' => SfmOrderStatus::Ignore,
+            'sync_role' => OrderSyncRole::Ignore,
         ]);
 
         $response = $this->actingAs($this->adminUser('order-status'))
@@ -45,7 +48,9 @@ class OrderStatusMappingPageTest extends TestCase
         $response->assertOk()
             ->assertSee('Active Queue Statuses')
             ->assertSee('From Warehouse')
-            ->assertSee('Create new IBS order')
+            ->assertSee('Import Trigger')
+            ->assertSee('Create IBS order once + deduct stock')
+            ->assertSee('How sync roles work')
             ->assertSee('Other OpenCart Statuses')
             ->assertSee('Recommended current mapping')
             ->assertSee('25 From Warehouse')
@@ -59,6 +64,7 @@ class OrderStatusMappingPageTest extends TestCase
             'source_status_name' => 'Processing',
             'oc_selected' => false,
             'sfm_status' => SfmOrderStatus::Ignore,
+            'sync_role' => OrderSyncRole::Ignore,
         ]);
 
         $response = $this->actingAs($this->adminUser('order-status'))
@@ -77,6 +83,7 @@ class OrderStatusMappingPageTest extends TestCase
             'source_status_name' => 'From Warehouse',
             'oc_selected' => true,
             'sfm_status' => SfmOrderStatus::New,
+            'sync_role' => OrderSyncRole::ImportTrigger,
         ]);
 
         $reference = OrderStatusMapping::query()->create([
@@ -84,19 +91,21 @@ class OrderStatusMappingPageTest extends TestCase
             'source_status_name' => 'Complete',
             'oc_selected' => false,
             'sfm_status' => SfmOrderStatus::Completed,
+            'sync_role' => OrderSyncRole::UpdateExisting,
         ]);
 
         $this->actingAs($this->adminUser('order-status'))
             ->put(route('settings.order-status-mapping.update'), [
                 'mappings' => [
-                    ['id' => $selected->id, 'sfm_status' => 'new'],
-                    ['id' => $reference->id, 'sfm_status' => 'completed'],
+                    ['id' => $selected->id, 'sfm_status' => 'new', 'sync_role' => 'import_trigger'],
+                    ['id' => $reference->id, 'sfm_status' => 'completed', 'sync_role' => 'update_existing'],
                 ],
             ])
             ->assertRedirect(route('settings.order-status-mapping.index'))
             ->assertSessionHas('success', 'Order status mappings saved.');
 
         $this->assertSame(SfmOrderStatus::Ignore, $reference->fresh()->sfm_status);
+        $this->assertSame(OrderSyncRole::Ignore, $reference->fresh()->sync_role);
         $this->assertFalse($reference->fresh()->isSyncActive());
     }
 
@@ -107,6 +116,7 @@ class OrderStatusMappingPageTest extends TestCase
             'source_status_name' => 'Complete',
             'oc_selected' => false,
             'sfm_status' => SfmOrderStatus::Completed,
+            'sync_role' => OrderSyncRole::UpdateExisting,
         ]);
 
         $service = app(OrderStatusService::class);
@@ -115,23 +125,26 @@ class OrderStatusMappingPageTest extends TestCase
         $this->assertSame(0, OrderStatusMapping::query()->syncActive()->count());
     }
 
-    public function test_save_persists_selected_mapping(): void
+    public function test_save_persists_selected_mapping_and_sync_role(): void
     {
         $mapping = OrderStatusMapping::query()->create([
             'source_status_id' => 7,
             'source_status_name' => 'Canceled',
             'oc_selected' => true,
             'sfm_status' => SfmOrderStatus::Ignore,
+            'sync_role' => OrderSyncRole::Ignore,
         ]);
 
         $this->actingAs($this->adminUser('order-status'))
             ->put(route('settings.order-status-mapping.update'), [
                 'mappings' => [
-                    ['id' => $mapping->id, 'sfm_status' => 'rejected'],
+                    ['id' => $mapping->id, 'sfm_status' => 'rejected', 'sync_role' => 'update_existing'],
                 ],
             ])
             ->assertSessionHas('success', 'Order status mappings saved.');
 
-        $this->assertSame(SfmOrderStatus::Rejected, $mapping->fresh()->sfm_status);
+        $mapping->refresh();
+        $this->assertSame(SfmOrderStatus::Rejected, $mapping->sfm_status);
+        $this->assertSame(OrderSyncRole::UpdateExisting, $mapping->sync_role);
     }
 }

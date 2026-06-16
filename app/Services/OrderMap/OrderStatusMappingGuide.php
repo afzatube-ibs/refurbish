@@ -2,6 +2,7 @@
 
 namespace App\Services\OrderMap;
 
+use App\Enums\OrderSyncRole;
 use App\Enums\SfmOrderStatus;
 use App\Models\OrderStatusMapping;
 
@@ -21,7 +22,7 @@ class OrderStatusMappingGuide
     ];
 
     /**
-     * @return list<array{oc_id: int, oc_name: string, ibs: SfmOrderStatus}>
+     * @return list<array{oc_id: int, oc_name: string, ibs: SfmOrderStatus, sync_role: OrderSyncRole, behavior: string}>
      */
     public function recommendedRows(): array
     {
@@ -35,10 +36,13 @@ class OrderStatusMappingGuide
 
         $rows = [];
         foreach (self::RECOMMENDED_BY_OC_ID as $ocId => $ibs) {
+            $role = OrderSyncRole::recommendedFor($ibs);
             $rows[] = [
                 'oc_id' => $ocId,
                 'oc_name' => $names[$ocId] ?? 'Status '.$ocId,
                 'ibs' => $ibs,
+                'sync_role' => $role,
+                'behavior' => $this->syncBehaviorLabel($ibs, $role),
             ];
         }
 
@@ -58,30 +62,44 @@ class OrderStatusMappingGuide
         };
     }
 
-    public function syncBehaviorLabel(SfmOrderStatus $status): string
+    public function syncBehaviorLabel(SfmOrderStatus $status, ?OrderSyncRole $role = null): string
     {
-        return match ($status) {
-            SfmOrderStatus::New => 'Create new IBS order',
-            SfmOrderStatus::Rejected => 'Update existing / restore stock',
-            SfmOrderStatus::ReturnQueue => 'Update existing only',
-            SfmOrderStatus::ReturnReceived => 'Update existing / return received',
-            SfmOrderStatus::Completed => 'Update existing only',
-            SfmOrderStatus::Ignore => 'No import/update',
+        $role ??= OrderSyncRole::recommendedFor($status);
+
+        if ($role === OrderSyncRole::Ignore) {
+            return 'No import/update';
+        }
+
+        return match (true) {
+            $role === OrderSyncRole::ImportTrigger && $status === SfmOrderStatus::New => 'Create IBS order once + deduct stock',
+            $role === OrderSyncRole::UpdateExisting && $status === SfmOrderStatus::Rejected => 'Update existing order + restore stock',
+            $role === OrderSyncRole::UpdateExisting && $status === SfmOrderStatus::Completed => 'Update existing order to completed',
+            $role === OrderSyncRole::UpdateExisting && $status === SfmOrderStatus::ReturnQueue => 'Mark existing order as returning',
+            $role === OrderSyncRole::UpdateExisting && $status === SfmOrderStatus::ReturnReceived => 'Mark existing order as return received',
+            $role === OrderSyncRole::UpdateExisting => 'Update existing order only',
             default => 'Workflow status',
         };
     }
 
-    public function helperText(SfmOrderStatus $status): string
+    public function helperText(SfmOrderStatus $status, ?OrderSyncRole $role = null): string
     {
-        return match ($status) {
-            SfmOrderStatus::New => 'Creates IBS order once and deducts stock.',
-            SfmOrderStatus::Rejected => 'Updates existing order only and restores stock.',
-            SfmOrderStatus::ReturnQueue => 'Updates existing order only. Product is returning, not received yet.',
-            SfmOrderStatus::ReturnReceived => 'Updates existing order only. Product physically received back.',
-            SfmOrderStatus::Completed => 'Updates existing order only. Final delivered.',
-            SfmOrderStatus::Ignore => 'No import/update.',
-            default => '',
-        };
+        $role ??= OrderSyncRole::recommendedFor($status);
+
+        if ($role === OrderSyncRole::ImportTrigger) {
+            return 'Creates IBS order once and deducts stock for matched products.';
+        }
+
+        if ($role === OrderSyncRole::UpdateExisting) {
+            return match ($status) {
+                SfmOrderStatus::Rejected => 'Updates existing order only and restores stock.',
+                SfmOrderStatus::ReturnQueue => 'Updates existing order only. Product is returning, not received yet.',
+                SfmOrderStatus::ReturnReceived => 'Updates existing order only. Product physically received back.',
+                SfmOrderStatus::Completed => 'Updates existing order only. Final delivered.',
+                default => 'Updates existing order only — never creates new orders.',
+            };
+        }
+
+        return 'No import/update.';
     }
 
     public function ibsBadgeClass(SfmOrderStatus $status): string
@@ -100,6 +118,13 @@ class OrderStatusMappingGuide
     public function recommendedFor(OrderStatusMapping $mapping): ?SfmOrderStatus
     {
         return self::RECOMMENDED_BY_OC_ID[$mapping->source_status_id] ?? null;
+    }
+
+    public function recommendedSyncRoleFor(OrderStatusMapping $mapping): OrderSyncRole
+    {
+        $recommended = $this->recommendedFor($mapping);
+
+        return $recommended ? OrderSyncRole::recommendedFor($recommended) : OrderSyncRole::Ignore;
     }
 
     public function isDangerousSelection(OrderStatusMapping $mapping, string $selectedValue): bool

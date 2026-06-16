@@ -48,6 +48,7 @@ class OrderConnectorFilterTest extends TestCase
             app(\App\Services\OpenCart\OrderStatusService::class),
             app(\App\Services\OrderMap\OrderMapProductMatcher::class),
             app(\App\Services\OrderMap\OrderMapStockService::class),
+            app(\App\Services\OrderMap\OrderMapLoadLogService::class),
         );
 
         $reflection = new \ReflectionClass($service);

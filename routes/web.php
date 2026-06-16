@@ -48,6 +48,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::middleware(['admin'])->group(function () {
             Route::post('/load', [OrderController::class, 'load'])->name('load');
+            Route::post('/sync-updates', [OrderController::class, 'syncStatusUpdates'])->name('sync-updates');
             Route::post('/sync', [OrderController::class, 'sync'])->name('sync');
         });
 

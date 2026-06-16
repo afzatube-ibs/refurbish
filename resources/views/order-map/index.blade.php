@@ -2,14 +2,18 @@
 
 @section('title', 'Order Queue — DropFlow SFM')
 @section('page-title', 'Order Queue')
-@section('page-subtitle', 'IBS fulfillment workflow — manual load from mapped OpenCart statuses')
+@section('page-subtitle', 'IBS fulfillment workflow — manual import and status sync')
 
 @section('page-actions')
     @if (auth()->user()->isAdmin())
         <a href="{{ route('settings.order-status-mapping.index') }}" class="header-action-btn header-action-btn--secondary">Status Mapping</a>
         <form method="POST" action="{{ route('order-map.load') }}" class="inline">
             @csrf
-            <button type="submit" class="header-action-btn header-action-btn--primary">Load Orders</button>
+            <button type="submit" class="header-action-btn header-action-btn--primary">Load New Orders</button>
+        </form>
+        <form method="POST" action="{{ route('order-map.sync-updates') }}" class="inline">
+            @csrf
+            <button type="submit" class="header-action-btn header-action-btn--secondary">Sync Status Updates</button>
         </form>
     @endif
 @endsection
@@ -58,7 +62,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="order-map-empty">No orders in queue yet.@if (auth()->user()->isAdmin()) Use <strong>Load Orders</strong> after mapping OpenCart statuses.@endif</td>
+                        <td colspan="8" class="order-map-empty">No orders in queue yet.@if (auth()->user()->isAdmin()) Use <strong>Load New Orders</strong> after mapping Import Trigger statuses.@endif</td>
                     </tr>
                 @endforelse
             </tbody>

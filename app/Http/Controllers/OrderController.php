@@ -6,6 +6,7 @@ use App\Http\Requests\DispatchOrderRequest;
 use App\Models\ActivityLog;
 use App\Models\Order;
 use App\Services\OpenCart\OrderSyncService;
+use App\Services\OrderMap\OrderMapLoadLogService;
 use App\Services\OrderMap\OrderQueuePresenter;
 use App\Services\OrderStatusEngine;
 use App\Services\OrderWorkflowService;
@@ -20,6 +21,7 @@ class OrderController extends Controller
         private readonly OrderWorkflowService $orderWorkflowService,
         private readonly OrderStatusEngine $statusEngine,
         private readonly OrderQueuePresenter $queuePresenter,
+        private readonly OrderMapLoadLogService $loadLogService,
     ) {}
 
     public function index(Request $request): View
@@ -73,11 +75,20 @@ class OrderController extends Controller
 
     public function load(): RedirectResponse
     {
-        $result = $this->orderSyncService->load(auth()->user());
+        $result = $this->orderSyncService->loadNewOrders(auth()->user());
 
         return redirect()
             ->route('order-map.index')
-            ->with('success', "Load complete: {$result['imported']} imported, {$result['skipped']} skipped, {$result['updated']} updated.");
+            ->with('success', $this->loadLogService->formatBannerMessage($result));
+    }
+
+    public function syncStatusUpdates(): RedirectResponse
+    {
+        $result = $this->orderSyncService->syncStatusUpdates(auth()->user());
+
+        return redirect()
+            ->route('order-map.index')
+            ->with('success', $this->loadLogService->formatBannerMessage($result));
     }
 
     /** @deprecated Use load() */

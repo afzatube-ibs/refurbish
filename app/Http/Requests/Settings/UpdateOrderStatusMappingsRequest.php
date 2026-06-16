@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Settings;
 
+use App\Enums\OrderSyncRole;
 use App\Enums\SfmOrderStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -16,11 +17,13 @@ class UpdateOrderStatusMappingsRequest extends FormRequest
     public function rules(): array
     {
         $statusValues = array_column(SfmOrderStatus::cases(), 'value');
+        $roleValues = array_column(OrderSyncRole::cases(), 'value');
 
         return [
             'mappings' => ['required', 'array'],
             'mappings.*.id' => ['required', 'integer', 'exists:order_status_mappings,id'],
             'mappings.*.sfm_status' => ['required', 'string', Rule::in($statusValues)],
+            'mappings.*.sync_role' => ['required', 'string', Rule::in($roleValues)],
         ];
     }
 }

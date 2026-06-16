@@ -1824,6 +1824,41 @@ body {
     align-items: start;
 }
 
+.osm-help-card {
+    background: rgb(239 246 255);
+    border: 1px solid rgb(191 219 254);
+    border-radius: 0.5rem;
+    padding: 1rem 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.osm-help-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: rgb(30 64 175);
+    margin: 0 0 0.5rem;
+}
+
+.osm-help-card p {
+    margin: 0.25rem 0;
+    font-size: 0.8125rem;
+    color: rgb(51 65 85);
+}
+
+.osm-queue-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    padding: 0.15rem 0.55rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+}
+
+.osm-queue-selected {
+    background: rgb(220 252 231);
+    color: rgb(22 101 52);
+}
+
 .osm-toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -2023,11 +2058,18 @@ body {
 
 .osm-recommended-list li {
     display: grid;
-    grid-template-columns: 1fr auto auto;
-    gap: 0.35rem;
-    align-items: center;
-    padding: 0.35rem 0;
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+    align-items: start;
+    padding: 0.5rem 0;
     border-bottom: 1px solid rgb(241 245 249);
+}
+
+.osm-rec-role,
+.osm-rec-behavior {
+    display: block;
+    font-size: 0.75rem;
+    color: rgb(100 116 139);
 }
 
 .osm-recommended-list li:last-child {

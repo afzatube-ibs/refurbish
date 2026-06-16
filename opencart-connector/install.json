@@ -1,0 +1,9 @@
+{
+  "name": "IBS Sync Connector",
+  "code": "ibs_sync_connector",
+  "version": "1.1.1",
+  "author": "IBS ERP",
+  "link": "https://github.com/lokkisona/ibs-erp",
+  "type": "module",
+  "description": "IBS Sync Connector v2 rebuild — orders filter queue_status_only only (1.1.1)."
+}

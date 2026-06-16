@@ -1,0 +1,104 @@
+{{ header }}{{ column_left }}
+<div id="content">
+  <div class="page-header">
+    <div class="container-fluid">
+      <div class="pull-right">
+        <a href="{{ generate }}" data-toggle="tooltip" title="{{ button_generate }}" class="btn btn-default"><i class="fa fa-refresh"></i> {{ button_generate }}</a>
+        <button type="submit" form="form-ibs-sync" data-toggle="tooltip" title="{{ button_save }}" class="btn btn-primary"><i class="fa fa-save"></i></button>
+        <a href="{{ cancel }}" data-toggle="tooltip" title="{{ button_cancel }}" class="btn btn-default"><i class="fa fa-reply"></i></a>
+      </div>
+      <h1>{{ heading_title }} <small>v{{ connector_version }} · {{ connector_build }}</small></h1>
+      <ul class="breadcrumb">
+        {% for breadcrumb in breadcrumbs %}
+        <li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="container-fluid">
+    {% if error_warning %}
+    <div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> {{ error_warning }}
+      <button type="button" class="close" data-dismiss="alert">&times;</button>
+    </div>
+    {% endif %}
+    <div class="alert alert-info"><i class="fa fa-info-circle"></i> {{ text_read_only }}</div>
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title"><i class="fa fa-pencil"></i> {{ text_edit }}</h3>
+      </div>
+      <div class="panel-body">
+        <form action="{{ action }}" method="post" enctype="multipart/form-data" id="form-ibs-sync" class="form-horizontal">
+          <div class="form-group">
+            <label class="col-sm-2 control-label" for="input-status">{{ entry_status }}</label>
+            <div class="col-sm-10">
+              <select name="module_ibs_sync_connector_status" id="input-status" class="form-control">
+                {% if module_ibs_sync_connector_status %}
+                <option value="1" selected="selected">{{ text_enabled }}</option>
+                <option value="0">{{ text_disabled }}</option>
+                {% else %}
+                <option value="1">{{ text_enabled }}</option>
+                <option value="0" selected="selected">{{ text_disabled }}</option>
+                {% endif %}
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-2 control-label" for="input-api-token">{{ entry_api_token }}</label>
+            <div class="col-sm-10">
+              <input type="text" name="module_ibs_sync_connector_api_token" value="{{ module_ibs_sync_connector_api_token }}" id="input-api-token" class="form-control" />
+              <p class="help-block">{{ help_api_token }}</p>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-2 control-label">{{ entry_bridge_table }}</label>
+            <div class="col-sm-10">
+              <input type="text" value="{{ module_ibs_sync_connector_bridge_table }}" class="form-control" readonly="readonly" disabled="disabled" />
+              <input type="hidden" name="module_ibs_sync_connector_bridge_table" value="dispatch_location_product" />
+              <p class="help-block">{{ help_bridge_table }} {{ text_bridge_readonly }}</p>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-2 control-label" for="input-limit">{{ entry_max_limit }}</label>
+            <div class="col-sm-10">
+              <input type="number" min="1" max="20" name="module_ibs_sync_connector_max_limit" value="{{ module_ibs_sync_connector_max_limit }}" id="input-limit" class="form-control" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-2 control-label">{{ entry_queue_statuses }}</label>
+            <div class="col-sm-10">
+              <p class="help-block">{{ text_queue_help }}</p>
+              <div class="well well-sm" style="max-height:220px;overflow-y:auto;">
+                {% if order_statuses %}
+                  {% for status in order_statuses %}
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox" name="module_ibs_sync_connector_queue_status_ids[]" value="{{ status.order_status_id }}"
+                        {% if status.order_status_id in module_ibs_sync_connector_queue_status_ids %}checked="checked"{% endif %} />
+                      {{ status.name }} <span class="text-muted">(#{{ status.order_status_id }})</span>
+                    </label>
+                  </div>
+                  {% endfor %}
+                {% else %}
+                  <p class="text-muted">No order statuses found.</p>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-2 control-label">Endpoints</label>
+            <div class="col-sm-10">
+              <p class="help-block">{{ help_endpoints }}</p>
+              <p><strong>Connection test</strong><br><code style="word-break:break-all;">{{ connection_test_url }}</code></p>
+              <p><strong>Products</strong><br><code style="word-break:break-all;">{{ products_url }}</code></p>
+              <p><strong>Order queue statuses</strong><br><code style="word-break:break-all;">{{ order_queue_statuses_url }}</code></p>
+              <p><strong>Orders (queue status only)</strong><br><code style="word-break:break-all;">{{ orders_url }}</code></p>
+              <p><strong>Orders audit (debug)</strong><br><code style="word-break:break-all;">{{ orders_audit_url }}</code></p>
+              <p class="help-block">Fallback if audit route 404: <code style="word-break:break-all;">{{ orders_audit_fallback_url }}</code></p>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{{ footer }}

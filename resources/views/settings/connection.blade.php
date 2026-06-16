@@ -19,21 +19,14 @@
 @section('content')
 @php
     $canSave = $canSave ?? false;
+    $testPassed = $testPassed ?? false;
+    $requiredChecksPassed = $requiredChecksPassed ?? false;
     $isEditing = $isEditing ?? true;
     $hasSavedConnection = $hasSavedConnection ?? false;
     $hasToken = filled($connection->api_token ?? null);
     $ibsDefaults = $ibsDefaults ?? \App\Services\OpenCart\IbsRouteResolver::defaultFormEndpoints();
     $results = $testResults ?? null;
-    $allPassed = $results && collect($results)->every(function ($c) {
-        if (! is_array($c)) {
-            return (bool) $c;
-        }
-        if ($c['optional'] ?? false) {
-            return true;
-        }
-
-        return $c['passed'] ?? false;
-    });
+    $allPassed = $requiredChecksPassed;
 
     $display = [
         'store_url' => old('store_url', $connection->store_url ?? ''),
@@ -41,7 +34,9 @@
         'order_api_endpoint' => old('order_api_endpoint', $connection->order_api_endpoint ?: $ibsDefaults['order_api_endpoint']),
         'order_status_api_endpoint' => old('order_status_api_endpoint', $connection->order_status_api_endpoint ?: $ibsDefaults['order_status_api_endpoint']),
         'supplier_filter' => old('supplier_filter', $connection->supplier_filter ?? 'ex-a'),
-        'is_active' => filter_var(old('is_active', $connection->is_active ?? false), FILTER_VALIDATE_BOOLEAN),
+        'is_active' => app(\App\Services\OpenCart\ConnectionService::class)->normalizeBooleanInput(
+            old('is_active', $connection->is_active ?? false)
+        ),
     ];
 
     $lastTestAt = $connection->last_connection_test_at;
@@ -95,6 +90,7 @@
             @else
                 <form method="POST" action="{{ route('connection.update') }}" id="connection-form" class="p-6 space-y-5">
                     @csrf
+                    <input type="hidden" name="connection_test_passed" id="connection-test-passed" value="{{ $testPassed ? '1' : '0' }}">
 
                     @if ($hasSavedConnection)
                         <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-100">
@@ -227,18 +223,27 @@
 (function () {
     const form = document.getElementById('connection-form');
     const saveBtn = document.getElementById('save-connection-btn');
+    const testPassedInput = document.getElementById('connection-test-passed');
     let verified = @json($canSave);
 
     if (!form || !saveBtn) return;
+
+    function requiredChecksPassed() {
+        return testPassedInput && testPassedInput.value === '1';
+    }
 
     function setSaveEnabled(enabled) {
         saveBtn.disabled = !enabled;
         if (enabled) {
             saveBtn.classList.add('bg-slate-900', 'hover:bg-slate-800');
             saveBtn.classList.remove('bg-slate-300', 'cursor-not-allowed');
+            saveBtn.title = 'Save connection settings';
         } else {
             saveBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
             saveBtn.classList.add('bg-slate-300', 'cursor-not-allowed');
+            saveBtn.title = requiredChecksPassed()
+                ? 'Form changed since last test — run Test Connection again'
+                : 'Complete a successful connection test first';
         }
     }
 
@@ -248,11 +253,17 @@
         field.addEventListener('input', function () {
             if (!verified) return;
             verified = false;
+            if (testPassedInput) {
+                testPassedInput.value = '0';
+            }
             setSaveEnabled(false);
         });
         field.addEventListener('change', function () {
             if (!verified) return;
             verified = false;
+            if (testPassedInput) {
+                testPassedInput.value = '0';
+            }
             setSaveEnabled(false);
         });
     });

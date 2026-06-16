@@ -151,6 +151,34 @@ class ConnectionSaveRequiresTestTest extends TestCase
             ->assertSee('Saved connection');
     }
 
+    public function test_save_enabled_when_flashed_is_active_is_checkbox_array(): void
+    {
+        $admin = $this->adminUser();
+
+        $payload = [
+            'store_url' => 'https://store.example.com',
+            'api_token' => 'test-token',
+            'product_api_endpoint' => 'index.php?route=api/ibs/products',
+            'order_api_endpoint' => 'index.php?route=api/ibs/orders',
+            'order_status_api_endpoint' => 'index.php?route=api/ibs/order_queue_statuses',
+            'supplier_filter' => 'ex-a',
+            'is_active' => '1',
+        ];
+
+        $this->actingAs($admin)->post(route('connection.test'), $payload);
+
+        session()->put('_old_input', array_merge(
+            session()->get('_old_input', []),
+            ['is_active' => ['0', '1']]
+        ));
+
+        $this->actingAs($admin)
+            ->get(route('connection.edit', ['edit' => 1]))
+            ->assertOk()
+            ->assertSee('id="connection-test-passed" value="1"', false)
+            ->assertDontSee('id="save-connection-btn" disabled', false);
+    }
+
     public function test_clear_logs_removes_test_results_only(): void
     {
         $admin = $this->adminUser();

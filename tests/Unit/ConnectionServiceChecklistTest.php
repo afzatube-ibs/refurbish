@@ -29,6 +29,15 @@ class ConnectionServiceChecklistTest extends TestCase
         $this->assertTrue($statusApiOk);
     }
 
+    public function test_normalize_boolean_input_handles_checkbox_array(): void
+    {
+        $service = new ConnectionService;
+
+        $this->assertTrue($service->normalizeBooleanInput(['0', '1']));
+        $this->assertFalse($service->normalizeBooleanInput(['0']));
+        $this->assertTrue($service->normalizeBooleanInput('1'));
+    }
+
     public function test_option_image_check_uses_connection_test_probe(): void
     {
         $service = new ConnectionService;

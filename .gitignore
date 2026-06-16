@@ -16,3 +16,5 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+*.ocmod.zip
+ibs-opencart-sync-connector-v2.ocmod.zip

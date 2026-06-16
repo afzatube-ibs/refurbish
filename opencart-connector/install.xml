@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+    <name>IBS OpenCart Sync Connector</name>
+    <code>ibs_opencart_sync_connector</code>
+    <version>1.1.1</version>
+    <author>IBS ERP</author>
+    <link>https://github.com/lokkisona/ibs-erp</link>
+</modification>

@@ -85,7 +85,7 @@ class ConnectionService
     {
         $normalized = IbsRouteResolver::normalizeConnectionInput($data);
         $normalized['store_url'] = rtrim((string) ($normalized['store_url'] ?? ''), '/');
-        $normalized['is_active'] = filter_var($normalized['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $normalized['is_active'] = $this->normalizeBooleanInput($normalized['is_active'] ?? false);
 
         if (filled($normalized['api_token'] ?? null)) {
             return [
@@ -126,6 +126,19 @@ class ConnectionService
         return $this->configFingerprint($context['data'], $context['uses_existing_token']);
     }
 
+    public function normalizeBooleanInput(mixed $value, bool $default = false): bool
+    {
+        if (is_array($value)) {
+            $value = end($value);
+        }
+
+        if ($value === null || $value === '') {
+            return $default;
+        }
+
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
+
     public function isVerifiedForSave(array $data, Connection $connection): bool
     {
         if (! session()->has('connection_verified_fingerprint')) {
@@ -164,7 +177,7 @@ class ConnectionService
     {
         $data = IbsRouteResolver::normalizeConnectionInput($data);
         $data['store_url'] = rtrim((string) ($data['store_url'] ?? ''), '/');
-        $data['is_active'] = filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $data['is_active'] = $this->normalizeBooleanInput($data['is_active'] ?? false);
 
         if (filled($data['api_token'] ?? null)) {
             return $data;

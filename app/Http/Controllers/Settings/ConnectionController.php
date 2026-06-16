@@ -35,7 +35,9 @@ class ConnectionController extends Controller
         $formData = $this->formDataFromRequestOrConnection($connection);
         $testPayload = session('test_results');
         $testChecks = is_array($testPayload) ? ($testPayload['checks'] ?? $testPayload) : null;
-        $canSave = $isEditing && $this->connectionService->isVerifiedForSave($formData, $connection);
+        $requiredChecksPassed = is_array($testPayload) && $this->connectionService->allChecksPassed($testPayload);
+        $testPassed = $requiredChecksPassed && session()->has('connection_verified_fingerprint');
+        $canSave = $isEditing && $testPassed && $this->connectionService->isVerifiedForSave($formData, $connection);
         $badgeStatus = $this->connectionService->resolveBadgeStatus($connection, $hasSavedConnection, $isEditing);
 
         return view('settings.connection', [
@@ -44,6 +46,8 @@ class ConnectionController extends Controller
             'hasSavedConnection' => $hasSavedConnection,
             'isEditing' => $isEditing,
             'canSave' => $canSave,
+            'testPassed' => $testPassed,
+            'requiredChecksPassed' => $requiredChecksPassed,
             'badgeStatus' => $badgeStatus,
             'testResults' => $testChecks,
             'testSample' => is_array($testPayload) ? ($testPayload['sample'] ?? null) : null,
@@ -105,8 +109,9 @@ class ConnectionController extends Controller
             ->route('connection.edit', ['edit' => 1])
             ->with('test_results', $results)
             ->withInput(array_merge(
-                $request->except('api_token'),
-                $results['resolved_endpoints'] ?? []
+                $request->except(['api_token', 'is_active']),
+                $results['resolved_endpoints'] ?? [],
+                ['is_active' => $validated['is_active'] ?? false],
             ))
             ->with($allPassed ? 'success' : 'error', $allPassed
                 ? 'Connection verified. You can save your settings.'
@@ -153,7 +158,10 @@ class ConnectionController extends Controller
                 'order_api_endpoint' => old('order_api_endpoint', ''),
                 'order_status_api_endpoint' => old('order_status_api_endpoint', ''),
                 'supplier_filter' => old('supplier_filter', ''),
-                'is_active' => old('is_active', false),
+                'is_active' => $this->connectionService->normalizeBooleanInput(
+                    old('is_active'),
+                    (bool) $connection->is_active
+                ),
                 'api_token' => old('api_token'),
             ];
         }
@@ -164,7 +172,7 @@ class ConnectionController extends Controller
             'order_api_endpoint' => $connection->order_api_endpoint,
             'order_status_api_endpoint' => $connection->order_status_api_endpoint,
             'supplier_filter' => $connection->supplier_filter,
-            'is_active' => $connection->is_active,
+            'is_active' => (bool) $connection->is_active,
             'api_token' => null,
         ];
     }

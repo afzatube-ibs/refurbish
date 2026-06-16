@@ -1,0 +1,4 @@
+IBS OpenCart Sync Connector
+version=1.1.1
+build=v2-queue-status-only-audit2
+orders_filter=queue_status_only

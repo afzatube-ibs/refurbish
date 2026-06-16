@@ -4,6 +4,7 @@ namespace App\Services\ProductMap;
 
 use App\Models\User;
 use App\Services\OpenCart\ProductPreviewService;
+use Carbon\CarbonInterface;
 use InvalidArgumentException;
 
 class ProductMapLocalControlService
@@ -64,31 +65,66 @@ class ProductMapLocalControlService
         $history = $this->mergeService->historyForProduct($supplier, $productId);
 
         return [
-            'rate' => $history['rate']->map(fn ($row) => [
-                'id' => $row->id,
-                'product_id' => $row->product_id,
-                'variant_id' => $row->variant_id,
-                'old_rate' => $row->old_rate,
-                'new_rate' => $row->new_rate,
-                'difference' => $row->difference,
-                'effective_from' => $row->effective_from?->toIso8601String(),
-                'note' => $row->note,
-                'user' => $row->changedByUser?->name,
-                'created_at' => $row->created_at?->toIso8601String(),
-            ])->all(),
-            'stock' => $history['stock']->map(fn ($row) => [
-                'id' => $row->id,
-                'product_id' => $row->product_id,
-                'variant_id' => $row->variant_id,
-                'old_stock' => $row->old_stock,
-                'new_stock' => $row->new_stock,
-                'difference' => $row->difference,
-                'reason' => $row->reason,
-                'note' => $row->note,
-                'user' => $row->changedByUser?->name,
-                'created_at' => $row->created_at?->toIso8601String(),
-            ])->all(),
+            'rate' => $history['rate']->map(function ($row) {
+                $moment = $row->effective_from ?? $row->created_at;
+                $formatted = $this->formatHistoryMoment($moment);
+
+                return [
+                    'id' => $row->id,
+                    'product_id' => $row->product_id,
+                    'variant_id' => $row->variant_id,
+                    'old_rate' => $row->old_rate,
+                    'new_rate' => $row->new_rate,
+                    'difference' => $row->difference,
+                    'date' => $formatted['date'],
+                    'time' => $formatted['time'],
+                    'sort_at' => $moment?->toIso8601String() ?? '',
+                    'note' => $row->note,
+                    'user' => $this->resolveHistoryUser($row->changedByUser),
+                ];
+            })->all(),
+            'stock' => $history['stock']->map(function ($row) {
+                $moment = $row->created_at;
+                $formatted = $this->formatHistoryMoment($moment);
+
+                return [
+                    'id' => $row->id,
+                    'product_id' => $row->product_id,
+                    'variant_id' => $row->variant_id,
+                    'old_stock' => $row->old_stock,
+                    'new_stock' => $row->new_stock,
+                    'difference' => $row->difference,
+                    'reason' => $row->reason,
+                    'note' => $row->note,
+                    'date' => $formatted['date'],
+                    'time' => $formatted['time'],
+                    'sort_at' => $moment?->toIso8601String() ?? '',
+                    'user' => $this->resolveHistoryUser($row->changedByUser),
+                ];
+            })->all(),
         ];
+    }
+
+    /**
+     * @return array{date: string, time: string}
+     */
+    private function formatHistoryMoment(?CarbonInterface $moment): array
+    {
+        if ($moment === null) {
+            return ['date' => '—', 'time' => '—'];
+        }
+
+        return [
+            'date' => $moment->format('j M Y'),
+            'time' => $moment->format('h:i A'),
+        ];
+    }
+
+    private function resolveHistoryUser(?User $user): string
+    {
+        $name = trim((string) ($user?->name ?? ''));
+
+        return $name !== '' ? $name : 'System';
     }
 
     public function historyCount(string $productId): int

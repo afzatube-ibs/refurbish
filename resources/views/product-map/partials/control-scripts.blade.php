@@ -44,6 +44,14 @@
         return value == null ? '' : String(value).trim();
     }
 
+    function variantOptionLabel(opt, index) {
+        var value = trimVal(opt.option_value);
+        if (value !== '' && value !== '—') return value;
+        var label = trimVal(opt.option_label);
+        if (label !== '') return label;
+        return 'Variant ' + (index + 1);
+    }
+
     function displayVal(value) {
         return trimVal(value) === '' ? 'Not set' : String(value);
     }
@@ -349,6 +357,7 @@
         variantLinesBody.innerHTML = options.map(function (opt, index) {
             var effective = effectiveRate('variant', index);
             return '<tr data-variant-index="' + index + '">' +
+                '<td class="pcc-vcol-option"><span class="pcc-cell-ellipsis">' + esc(variantOptionLabel(opt, index)) + '</span></td>' +
                 '<td class="pcc-vcol-image">' + imageCellHtml(opt.image) + '</td>' +
                 '<td class="pcc-vcol-model"><span class="pcc-cell-ellipsis">' + esc(opt.lk_model || opt.model || '—') + '</span></td>' +
                 '<td class="pcc-vcol-vendor">' + editableCellHtml('variant', 'ibs_model', opt.ibs_model, index, 'text') + '</td>' +
@@ -863,7 +872,8 @@
         var rows = [];
         (history.rate || []).forEach(function (row) {
             rows.push({
-                at: row.effective_from || row.created_at || '—',
+                date: row.date || '—',
+                time: row.time || '—',
                 model: row.variant_id ? String(row.variant_id) : parentModel,
                 type: 'Rate Change',
                 old: row.old_rate ?? '—',
@@ -871,14 +881,15 @@
                 change: row.difference,
                 reason: '—',
                 note: row.note || '—',
-                user: row.user || '—',
-                sortAt: row.effective_from || row.created_at || ''
+                user: row.user || 'System',
+                sortAt: row.sort_at || ''
             });
         });
         (history.stock || []).forEach(function (row) {
             var isInitial = row.old_stock == null && (row.reason == null || row.reason === '');
             rows.push({
-                at: row.created_at || '—',
+                date: row.date || '—',
+                time: row.time || '—',
                 model: row.variant_id ? String(row.variant_id) : parentModel,
                 type: isInitial ? 'Initial Stock Set' : 'Stock Adjustment',
                 old: row.old_stock ?? '—',
@@ -886,17 +897,17 @@
                 change: row.difference,
                 reason: isInitial ? 'Initial Set' : (row.reason || '—'),
                 note: row.note || '—',
-                user: row.user || '—',
-                sortAt: row.created_at || ''
+                user: row.user || 'System',
+                sortAt: row.sort_at || ''
             });
         });
         rows.sort(function (a, b) { return String(b.sortAt).localeCompare(String(a.sortAt)); });
         if (!rows.length) {
-            tbody.innerHTML = '<tr><td colspan="9" class="pcc-muted-cell">No rate or stock history recorded yet.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="pcc-muted-cell">No rate or stock history recorded yet.</td></tr>';
             return;
         }
         tbody.innerHTML = rows.map(function (row) {
-            return '<tr><td>' + esc(row.at) + '</td><td>' + esc(row.model) + '</td><td>' + esc(row.type) + '</td><td class="pcc-num">' + esc(String(row.old)) + '</td><td class="pcc-num">' + esc(String(row.neu)) + '</td><td class="pcc-num">' + esc(String(row.change)) + '</td><td>' + esc(row.reason) + '</td><td>' + esc(row.note) + '</td><td>' + esc(row.user) + '</td></tr>';
+            return '<tr><td>' + esc(row.date) + '</td><td>' + esc(row.time) + '</td><td>' + esc(row.model) + '</td><td>' + esc(row.type) + '</td><td class="pcc-num">' + esc(String(row.old)) + '</td><td class="pcc-num">' + esc(String(row.neu)) + '</td><td class="pcc-num">' + esc(String(row.change)) + '</td><td>' + esc(row.reason) + '</td><td>' + esc(row.note) + '</td><td>' + esc(row.user) + '</td></tr>';
         }).join('');
     }
 
@@ -906,12 +917,12 @@
             return;
         }
         var tbody = document.getElementById('pccHistoryRows');
-        if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="pcc-muted-cell">Loading history…</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="10" class="pcc-muted-cell">Loading history…</td></tr>';
         fetch(historyUrl + '?product_id=' + encodeURIComponent(pid), { headers: { Accept: 'application/json' } })
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 if (!d.success) {
-                    if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="pcc-muted-cell">Could not load history.</td></tr>';
+                    if (tbody) tbody.innerHTML = '<tr><td colspan="10" class="pcc-muted-cell">Could not load history.</td></tr>';
                     return;
                 }
                 historyCache[pid] = d.history || {};
@@ -920,7 +931,7 @@
                 renderHistoryRows(historyCache[pid]);
             })
             .catch(function () {
-                if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="pcc-muted-cell">Could not load history.</td></tr>';
+                if (tbody) tbody.innerHTML = '<tr><td colspan="10" class="pcc-muted-cell">Could not load history.</td></tr>';
             });
     }
 

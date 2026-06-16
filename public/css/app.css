@@ -1160,8 +1160,9 @@ td.is-editing.pcc-category-editing,
     background: rgb(219 234 254 / 0.35);
 }
 
+.pcc-dropflow-table .pcc-vcol-option { width: 10%; }
 .pcc-dropflow-table .pcc-vcol-image { width: 48px; }
-.pcc-dropflow-table .pcc-vcol-model { width: 14%; }
+.pcc-dropflow-table .pcc-vcol-model { width: 12%; }
 .pcc-dropflow-table .pcc-vcol-vendor { width: 12%; }
 .pcc-dropflow-table .pcc-vcol-sm { width: 11%; }
 .pcc-dropflow-table .pcc-vcol-category { width: 12%; }

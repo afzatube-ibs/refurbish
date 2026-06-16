@@ -70,6 +70,7 @@
                             <table class="data-table pcc-variant-lines-table pcc-v202-table pcc-dropflow-table" id="pccVariantLinesTable">
                                 <thead>
                                     <tr>
+                                        <th class="pcc-vcol-option">Option</th>
                                         <th class="pcc-vcol-image">Image</th>
                                         <th class="pcc-vcol-model">OC Model</th>
                                         <th class="pcc-vcol-vendor">IBS Model</th>
@@ -121,7 +122,8 @@
                     <table class="data-table pcc-history-table">
                         <thead>
                             <tr>
-                                <th>Date / Time</th>
+                                <th>Date</th>
+                                <th>Time</th>
                                 <th>Product / Variant Model</th>
                                 <th>Type</th>
                                 <th>Old</th>
@@ -133,7 +135,7 @@
                             </tr>
                         </thead>
                         <tbody id="pccHistoryRows">
-                            <tr><td colspan="9" class="pcc-muted-cell">Open a product to view history.</td></tr>
+                            <tr><td colspan="10" class="pcc-muted-cell">Open a product to view history.</td></tr>
                         </tbody>
                     </table>
                 </div>

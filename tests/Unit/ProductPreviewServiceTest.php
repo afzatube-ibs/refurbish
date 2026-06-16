@@ -31,6 +31,16 @@ class ProductPreviewServiceTest extends TestCase
             {
                 return $this->extractRawOptions($product);
             }
+
+            public function detectNewProductsForTest(array $fresh, array $existing): array
+            {
+                return $this->detectNewProducts($fresh, $existing);
+            }
+
+            public function appendNewProductsForTest(array $preview, array $new): array
+            {
+                return $this->appendNewProducts($preview, $new);
+            }
         };
     }
 
@@ -205,5 +215,96 @@ class ProductPreviewServiceTest extends TestCase
             'https://www.staging.lokkisona.com/image/catalog/Products/my%20toy/560.jpg',
             $resolver->resolveOptionImage(['image' => 'catalog/Products/my toy/560.jpg'], $context)
         );
+    }
+
+    public function test_detect_new_products_skips_existing_ids(): void
+    {
+        $service = $this->makeService();
+
+        $existing = [
+            ['product_id' => '1', 'model' => 'A'],
+            ['product_id' => '2', 'model' => 'B'],
+        ];
+        $fresh = [
+            ['product_id' => '2', 'model' => 'B-UPDATED'],
+            ['product_id' => '3', 'model' => 'C'],
+        ];
+
+        $new = $service->detectNewProductsForTest($fresh, $existing);
+
+        $this->assertCount(1, $new);
+        $this->assertSame('3', $service->productKey($new[0]));
+    }
+
+    public function test_append_new_products_avoids_duplicates(): void
+    {
+        $service = $this->makeService();
+
+        $preview = [
+            'products' => [
+                ['product_id' => '1', 'model' => 'A', 'options' => []],
+            ],
+            'meta' => [],
+            'summary' => [],
+        ];
+
+        $merged = $service->appendNewProductsForTest($preview, [
+            ['product_id' => '1', 'model' => 'A-DUP', 'options' => []],
+            ['product_id' => '2', 'model' => 'B', 'options' => []],
+        ]);
+
+        $this->assertCount(2, $merged['products']);
+        $this->assertSame('A', $merged['products'][0]['model']);
+        $this->assertSame('B', $merged['products'][1]['model']);
+    }
+
+    public function test_refresh_existing_preview_preserves_local_rate(): void
+    {
+        $service = new class(app(\App\Services\OpenCart\OpenCartHttpClient::class), app(\App\Services\OpenCart\ConnectionService::class)) extends ProductPreviewService
+        {
+            public function loadPreview(): array
+            {
+                return [
+                    'products' => [
+                        [
+                            'product_id' => '99',
+                            'model' => 'FRESH',
+                            'rate' => null,
+                            'options' => [],
+                        ],
+                    ],
+                    'diagnostics' => ['raw_product_count' => 1],
+                ];
+            }
+        };
+
+        $existing = [
+            'products' => [
+                [
+                    'product_id' => '99',
+                    'model' => 'LOCAL',
+                    'rate' => 55.5,
+                    'options' => [],
+                ],
+            ],
+            'meta' => [],
+            'summary' => [],
+        ];
+
+        $refreshed = $service->refreshExistingPreview($existing);
+
+        $this->assertSame('FRESH', $refreshed['products'][0]['model']);
+        $this->assertSame(55.5, $refreshed['products'][0]['rate']);
+        $this->assertCount(1, $refreshed['products']);
+    }
+
+    public function test_refresh_existing_preview_requires_loaded_products(): void
+    {
+        $service = $this->makeService();
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('No products loaded yet. Please use Load Products first.');
+
+        $service->refreshExistingPreview(['products' => []]);
     }
 }

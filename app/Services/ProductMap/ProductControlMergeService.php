@@ -148,6 +148,7 @@ class ProductControlMergeService
 
         $product['options'] = $options;
         $product['variants'] = $options;
+        $product['ibs_stock'] = ProductIbsStockAggregator::forProduct($product);
 
         return $product;
     }

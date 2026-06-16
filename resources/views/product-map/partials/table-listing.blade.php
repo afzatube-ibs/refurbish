@@ -17,7 +17,7 @@
         return (string) (int) $value;
     };
     $displayIbsStock = static function ($value): string {
-        if ($value === null || $value === '' || (is_numeric($value) && (int) $value === 0)) {
+        if ($value === null || $value === '') {
             return '—';
         }
 
@@ -33,8 +33,9 @@
         @include('product-map.partials.list-pagination', ['placement' => 'top'])
     @endif
 
+<div class="product-map-table-scroll">
 <div class="product-map-list">
-    <div class="product-map-list-header overflow-x-auto">
+    <div class="product-map-list-header">
         <table class="min-w-full text-sm table-compact product-map-table product-map-table-layout">
             @include('product-map.partials.table-colgroup')
             <thead class="bg-slate-50">
@@ -75,7 +76,7 @@
             $healthTitle = $healthIssues !== [] ? implode('; ', $healthIssues) : 'No issues';
         @endphp
         <div class="product-map-group" id="group-{{ $rowId }}">
-            <div class="overflow-x-auto">
+            <div>
                 <table class="min-w-full text-sm table-compact product-map-table product-map-table-layout">
                     @include('product-map.partials.table-colgroup')
                     <tbody>
@@ -201,6 +202,7 @@
             </div>
         </div>
     @endforelse
+</div>
 </div>
 
     @if ($showPagination)

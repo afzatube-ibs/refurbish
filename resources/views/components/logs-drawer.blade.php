@@ -121,10 +121,31 @@
                                 <form method="POST" action="{{ route($tab['clear_route']) }}" class="inline">
                                     @csrf
                                     <button type="submit"
-                                            class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">
+                                            class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                                            title="Clears diagnostics, load traces, and debug entries only">
                                         Clear logs
                                     </button>
                                 </form>
+                            @endif
+
+                            @if ($key === 'product-map' && ($tab['reset_route'] ?? null))
+                                @php
+                                    $preview = session('product_preview');
+                                    $canResetProductMap = (is_array($preview) && ! empty($preview['products']))
+                                        || is_array(session('product_map_pending_load'));
+                                @endphp
+                                @if ($canResetProductMap)
+                                    <form method="POST"
+                                          action="{{ route($tab['reset_route']) }}"
+                                          class="inline"
+                                          onsubmit="return window.confirm('Reset Product Map? This removes loaded products from your browser session. Product control history in the database is not deleted.');">
+                                        @csrf
+                                        <button type="submit"
+                                                class="logs-reset-btn rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100">
+                                            Reset Product Map
+                                        </button>
+                                    </form>
+                                @endif
                             @endif
                         </div>
 

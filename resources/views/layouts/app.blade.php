@@ -13,8 +13,8 @@
     @php
         $modules = config('dropflow.modules', []);
     @endphp
-    <div class="flex min-h-screen">
-        <aside class="w-64 shrink-0 bg-slate-900 text-slate-300 flex flex-col">
+    <div class="flex min-h-screen app-layout-shell">
+        <aside class="app-layout-sidebar w-64 shrink-0 bg-slate-900 text-slate-300 flex flex-col">
             <div class="px-5 py-6 border-b border-slate-700">
                 <a href="{{ route('dashboard') }}" class="block">
                     <span class="text-lg font-semibold text-white tracking-tight">DropFlow SFM</span>
@@ -71,8 +71,8 @@
             </div>
         </aside>
 
-        <div class="flex-1 flex flex-col min-w-0">
-            <header class="bg-white border-b border-slate-200 px-6 py-4">
+        <div class="app-layout-main flex-1 flex flex-col min-w-0">
+            <header class="app-page-header bg-white border-b border-slate-200 px-6 py-4">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
                         <h1 class="text-xl font-semibold text-slate-900">@yield('page-title', 'Dashboard')</h1>
@@ -92,7 +92,7 @@
                 </div>
             </header>
 
-            <main class="flex-1 p-6">
+            <main class="app-page-main flex-1 p-6">
                 @if (session('success'))
                     <div class="mb-4 rounded-md bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800">
                         {{ session('success') }}

@@ -25,10 +25,13 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['admin', 'module:product_map'])->prefix('product-map')->name('product-map.')->group(function () {
         Route::get('/', [ProductMapController::class, 'index'])->name('index');
         Route::post('/load', [ProductMapController::class, 'load'])->name('load');
+        Route::post('/load/confirm', [ProductMapController::class, 'confirmLoad'])->name('load.confirm');
+        Route::post('/load/cancel', [ProductMapController::class, 'cancelLoad'])->name('load.cancel');
         Route::post('/refresh', [ProductMapController::class, 'refresh'])->name('refresh');
         Route::post('/control', [ProductMapController::class, 'saveControl'])->name('control.save');
         Route::get('/control/history', [ProductMapController::class, 'controlHistory'])->name('control.history');
-        Route::post('/clear-logs', [LogsController::class, 'clearProductMap'])->name('clear-logs');
+        Route::post('/clear-logs', [LogsController::class, 'clearProductMapLogs'])->name('clear-logs');
+        Route::post('/reset', [LogsController::class, 'resetProductMap'])->name('reset');
     });
 
     Route::middleware(['module:order_map'])->prefix('order-map')->name('order-map.')->group(function () {

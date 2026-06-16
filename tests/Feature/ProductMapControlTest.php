@@ -2,13 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Enums\UserRole;
 use App\Models\Connection;
 use App\Models\ProductMap\ProductControlState;
 use App\Models\ProductMap\ProductRateHistory;
 use App\Models\ProductMap\StockAdjustmentHistory;
 use App\Models\Supplier;
-use App\Models\User;
 use App\Services\OpenCart\OpenCartImageContext;
 use App\Services\OpenCart\ProductPreviewService;
 use App\Services\ProductMap\ProductControlMergeService;
@@ -17,11 +15,12 @@ use App\Services\ProductMap\ProductMapLocalControlService;
 use Carbon\Carbon;
 use Database\Seeders\SupplierSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
+use Tests\Concerns\CreatesUniqueAdminUser;
 use Tests\TestCase;
 
 class ProductMapControlTest extends TestCase
 {
+    use CreatesUniqueAdminUser;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -36,20 +35,6 @@ class ProductMapControlTest extends TestCase
         ]);
     }
 
-    protected function adminUser(): User
-    {
-        return User::create([
-            'name' => 'Admin',
-            'email' => 'admin-control@example.com',
-            'password' => Hash::make('password'),
-            'role' => UserRole::Admin,
-            'is_active' => true,
-        ]);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
     protected function seedPreviewSession(): array
     {
         $service = app(ProductPreviewService::class);
@@ -341,8 +326,9 @@ class ProductMapControlTest extends TestCase
     public function test_control_history_endpoint_returns_entries(): void
     {
         $this->seedPreviewSession();
+        $user = $this->adminUser('product-map-control');
 
-        $this->actingAs($this->adminUser())
+        $this->actingAs($user)
             ->postJson(route('product-map.control.save'), [
                 'product_index' => 0,
                 'changes' => [
@@ -350,7 +336,7 @@ class ProductMapControlTest extends TestCase
                 ],
             ]);
 
-        $this->actingAs($this->adminUser())
+        $this->actingAs($user)
             ->getJson(route('product-map.control.history', ['product_id' => '9509']))
             ->assertOk()
             ->assertJsonPath('success', true)
@@ -404,6 +390,48 @@ class ProductMapControlTest extends TestCase
         $this->assertSame('Chair', $state->product_category);
     }
 
+    public function test_simple_product_category_persists_via_simple_scope(): void
+    {
+        $service = app(ProductPreviewService::class);
+        $anonymous = new class(app(\App\Services\OpenCart\OpenCartHttpClient::class), app(\App\Services\OpenCart\ConnectionService::class)) extends ProductPreviewService
+        {
+            public function buildSimple(): array
+            {
+                $product = $this->normalizeProduct([
+                    'product_id' => '9601',
+                    'model' => 'SIMPLE-9601',
+                    'ibs_model' => 'IBS-9601',
+                    'image' => 'catalog/p.jpg',
+                    'stock' => 8,
+                    'from_warehouse' => 1,
+                    'options' => [],
+                ], OpenCartImageContext::fromStoreUrl('https://example.com'));
+
+                return $this->applyHealthRules([$product])[0];
+            }
+        };
+
+        session(['product_preview' => [
+            'products' => [$anonymous->buildSimple()],
+            'meta' => [],
+            'summary' => [],
+        ]]);
+
+        $this->actingAs($this->adminUser())
+            ->postJson(route('product-map.control.save'), [
+                'product_index' => 0,
+                'changes' => [
+                    ['scope' => 'simple', 'field' => 'product_category', 'mode' => 'set', 'value' => 'Toys'],
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonPath('product.product_category', 'Toys');
+
+        $state = ProductControlState::query()->where('source_product_id', '9601')->first();
+        $this->assertNotNull($state);
+        $this->assertSame('Toys', $state->product_category);
+    }
+
     public function test_rate_history_rows_are_never_updated(): void
     {
         $this->seedPreviewSession();
@@ -449,5 +477,144 @@ class ProductMapControlTest extends TestCase
 
         $option['low_warning'] = null;
         $this->assertSame(12, $previewService->optionLowWarning($option, 12));
+    }
+
+    public function test_save_sets_parent_listing_ibs_stock_for_variable_product(): void
+    {
+        $this->seedPreviewSession();
+
+        $this->actingAs($this->adminUser())
+            ->postJson(route('product-map.control.save'), [
+                'product_index' => 0,
+                'changes' => [
+                    ['scope' => 'parent', 'field' => 'rate', 'mode' => 'set', 'value' => 50],
+                    ['scope' => 'variant', 'index' => 0, 'field' => 'ibs_stock', 'mode' => 'set', 'value' => 12],
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonPath('product.options.0.ibs_stock', 12)
+            ->assertJsonPath('product.ibs_stock', 12);
+    }
+
+    public function test_index_reload_merges_parent_ibs_stock_from_database(): void
+    {
+        $this->seedPreviewSession();
+        $user = $this->adminUser();
+
+        $this->actingAs($user)
+            ->postJson(route('product-map.control.save'), [
+                'product_index' => 0,
+                'changes' => [
+                    ['scope' => 'parent', 'field' => 'rate', 'mode' => 'set', 'value' => 50],
+                    ['scope' => 'variant', 'index' => 0, 'field' => 'ibs_stock', 'mode' => 'set', 'value' => 12],
+                ],
+            ])
+            ->assertOk();
+
+        $preview = session('product_preview');
+        $preview['products'][0]['ibs_stock'] = null;
+        $preview['products'][0]['options'][0]['ibs_stock'] = null;
+        session(['product_preview' => $preview]);
+
+        $this->actingAs($user)
+            ->get(route('product-map.index'))
+            ->assertOk();
+
+        $product = session('product_preview.products.0');
+
+        $this->assertSame(12, $product['ibs_stock'] ?? null);
+        $this->assertSame(12, $product['options'][0]['ibs_stock'] ?? null);
+    }
+
+    public function test_simple_product_listing_ibs_stock_comes_from_database_merge(): void
+    {
+        $service = app(ProductPreviewService::class);
+        $anonymous = new class(app(\App\Services\OpenCart\OpenCartHttpClient::class), app(\App\Services\OpenCart\ConnectionService::class)) extends ProductPreviewService
+        {
+            public function buildSimple(): array
+            {
+                $product = $this->normalizeProduct([
+                    'product_id' => '9600',
+                    'model' => 'SIMPLE-9600',
+                    'ibs_model' => 'IBS-9600',
+                    'image' => 'catalog/p.jpg',
+                    'stock' => 8,
+                    'from_warehouse' => 1,
+                    'options' => [],
+                ], OpenCartImageContext::fromStoreUrl('https://example.com'));
+
+                return $this->applyHealthRules([$product])[0];
+            }
+        };
+
+        session(['product_preview' => [
+            'products' => [$anonymous->buildSimple()],
+            'meta' => [],
+            'summary' => [],
+        ]]);
+
+        $user = $this->adminUser();
+
+        $this->actingAs($user)
+            ->postJson(route('product-map.control.save'), [
+                'product_index' => 0,
+                'changes' => [
+                    ['scope' => 'parent', 'field' => 'rate', 'mode' => 'set', 'value' => 40],
+                    ['scope' => 'simple', 'field' => 'ibs_stock', 'mode' => 'set', 'value' => 27],
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonPath('product.ibs_stock', 27);
+
+        $preview = session('product_preview');
+        $preview['products'][0]['ibs_stock'] = null;
+        session(['product_preview' => $preview]);
+
+        $this->actingAs($user)->get(route('product-map.index'))->assertOk();
+
+        $this->assertSame(27, session('product_preview.products.0.ibs_stock'));
+    }
+
+    public function test_variable_parent_health_uses_aggregated_ibs_stock(): void
+    {
+        $service = new class(app(\App\Services\OpenCart\OpenCartHttpClient::class), app(\App\Services\OpenCart\ConnectionService::class)) extends ProductPreviewService
+        {
+            /** @param array<string, mixed> $product */
+            public function healthFor(array $product): array
+            {
+                return $this->applyHealthRules([$product])[0]['health'];
+            }
+        };
+
+        $alertHealth = $service->healthFor([
+            'model' => 'PARENT-AGG',
+            'ibs_model' => 'IBS-AGG',
+            'image' => 'catalog/p.jpg',
+            'stock' => 20,
+            'rate' => 10.0,
+            'low_warning' => 5,
+            'options' => [
+                ['model' => 'V1', 'stock' => 10, 'image' => 'catalog/o.jpg', 'ibs_model' => 'IBS-V1', 'ibs_stock' => 2],
+                ['model' => 'V2', 'stock' => 10, 'image' => 'catalog/o2.jpg', 'ibs_model' => 'IBS-V2', 'ibs_stock' => 1],
+            ],
+        ]);
+
+        $this->assertSame('alert', $alertHealth['status']);
+        $this->assertContains('Low stock', $alertHealth['issues']);
+
+        $warningHealth = $service->healthFor([
+            'model' => 'PARENT-MISSING',
+            'ibs_model' => 'IBS-MISSING',
+            'image' => 'catalog/p.jpg',
+            'stock' => 20,
+            'rate' => 10.0,
+            'low_warning' => 5,
+            'options' => [
+                ['model' => 'V1', 'stock' => 10, 'image' => 'catalog/o.jpg', 'ibs_model' => 'IBS-V1', 'ibs_stock' => null],
+            ],
+        ]);
+
+        $this->assertSame('warning', $warningHealth['status']);
+        $this->assertContains('Missing IBS Stock', $warningHealth['issues']);
     }
 }

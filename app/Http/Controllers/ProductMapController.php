@@ -9,6 +9,7 @@ use App\Services\ProductMap\ProductControlCategoryService;
 use App\Services\ProductMap\ProductControlMergeService;
 use App\Services\ProductMap\ProductMapListingFilter;
 use App\Services\ProductMap\ProductMapLocalControlService;
+use App\Services\ProductMap\ProductMapLogsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,12 +24,20 @@ class ProductMapController extends Controller
         private readonly ProductControlMergeService $controlMergeService,
         private readonly ProductControlCategoryService $categoryService,
         private readonly ProductMapListingFilter $listingFilter,
+        private readonly ProductMapLogsService $productMapLogsService,
     ) {}
 
     public function index(Request $request): View
     {
         $connection = $this->connectionService->getActive();
         $preview = session('product_preview');
+
+        if (is_array($preview) && ! empty($preview['products'])) {
+            $preview = $this->controlMergeService->mergeIntoPreview($preview);
+            $preview = $this->previewService->refreshPreviewState($preview);
+            session()->put('product_preview', $preview);
+        }
+
         $products = is_array($preview) ? ($preview['products'] ?? []) : [];
         $listingFilters = $this->listingFilter->resolveFromRequest($request);
         $storedCategories = $this->categoryService->categoriesForSupplier();
@@ -65,6 +74,10 @@ class ProductMapController extends Controller
             'previewSummary' => is_array($preview) ? ($preview['summary'] ?? null) : null,
             'previewDiagnostics' => is_array($preview) ? ($preview['diagnostics'] ?? null) : null,
             'productCategories' => $storedCategories,
+            'pendingLoad' => session('product_map_pending_load'),
+            'pendingProducts' => is_array($pending = session('product_map_pending_load'))
+                ? ($pending['products'] ?? [])
+                : [],
         ]);
     }
 
@@ -131,35 +144,150 @@ class ProductMapController extends Controller
 
     public function load(): RedirectResponse
     {
-        return $this->fetchPreview('Product preview loaded.');
-    }
-
-    public function refresh(): RedirectResponse
-    {
-        return $this->fetchPreview('Product preview refreshed.', mergeLocal: true);
-    }
-
-    protected function fetchPreview(string $successMessage, bool $mergeLocal = false): RedirectResponse
-    {
         try {
-            $existing = $mergeLocal ? session('product_preview') : null;
-            $preview = $this->previewService->loadPreview();
+            $fresh = $this->previewService->loadPreview();
+            $existing = session('product_preview');
+            $existingProducts = is_array($existing) ? ($existing['products'] ?? []) : [];
+            $freshProducts = is_array($fresh['products'] ?? null) ? $fresh['products'] : [];
+            $newProducts = $this->previewService->detectNewProducts($freshProducts, $existingProducts);
 
-            if ($mergeLocal && is_array($existing) && ! empty($existing['products'])) {
-                $preview = $this->previewService->mergeLocalPreview($preview, $existing);
+            if ($newProducts === []) {
+                $message = $existingProducts === []
+                    ? 'No products found in OpenCart.'
+                    : 'No new products found.';
+
+                return redirect()
+                    ->route('product-map.index')
+                    ->with('info', $message);
+            }
+
+            session()->put('product_map_pending_load', [
+                'count' => count($newProducts),
+                'products' => $newProducts,
+                'fetch_meta' => is_array($fresh['meta'] ?? null) ? $fresh['meta'] : [],
+                'fetch_diagnostics' => is_array($fresh['diagnostics'] ?? null) ? $fresh['diagnostics'] : [],
+            ]);
+
+            $this->productMapLogsService->recordLoadEvent('load_detect', [
+                'new_count' => count($newProducts),
+            ]);
+
+            $count = count($newProducts);
+            $message = $count === 1
+                ? '1 new product found'
+                : $count.' new products found';
+
+            return redirect()
+                ->route('product-map.index')
+                ->with('info', $message);
+        } catch (\Throwable $exception) {
+            $this->productMapLogsService->recordError($exception->getMessage());
+
+            return redirect()
+                ->route('product-map.index')
+                ->with('error', $exception->getMessage());
+        }
+    }
+
+    public function confirmLoad(): RedirectResponse
+    {
+        $pending = session('product_map_pending_load');
+
+        if (! is_array($pending) || empty($pending['products'])) {
+            return redirect()
+                ->route('product-map.index')
+                ->with('error', 'No pending products to add. Use Load Products first.');
+        }
+
+        try {
+            $existing = session('product_preview');
+            $base = is_array($existing) ? $existing : [
+                'products' => [],
+                'activity' => [],
+                'meta' => [],
+                'summary' => [],
+                'diagnostics' => [],
+            ];
+
+            $preview = $this->previewService->appendNewProducts($base, $pending['products']);
+
+            if (is_array($pending['fetch_meta'] ?? null) && $pending['fetch_meta'] !== []) {
+                $preview['meta'] = array_merge(
+                    $pending['fetch_meta'],
+                    is_array($preview['meta'] ?? null) ? $preview['meta'] : [],
+                );
+                $preview['meta']['loaded_at'] = now()->toIso8601String();
+            }
+
+            if (is_array($pending['fetch_diagnostics'] ?? null) && $pending['fetch_diagnostics'] !== []) {
+                $preview['diagnostics'] = $pending['fetch_diagnostics'];
             }
 
             $preview = $this->controlMergeService->mergeIntoPreview($preview);
             $preview = $this->previewService->refreshPreviewState($preview);
 
             session()->put('product_preview', $preview);
+            session()->forget('product_map_pending_load');
+
+            $this->productMapLogsService->recordLoadEvent('load_confirm', [
+                'added_count' => (int) ($pending['count'] ?? count($pending['products'])),
+            ]);
+
+            $count = (int) ($pending['count'] ?? count($pending['products']));
+            $message = $count === 1
+                ? '1 product added to Product Map.'
+                : $count.' products added to Product Map.';
 
             return redirect()
                 ->route('product-map.index')
-                ->with('success', $successMessage);
+                ->with('success', $message);
+        } catch (\Throwable $exception) {
+            $this->productMapLogsService->recordError($exception->getMessage());
+
+            return redirect()
+                ->route('product-map.index')
+                ->with('error', $exception->getMessage());
+        }
+    }
+
+    public function cancelLoad(): RedirectResponse
+    {
+        session()->forget('product_map_pending_load');
+
+        return redirect()
+            ->route('product-map.index')
+            ->with('info', 'Add to Product Map cancelled.');
+    }
+
+    public function refresh(): RedirectResponse
+    {
+        $existing = session('product_preview');
+        $existingProducts = is_array($existing) ? ($existing['products'] ?? []) : [];
+
+        if ($existingProducts === []) {
+            return redirect()
+                ->route('product-map.index')
+                ->with('error', 'No products loaded yet. Please use Load Products first.');
+        }
+
+        try {
+            $preview = $this->previewService->refreshExistingPreview($existing);
+            $preview = $this->controlMergeService->mergeIntoPreview($preview);
+            $preview = $this->previewService->refreshPreviewState($preview);
+
+            session()->put('product_preview', $preview);
+
+            $this->productMapLogsService->recordLoadEvent('refresh', [
+                'product_count' => count($preview['products'] ?? []),
+            ]);
+
+            return redirect()
+                ->route('product-map.index')
+                ->with('success', 'Product preview refreshed.');
         } catch (\Throwable $exception) {
             $message = $exception->getMessage();
             $hasExistingPreview = is_array(session('product_preview'));
+            $this->productMapLogsService->recordError($message);
 
             return redirect()
                 ->route('product-map.index')

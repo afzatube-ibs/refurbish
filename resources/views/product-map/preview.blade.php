@@ -22,9 +22,9 @@
       data-has-local-edits="{{ ($previewMeta['has_local_edits'] ?? false) ? '1' : '0' }}">
     @csrf
     <button type="submit"
-            @disabled(! ($connectionReady ?? false) && ! $hasPreview)
+            @disabled(! $hasPreview || ! ($connectionReady ?? false))
             class="header-action-btn header-action-btn--secondary"
-            title="Reload the live product preview">
+            title="{{ $hasPreview ? 'Refresh OpenCart data for loaded products only' : 'Load products first' }}">
         Refresh Preview
     </button>
 </form>
@@ -47,27 +47,39 @@
 @section('content')
 @php
     $hasPreview = ! empty($products);
+    $pendingLoad = is_array($pendingLoad ?? null) ? $pendingLoad : null;
+    $pendingProducts = is_array($pendingProducts ?? null) ? $pendingProducts : [];
+    $pendingCount = (int) ($pendingLoad['count'] ?? count($pendingProducts));
+    $inReview = $pendingCount > 0 && $pendingProducts !== [];
 @endphp
 
-@if ($hasPreview && ($previewSummary ?? null))
-    @include('product-map.partials.summary')
-@endif
-
-@if ($hasPreview)
-    @include('product-map.partials.filters')
-@endif
-
-@include('product-map.partials.table-listing')
-
-@if ($hasPreview)
-    @php
-        $stockReasons = \App\Services\ProductMap\ProductMapLocalControlService::STOCK_REASONS;
-        $productCategories = app(\App\Services\ProductMap\ProductControlCategoryService::class)->categoriesForSupplier();
-    @endphp
-    @include('product-map.partials.control-modal', ['stockReasons' => $stockReasons])
-    @include('product-map.partials.control-scripts', [
-        'stockReasons' => $stockReasons,
-        'productCategories' => $productCategories ?? [],
+@if ($inReview)
+    @include('product-map.partials.pending-load-review', [
+        'pendingProducts' => $pendingProducts,
+        'pendingCount' => $pendingCount,
+        'isFirstLoad' => ! $hasPreview,
     ])
+@else
+    @if ($hasPreview && ($previewSummary ?? null))
+        @include('product-map.partials.summary')
+    @endif
+
+    @if ($hasPreview)
+        @include('product-map.partials.filters')
+    @endif
+
+    @include('product-map.partials.table-listing')
+
+    @if ($hasPreview)
+        @php
+            $stockReasons = \App\Services\ProductMap\ProductMapLocalControlService::STOCK_REASONS;
+            $productCategories = app(\App\Services\ProductMap\ProductControlCategoryService::class)->categoriesForSupplier();
+        @endphp
+        @include('product-map.partials.control-modal', ['stockReasons' => $stockReasons])
+        @include('product-map.partials.control-scripts', [
+            'stockReasons' => $stockReasons,
+            'productCategories' => $productCategories ?? [],
+        ])
+    @endif
 @endif
 @endsection

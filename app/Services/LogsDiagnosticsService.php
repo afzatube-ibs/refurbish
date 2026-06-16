@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Connection;
 use App\Services\OpenCart\ConnectionService;
+use App\Services\ProductMap\ProductMapLogsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 
@@ -11,6 +12,7 @@ class LogsDiagnosticsService
 {
     public function __construct(
         private readonly ConnectionService $connectionService,
+        private readonly ProductMapLogsService $productMapLogsService,
     ) {}
 
     /**
@@ -222,8 +224,10 @@ class LogsDiagnosticsService
         $meta = $hasPreview ? ($preview['meta'] ?? []) : [];
         $summaryData = $hasPreview ? ($preview['summary'] ?? []) : [];
         $diagnostics = $hasPreview ? ($preview['diagnostics'] ?? []) : [];
+        $activity = $hasPreview ? ($preview['activity'] ?? []) : [];
+        $sessionLogs = $this->productMapLogsService->all();
 
-        $loadedAt = $meta['loaded_at'] ?? null;
+        $loadedAt = $meta['loaded_at'] ?? ($sessionLogs['last_action_at'] ?? null);
         $healthOk = $summaryData['health_ok'] ?? null;
 
         $status = 'neutral';
@@ -232,14 +236,20 @@ class LogsDiagnosticsService
         if ($hasPreview) {
             $status = $healthOk === false ? 'warning' : 'ok';
             $statusLabel = $healthOk === false ? 'Preview loaded — review health flags' : 'Preview loaded';
+        } elseif ($this->productMapLogsService->hasClearableLogs()) {
+            $status = 'neutral';
+            $statusLabel = 'Diagnostic logs available';
         }
 
-        $sessionError = session('error');
-        $lastError = is_string($sessionError) && (
-            str_contains(strtolower($sessionError), 'preview')
-            || str_contains(strtolower($sessionError), 'refresh')
-            || str_contains(strtolower($sessionError), 'load')
-        ) ? $sessionError : null;
+        $lastError = $this->productMapLogsService->lastError();
+
+        if ($lastError && ! $hasPreview) {
+            $status = 'error';
+            $statusLabel = 'Last Product Map action failed';
+        } elseif ($lastError && $hasPreview) {
+            $status = 'warning';
+            $statusLabel = 'Preview loaded — last action reported an error';
+        }
 
         $summary = [
             'Preview loaded' => $hasPreview ? 'Yes' : 'No',
@@ -251,6 +261,10 @@ class LogsDiagnosticsService
             'Endpoint' => $hasPreview ? ($meta['endpoint'] ?? '—') : '—',
         ];
 
+        if (($sessionLogs['last_action'] ?? null) !== null) {
+            $summary['Last action'] = (string) $sessionLogs['last_action'];
+        }
+
         $advanced = $this->stripSecrets([
             'mapping_structure' => [
                 'chain' => 'IBS Model (master key) → LK Model (active) → SM Model (reserved)',
@@ -261,9 +275,11 @@ class LogsDiagnosticsService
                 'scope' => 'Warehouse products only',
                 'mode' => 'Read-only preview — no import or database writes',
             ],
+            'session_logs' => $sessionLogs !== [] ? $sessionLogs : null,
             'meta' => $meta,
             'summary' => $summaryData,
             'diagnostics' => $diagnostics,
+            'activity' => $activity,
         ]);
 
         return $this->tabPayload(
@@ -272,8 +288,9 @@ class LogsDiagnosticsService
             lastError: $lastError,
             lastTestTime: $loadedAt ? $this->formatIsoTime($loadedAt) : null,
             summary: $summary,
-            hasLogs: $hasPreview,
+            hasLogs: $this->productMapLogsService->hasClearableLogs(),
             clearRoute: 'product-map.clear-logs',
+            resetRoute: 'product-map.reset',
             advanced: $advanced,
         );
     }
@@ -359,6 +376,7 @@ class LogsDiagnosticsService
         bool $hasLogs,
         ?string $clearRoute,
         mixed $advanced,
+        ?string $resetRoute = null,
     ): array {
         return [
             'status' => $status,
@@ -368,6 +386,7 @@ class LogsDiagnosticsService
             'summary' => $summary,
             'has_logs' => $hasLogs,
             'clear_route' => $clearRoute,
+            'reset_route' => $resetRoute,
             'advanced' => $advanced,
             'copy_json' => json_encode($this->stripSecrets([
                 'status' => $status,

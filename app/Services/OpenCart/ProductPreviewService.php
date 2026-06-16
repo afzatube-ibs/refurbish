@@ -3,6 +3,7 @@
 namespace App\Services\OpenCart;
 
 use App\Models\Connection;
+use App\Services\ProductMap\ProductIbsStockAggregator;
 use RuntimeException;
 
 class ProductPreviewService
@@ -597,13 +598,10 @@ class ProductPreviewService
                 $healths[] = $this->healthResult('critical', 'Critical', ['Missing Rate']);
             }
 
-            foreach ($options as $option) {
-                $optionLow = $this->optionLowWarning($option, $lowWarning);
-                $variantIbsStock = array_key_exists('ibs_stock', $option) && $option['ibs_stock'] !== null
-                    ? (int) $option['ibs_stock']
-                    : null;
-                $healths[] = $this->assessLocalHealth(null, $variantIbsStock, $optionLow, false);
-            }
+            $aggregatedIbsStock = ProductIbsStockAggregator::forProduct(
+                array_merge($product, ['options' => $options])
+            );
+            $healths[] = $this->assessLocalHealth(null, $aggregatedIbsStock, $lowWarning, false);
         } else {
             $healths[] = $this->assessLocalHealth($rate, $ibsStock, $lowWarning, true);
         }
@@ -907,6 +905,206 @@ class ProductPreviewService
     }
 
     /**
+     * @param  array<string, mixed>  $product
+     */
+    public function productKey(array $product): string
+    {
+        return (string) ($product['product_id'] ?? $product['source_product_id'] ?? $product['oc_product_id'] ?? '');
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $products
+     * @return array<string, array<string, mixed>>
+     */
+    public function indexProductsById(array $products): array
+    {
+        $indexed = [];
+
+        foreach ($products as $product) {
+            if (! is_array($product)) {
+                continue;
+            }
+
+            $id = $this->productKey($product);
+
+            if ($id !== '') {
+                $indexed[$id] = $product;
+            }
+        }
+
+        return $indexed;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $freshProducts
+     * @param  array<int, array<string, mixed>>  $existingProducts
+     * @return array<int, array<string, mixed>>
+     */
+    public function detectNewProducts(array $freshProducts, array $existingProducts): array
+    {
+        $existingIds = [];
+
+        foreach ($existingProducts as $product) {
+            if (! is_array($product)) {
+                continue;
+            }
+
+            $id = $this->productKey($product);
+
+            if ($id !== '') {
+                $existingIds[$id] = true;
+            }
+        }
+
+        $new = [];
+
+        foreach ($freshProducts as $product) {
+            if (! is_array($product)) {
+                continue;
+            }
+
+            $id = $this->productKey($product);
+
+            if ($id === '' || isset($existingIds[$id])) {
+                continue;
+            }
+
+            $new[] = $product;
+            $existingIds[$id] = true;
+        }
+
+        return $new;
+    }
+
+    /**
+     * @param  array<string, mixed>  $existingPreview
+     * @param  array<int, array<string, mixed>>  $newProducts
+     * @return array<string, mixed>
+     */
+    public function appendNewProducts(array $existingPreview, array $newProducts): array
+    {
+        $products = is_array($existingPreview['products'] ?? null) ? $existingPreview['products'] : [];
+        $existingIds = [];
+
+        foreach ($products as $product) {
+            if (! is_array($product)) {
+                continue;
+            }
+
+            $id = $this->productKey($product);
+
+            if ($id !== '') {
+                $existingIds[$id] = true;
+            }
+        }
+
+        foreach ($newProducts as $product) {
+            if (! is_array($product)) {
+                continue;
+            }
+
+            $id = $this->productKey($product);
+
+            if ($id === '' || isset($existingIds[$id])) {
+                continue;
+            }
+
+            $products[] = $product;
+            $existingIds[$id] = true;
+        }
+
+        $existingPreview['products'] = array_values($products);
+        $existingPreview['meta'] = is_array($existingPreview['meta'] ?? null) ? $existingPreview['meta'] : [];
+        $existingPreview['meta']['loaded_at'] = now()->toIso8601String();
+
+        return $this->refreshPreviewState($existingPreview);
+    }
+
+    /**
+     * @param  array<string, mixed>  $existing
+     * @return array<string, mixed>
+     */
+    public function refreshExistingPreview(array $existing): array
+    {
+        $existingProducts = is_array($existing['products'] ?? null) ? $existing['products'] : [];
+
+        if ($existingProducts === []) {
+            throw new RuntimeException('No products loaded yet. Please use Load Products first.');
+        }
+
+        $fresh = $this->loadPreview();
+        $freshById = $this->indexProductsById(is_array($fresh['products'] ?? null) ? $fresh['products'] : []);
+        $localFields = ['rate', 'ibs_stock', 'ibs_model', 'sm_model', 'low_warning', 'product_category'];
+
+        $updated = [];
+
+        foreach ($existingProducts as $product) {
+            if (! is_array($product)) {
+                continue;
+            }
+
+            $id = $this->productKey($product);
+
+            if ($id !== '' && isset($freshById[$id])) {
+                $product = $this->overlayLocalFields($freshById[$id], $product, $localFields);
+            }
+
+            $updated[] = $product;
+        }
+
+        $existing['products'] = $this->applyHealthRules($updated);
+        $existing['meta'] = is_array($existing['meta'] ?? null) ? $existing['meta'] : [];
+        $existing['meta']['loaded_at'] = now()->toIso8601String();
+        $existing['meta']['read_only'] = true;
+        $existing['activity'] = is_array($existing['activity'] ?? null) ? $existing['activity'] : [];
+
+        if (is_array($fresh['diagnostics'] ?? null)) {
+            $existing['diagnostics'] = $fresh['diagnostics'];
+        }
+
+        return $this->refreshPreviewState($existing);
+    }
+
+    /**
+     * @param  array<string, mixed>  $freshProduct
+     * @param  array<string, mixed>  $existingProduct
+     * @param  array<int, string>  $localFields
+     * @return array<string, mixed>
+     */
+    public function overlayLocalFields(array $freshProduct, array $existingProduct, array $localFields): array
+    {
+        $product = $freshProduct;
+
+        foreach ($localFields as $field) {
+            if (array_key_exists($field, $existingProduct)) {
+                $product[$field] = $existingProduct[$field];
+            }
+        }
+
+        $oldOptions = is_array($existingProduct['options'] ?? null) ? $existingProduct['options'] : [];
+        $options = is_array($product['options'] ?? null) ? $product['options'] : [];
+
+        foreach ($options as $variantIndex => $option) {
+            if (! is_array($option) || ! isset($oldOptions[$variantIndex]) || ! is_array($oldOptions[$variantIndex])) {
+                continue;
+            }
+
+            foreach ($localFields as $field) {
+                if (array_key_exists($field, $oldOptions[$variantIndex])) {
+                    $option[$field] = $oldOptions[$variantIndex][$field];
+                }
+            }
+
+            $options[$variantIndex] = $option;
+        }
+
+        $product['options'] = $options;
+        $product['variants'] = $options;
+
+        return $product;
+    }
+
+    /**
      * @param  array<string, mixed>  $fresh
      * @param  array<string, mixed>  $existing
      * @return array<string, mixed>
@@ -916,72 +1114,38 @@ class ProductPreviewService
         $existingProducts = is_array($existing['products'] ?? null) ? $existing['products'] : [];
 
         if ($existingProducts === []) {
-            return $fresh;
+            return $existing;
         }
 
-        $existingById = [];
+        $freshById = $this->indexProductsById(is_array($fresh['products'] ?? null) ? $fresh['products'] : []);
+        $localFields = ['rate', 'ibs_stock', 'ibs_model', 'sm_model', 'low_warning', 'product_category'];
+
+        $updated = [];
 
         foreach ($existingProducts as $product) {
             if (! is_array($product)) {
                 continue;
             }
 
-            $id = (string) ($product['product_id'] ?? $product['source_product_id'] ?? $product['oc_product_id'] ?? '');
+            $id = $this->productKey($product);
 
-            if ($id !== '') {
-                $existingById[$id] = $product;
+            if ($id !== '' && isset($freshById[$id])) {
+                $product = $this->overlayLocalFields($freshById[$id], $product, $localFields);
             }
+
+            $updated[] = $product;
         }
 
-        $localFields = ['rate', 'ibs_stock', 'ibs_model', 'sm_model', 'low_warning'];
-        $freshProducts = is_array($fresh['products'] ?? null) ? $fresh['products'] : [];
+        $existing['products'] = $this->applyHealthRules($updated);
+        $existing['meta'] = is_array($existing['meta'] ?? null) ? $existing['meta'] : [];
+        $existing['meta']['has_local_edits'] = (bool) ($existing['meta']['has_local_edits'] ?? false);
+        $existing['meta']['loaded_at'] = now()->toIso8601String();
+        $existing['activity'] = is_array($existing['activity'] ?? null) ? $existing['activity'] : [];
 
-        foreach ($freshProducts as $index => $product) {
-            if (! is_array($product)) {
-                continue;
-            }
-
-            $id = (string) ($product['product_id'] ?? $product['source_product_id'] ?? $product['oc_product_id'] ?? '');
-
-            if ($id === '' || ! isset($existingById[$id])) {
-                continue;
-            }
-
-            $old = $existingById[$id];
-
-            foreach ($localFields as $field) {
-                if (array_key_exists($field, $old)) {
-                    $product[$field] = $old[$field];
-                }
-            }
-
-            $oldOptions = is_array($old['options'] ?? null) ? $old['options'] : [];
-            $options = is_array($product['options'] ?? null) ? $product['options'] : [];
-
-            foreach ($options as $variantIndex => $option) {
-                if (! is_array($option) || ! isset($oldOptions[$variantIndex]) || ! is_array($oldOptions[$variantIndex])) {
-                    continue;
-                }
-
-                foreach ($localFields as $field) {
-                    if (array_key_exists($field, $oldOptions[$variantIndex])) {
-                        $option[$field] = $oldOptions[$variantIndex][$field];
-                    }
-                }
-
-                $options[$variantIndex] = $option;
-            }
-
-            $product['options'] = $options;
-            $product['variants'] = $options;
-            $freshProducts[$index] = $product;
+        if (is_array($fresh['diagnostics'] ?? null)) {
+            $existing['diagnostics'] = $fresh['diagnostics'];
         }
 
-        $fresh['products'] = $freshProducts;
-        $fresh['activity'] = is_array($existing['activity'] ?? null) ? $existing['activity'] : [];
-        $fresh['meta'] = is_array($fresh['meta'] ?? null) ? $fresh['meta'] : [];
-        $fresh['meta']['has_local_edits'] = (bool) ($existing['meta']['has_local_edits'] ?? false);
-
-        return $this->refreshPreviewState($fresh);
+        return $this->refreshPreviewState($existing);
     }
 }

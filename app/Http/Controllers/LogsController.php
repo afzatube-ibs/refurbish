@@ -2,16 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ProductMap\ProductMapLogsService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class LogsController extends Controller
 {
-    public function clearProductMap(): RedirectResponse
-    {
-        session()->forget('product_preview');
+    public function __construct(
+        private readonly ProductMapLogsService $productMapLogsService,
+    ) {}
 
-        return $this->redirectBackWithCleared('product-map', 'Product Map preview logs cleared.');
+    public function clearProductMapLogs(): RedirectResponse
+    {
+        $this->productMapLogsService->clear();
+
+        return $this->redirectBackWithCleared('product-map', 'Product Map diagnostic logs cleared.');
+    }
+
+    public function resetProductMap(): RedirectResponse
+    {
+        $this->productMapLogsService->resetProductMapSession();
+
+        return $this->redirectBackWithCleared('product-map', 'Product Map session reset. Loaded products were removed from this browser session. Control history in the database was not changed.');
     }
 
     protected function redirectBackWithCleared(string $tab, string $message): RedirectResponse

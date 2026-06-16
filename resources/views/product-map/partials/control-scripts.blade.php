@@ -415,13 +415,13 @@
         var indexRaw = cell.getAttribute('data-index');
         var index = indexRaw === '' ? null : parseInt(indexRaw, 10);
         var inputType = cell.getAttribute('data-input-type') || 'text';
-        var current = storedValue(scope, index, field);
-        var currentStr = current == null ? '' : String(current);
-        cell.classList.add('is-editing');
         if (inputType === 'category') {
             startCategoryFieldEdit(cell, scope, index);
             return;
         }
+        var current = storedValue(scope, index, field);
+        var currentStr = current == null ? '' : String(current);
+        cell.classList.add('is-editing');
         var step = field === 'rate' ? ' step="0.01" min="0"' : (inputType === 'integer' ? ' min="0"' : '');
         var type = inputType === 'decimal' || inputType === 'integer' || field === 'rate' || field === 'ibs_stock' || field === 'low_warning' ? 'number' : 'text';
         cell.innerHTML = '<input type="' + type + '" class="form-input pcc-variant-inline-input"' + step + ' value="' + esc(currentStr) + '">';
@@ -993,6 +993,7 @@
         }
         setCellOn(row, 'ibs_model', displayVal(product.ibs_model));
         setCellOn(row, 'sm_model', displayVal(product.sm_model));
+        setCellOn(row, 'product_category', displayVal(product.product_category));
         setCellOn(row, 'rate', formatRate(product.rate));
         setCellOn(row, 'ibs_stock', formatStock(product.ibs_stock));
         var btn = group.querySelector('[data-control-open]');

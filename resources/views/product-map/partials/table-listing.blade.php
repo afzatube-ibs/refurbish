@@ -23,7 +23,15 @@
 
         return (string) (int) $value;
     };
+    $rows = $listingProducts ?? $products ?? [];
+    $previewLoaded = ! empty($products ?? []);
+    $showPagination = $previewLoaded;
 @endphp
+
+<div class="product-map-list-card">
+    @if ($showPagination)
+        @include('product-map.partials.list-pagination', ['placement' => 'top'])
+    @endif
 
 <div class="product-map-list">
     <div class="product-map-list-header overflow-x-auto">
@@ -31,15 +39,16 @@
             @include('product-map.partials.table-colgroup')
             <thead class="bg-slate-50">
                 <tr>
-                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">Product ID</th>
+                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">OC Product ID</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">Main Image</th>
-                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">Model</th>
+                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">OC Model</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">IBS Model</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">SM Model</th>
-                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">Rate</th>
+                    <th class="col-center font-medium text-slate-600 whitespace-nowrap" title="IBS supplier cost (local)">Rate</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">Stock</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">IBS Stock</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">Product Type</th>
+                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">Category</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">Health</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">History</th>
                 </tr>
@@ -47,7 +56,7 @@
         </table>
     </div>
 
-    @forelse ($products as $index => $product)
+    @forelse ($rows as $index => $product)
         @php
             $health = $product['health'] ?? ['status' => 'ok', 'label' => 'OK', 'issues' => []];
             $options = $product['options'] ?? $product['variants'] ?? [];
@@ -61,6 +70,7 @@
             $ibsStock = $product['ibs_stock'] ?? null;
             $parentImage = $product['image'] ?? $product['main_image'] ?? null;
             $productId = $product['oc_product_id'] ?? $product['product_id'] ?? null;
+            $productCategory = $product['product_category'] ?? null;
             $healthIssues = $health['issues'] ?? [];
             $healthTitle = $healthIssues !== [] ? implode('; ', $healthIssues) : 'No issues';
         @endphp
@@ -87,11 +97,11 @@
                                 {{ $displayField($ibsModel) }}
                             </td>
                             <td class="col-center text-slate-400 whitespace-nowrap" data-cell="sm_model">{{ $displayField($smModel) }}</td>
-                            <td class="col-center text-slate-800 whitespace-nowrap" data-cell="rate">{{ $formatRate($rate) }}</td>
-                            <td class="col-center font-medium whitespace-nowrap {{ is_numeric($stock) && (int) $stock < 0 ? 'stock-negative' : 'text-slate-900' }}">
+                            <td class="col-center text-slate-800 whitespace-nowrap pm-num-cell" data-cell="rate">{{ $formatRate($rate) }}</td>
+                            <td class="col-center font-medium whitespace-nowrap pm-num-cell {{ is_numeric($stock) && (int) $stock < 0 ? 'stock-negative' : 'text-slate-900' }}">
                                 {{ $displayStock($stock) }}
                             </td>
-                            <td class="col-center text-slate-400 whitespace-nowrap" data-cell="ibs_stock">{{ $displayIbsStock($ibsStock) }}</td>
+                            <td class="col-center text-slate-400 whitespace-nowrap pm-num-cell" data-cell="ibs_stock">{{ $displayIbsStock($ibsStock) }}</td>
                             <td class="col-center whitespace-nowrap">
                                 @if ($isVariable)
                                     <button type="button"
@@ -106,24 +116,25 @@
                                     <span class="product-type-simple">Simple</span>
                                 @endif
                             </td>
+                            <td class="col-center text-slate-700 whitespace-nowrap" data-cell="product_category">
+                                {{ $displayField($productCategory) }}
+                            </td>
                             <td class="col-center" data-cell="health">
                                 @include('product-map.partials.health-badge', ['health' => $health, 'healthTitle' => $healthTitle, 'healthIssues' => $healthIssues])
                             </td>
                             <td class="col-center whitespace-nowrap">
-                                @php
-                                    $activityCount = count(collect($previewActivity ?? [])->where('product_id', (string) $productId));
-                                @endphp
                                 <button type="button"
                                         class="product-control-edit-btn"
                                         data-control-open
-                                        data-product-index="{{ $index }}">
-                                    {{ $activityCount > 0 ? 'Edit ('.$activityCount.')' : 'Edit' }}
+                                        data-product-index="{{ $index }}"
+                                        data-product-id="{{ $productId }}">
+                                    Edit
                                 </button>
                             </td>
                         </tr>
                         @if ($isVariable)
                             <tr class="product-map-variant-caption hidden" data-parent-row="{{ $rowId }}">
-                                <td colspan="11">Variants of {{ $displayField($lkModel) }}</td>
+                                <td colspan="12">Variants of {{ $displayField($lkModel) }}</td>
                             </tr>
                             @foreach ($options as $optionIndex => $option)
                                 @php
@@ -134,7 +145,6 @@
                                     $optionIbsModel = $option['ibs_model'] ?? null;
                                     $optionSmModel = $option['sm_model'] ?? null;
                                     $optionIbsStock = $option['ibs_stock'] ?? null;
-                                    $optionRate = $option['rate'] ?? null;
                                     $optionStock = $option['stock'] ?? $option['quantity'] ?? null;
                                     $optionImage = $option['image'] ?? $option['option_image'] ?? null;
                                 @endphp
@@ -156,11 +166,12 @@
                                         {{ $displayField($optionIbsModel) }}
                                     </td>
                                     <td class="col-center text-slate-400 whitespace-nowrap" data-cell="sm_model">{{ $displayField($optionSmModel) }}</td>
-                                    <td class="col-center text-slate-800 whitespace-nowrap" data-cell="rate">{{ $formatRate($optionRate) }}</td>
+                                    <td class="col-center text-slate-400 whitespace-nowrap" data-cell="rate">—</td>
                                     <td class="col-center font-medium whitespace-nowrap {{ is_numeric($optionStock) && (int) $optionStock < 0 ? 'stock-negative' : 'text-slate-900' }}">
                                         {{ $displayStock($optionStock) }}
                                     </td>
                                     <td class="col-center text-slate-400 whitespace-nowrap" data-cell="ibs_stock">{{ $displayIbsStock($optionIbsStock) }}</td>
+                                    <td class="col-center text-slate-400 whitespace-nowrap">—</td>
                                     <td class="col-center text-slate-400 whitespace-nowrap">—</td>
                                     <td class="col-center" data-cell="health">
                                         @include('product-map.partials.health-badge', [
@@ -180,11 +191,21 @@
     @empty
         <div class="product-map-group">
             <div class="text-center text-slate-500 py-16 px-4">
-                <p class="font-medium text-slate-700 mb-1">No products loaded</p>
-                <p class="text-sm">Select <strong>Load Products</strong> to fetch warehouse inventory.</p>
+                @if ($previewLoaded)
+                    <p class="font-medium text-slate-700 mb-1">No products match the current filters</p>
+                    <p class="text-sm">Try adjusting search or filter options, or <a href="{{ route('product-map.index') }}" class="text-slate-700 underline">clear filters</a>.</p>
+                @else
+                    <p class="font-medium text-slate-700 mb-1">No products loaded</p>
+                    <p class="text-sm">Select <strong>Load Products</strong> to fetch warehouse inventory.</p>
+                @endif
             </div>
         </div>
     @endforelse
+</div>
+
+    @if ($showPagination)
+        @include('product-map.partials.list-pagination', ['placement' => 'footer'])
+    @endif
 </div>
 
 @push('scripts')

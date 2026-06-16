@@ -27,6 +27,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/load', [ProductMapController::class, 'load'])->name('load');
         Route::post('/refresh', [ProductMapController::class, 'refresh'])->name('refresh');
         Route::post('/control', [ProductMapController::class, 'saveControl'])->name('control.save');
+        Route::get('/control/history', [ProductMapController::class, 'controlHistory'])->name('control.history');
         Route::post('/clear-logs', [LogsController::class, 'clearProductMap'])->name('clear-logs');
     });
 

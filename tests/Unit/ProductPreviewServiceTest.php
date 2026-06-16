@@ -118,6 +118,8 @@ class ProductPreviewServiceTest extends TestCase
             'model' => 'PARENT-1',
             'image' => '',
             'stock' => 5,
+            'rate' => 10.0,
+            'ibs_stock' => 5,
             'options' => [],
         ], $context);
 
@@ -129,13 +131,64 @@ class ProductPreviewServiceTest extends TestCase
             'ibs_model' => 'IBS-PARENT-2',
             'image' => 'catalog/p.jpg',
             'stock' => 10,
+            'rate' => 10.0,
             'options' => [
-                ['option_name' => 'Color', 'option_value' => 'Red', 'model' => 'VAR-1'],
+                ['option_name' => 'Color', 'option_value' => 'Red', 'model' => 'VAR-1', 'ibs_stock' => 8],
             ],
         ], $context);
 
         $this->assertContains('Missing IBS model', $optionHealth['issues']);
         $this->assertContains('Missing option image', $optionHealth['issues']);
+    }
+
+    public function test_local_health_priority_critical_over_warning(): void
+    {
+        $service = new class(app(\App\Services\OpenCart\OpenCartHttpClient::class), app(\App\Services\OpenCart\ConnectionService::class)) extends ProductPreviewService
+        {
+            public function healthFor(array $product): array
+            {
+                $normalized = $this->normalizeProduct($product, OpenCartImageContext::fromStoreUrl('https://example.com'));
+
+                return $this->applyHealthRules([$normalized])[0]['health'];
+            }
+        };
+
+        $health = $service->healthFor([
+            'model' => 'SIMPLE-1',
+            'ibs_model' => 'IBS-SIMPLE-1',
+            'image' => 'catalog/p.jpg',
+            'stock' => 10,
+            'options' => [],
+        ]);
+
+        $this->assertSame('critical', $health['status']);
+        $this->assertContains('Missing Rate', $health['issues']);
+    }
+
+    public function test_alert_uses_ibs_stock_not_oc_stock(): void
+    {
+        $service = new class(app(\App\Services\OpenCart\OpenCartHttpClient::class), app(\App\Services\OpenCart\ConnectionService::class)) extends ProductPreviewService
+        {
+            public function healthFor(array $product): array
+            {
+                $normalized = $this->normalizeProduct($product, OpenCartImageContext::fromStoreUrl('https://example.com'));
+
+                return $this->applyHealthRules([$normalized])[0]['health'];
+            }
+        };
+
+        $health = $service->healthFor([
+            'model' => 'SIMPLE-2',
+            'ibs_model' => 'IBS-SIMPLE-2',
+            'image' => 'catalog/p.jpg',
+            'stock' => 100,
+            'rate' => 25.0,
+            'ibs_stock' => 2,
+            'options' => [],
+        ]);
+
+        $this->assertSame('alert', $health['status']);
+        $this->assertContains('Low stock', $health['issues']);
     }
 
     public function test_store_image_url_uses_image_prefix_and_encodes_spaces(): void

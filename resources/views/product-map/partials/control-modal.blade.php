@@ -1,149 +1,188 @@
-<div id="product-control-modal" class="product-control-modal hidden" aria-hidden="true">
-    <div class="product-control-modal__backdrop" data-close-control-modal></div>
-    <div class="product-control-modal__panel" role="dialog" aria-modal="true" aria-labelledby="product-control-title">
-        <div class="product-control-modal__header">
-            <div>
-                <h3 id="product-control-title" class="text-lg font-semibold text-slate-900">Product Control</h3>
-                <p class="text-sm text-slate-500">Local only — double-click text fields to edit.</p>
-            </div>
-            <button type="button" class="product-control-modal__close" data-close-control-modal aria-label="Close">&times;</button>
+<div class="modal-overlay" id="productControlCenterModal" hidden aria-hidden="true">
+    <div class="modal-panel modal-panel-product-control pcc-v202-panel" role="dialog" aria-labelledby="pccModalTitle" aria-modal="true">
+        <div class="pcc-v202-header">
+            <h2 class="pcc-modal-title" id="pccModalTitle">Product Control</h2>
+            <button type="button" class="modal-close" data-close-control-modal aria-label="Close">&times;</button>
         </div>
 
-        <form id="product-control-form" class="product-control-modal__form">
-            <input type="hidden" id="control-product-index" name="product_index" value="">
+        <p class="pcc-modal-error" id="pccModalError" hidden role="alert"></p>
 
-            <div class="product-control-modal__scroll">
-                <section class="product-control-summary">
-                    <div id="control-product-image" class="product-control-thumb-wrap">—</div>
-                    <div class="product-control-summary-fields">
-                        <div class="product-control-summary-readonly">
-                            <span class="product-control-label">Product ID</span>
-                            <span id="control-product-id" class="product-control-value font-mono text-xs">—</span>
-                        </div>
-                        <div class="product-control-summary-readonly">
-                            <span class="product-control-label">Model</span>
-                            <span id="control-product-model" class="product-control-value font-mono text-xs">—</span>
-                        </div>
-                        <div class="product-control-field-wrap" data-field-key="parent.ibs_model">
-                            <label class="product-control-label" for="control-parent-ibs-model">IBS Model</label>
-                            <input type="text" id="control-parent-ibs-model" class="product-control-input control-lockable" autocomplete="off" readonly>
-                        </div>
-                        <div class="product-control-field-wrap" data-field-key="parent.sm_model">
-                            <label class="product-control-label" for="control-parent-sm-model">SM Model</label>
-                            <input type="text" id="control-parent-sm-model" class="product-control-input control-lockable" autocomplete="off" readonly>
-                        </div>
-                        <div class="product-control-field-wrap product-control-field-wrap--narrow" data-field-key="parent.low_warning">
-                            <label class="product-control-label" for="control-parent-low-warning">Low Warning</label>
-                            <input type="number" min="0" step="1" id="control-parent-low-warning" class="product-control-input control-lockable" readonly>
-                        </div>
-                    </div>
-                </section>
+        <div class="pcc-tabs pcc-v202-tabs" role="tablist">
+            <button type="button" class="pcc-tab is-active" data-pcc-tab="details" role="tab" aria-selected="true">Product Details</button>
+            <button type="button" class="pcc-tab" data-pcc-tab="history" role="tab" aria-selected="false">Rate / Stock History</button>
+        </div>
 
-                <section id="control-rows-section" class="product-control-table-section">
-                    <h4 id="control-rows-title" class="product-control-section__title">Variants</h4>
-                    <div class="product-control-table-wrap">
-                        <table class="product-control-table">
-                            <thead>
-                                <tr>
-                                    <th>Image</th>
-                                    <th>Model</th>
-                                    <th>IBS Model</th>
-                                    <th>SM Model</th>
-                                    <th>Rate</th>
-                                    <th>IBS Stock</th>
-                                    <th>Low Warning</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="control-rows-tbody"></tbody>
-                        </table>
-                    </div>
-                </section>
+        <form id="productControlCenterForm" class="pcc-v202-form">
+            <input type="hidden" id="control-product-index" value="">
 
-                <details class="product-control-activity-details">
-                    <summary class="product-control-section__title product-control-activity-summary">Activity History</summary>
-                    <div class="product-control-activity-panels">
-                        <div class="product-control-activity-panel">
-                            <h5 class="product-control-activity-heading">Parent Activity</h5>
-                            <div id="control-parent-activity" class="product-control-activity-list">
-                                <p class="product-control-activity-empty">No parent changes yet.</p>
+            <div class="pcc-tab-panel is-active pcc-v202-tab-panel" data-pcc-panel="details">
+                <div class="pcc-v202-workspace" id="pccWorkspace">
+                    <div class="pcc-v202-top-split">
+                        <section class="pcc-v202-snapshot" aria-label="Product information">
+                            <div class="pcc-v202-snapshot-image" id="pccMainImageWrap">
+                                <div class="pcc-image-placeholder-card pcc-v202-img-placeholder" id="pccImagePlaceholder"><span>No image</span></div>
+                                <img src="" alt="" class="pcc-product-image pcc-v202-product-image" id="pccProductImage" hidden>
                             </div>
-                        </div>
-                        <div class="product-control-activity-panel">
-                            <h5 class="product-control-activity-heading">Variant Activity</h5>
-                            <div id="control-variant-activity" class="product-control-activity-list">
-                                <p class="product-control-activity-empty">No variant changes yet.</p>
+                            <div class="pcc-v202-snapshot-body">
+                                <h3 class="pcc-v202-section-title">Product Information</h3>
+                                <dl class="pcc-v202-facts">
+                                    <div class="pcc-v202-fact"><dt>OC Product ID</dt><dd id="pccProductIdDisplay">—</dd></div>
+                                    <div class="pcc-v202-fact"><dt>OC Model</dt><dd id="pccMainModel">—</dd></div>
+                                    <div class="pcc-v202-fact"><dt>Type</dt><dd id="pccProductType">—</dd></div>
+                                </dl>
                             </div>
-                        </div>
-                    </div>
-                </details>
+                        </section>
 
-                <p id="control-form-error" class="product-control-error hidden"></p>
+                        <section class="pcc-v202-supplier" id="pccVendorMappingCard" aria-label="Supplier control fields">
+                            <h3 class="pcc-v202-section-title">Supplier Control</h3>
+                            <div class="pcc-v202-supplier-fields" id="pccSupplierFields">
+                                <div class="pcc-v202-field-row" data-supplier-field="ibs_model">
+                                    <span class="pcc-v202-field-label">IBS Model</span>
+                                    <span class="pcc-v202-field-value pcc-dblclick-edit" data-field="ibs_model" data-scope="parent" tabindex="0" title="Double-click to edit">—</span>
+                                </div>
+                                <div class="pcc-v202-field-row" data-supplier-field="sm_model">
+                                    <span class="pcc-v202-field-label">SM Model</span>
+                                    <span class="pcc-v202-field-value pcc-dblclick-edit" data-field="sm_model" data-scope="parent" tabindex="0" title="Double-click to edit">—</span>
+                                </div>
+                                <div class="pcc-v202-field-row" data-supplier-field="product_category">
+                                    <span class="pcc-v202-field-label">Product Category</span>
+                                    <span class="pcc-v202-field-value pcc-dblclick-edit pcc-category-display" data-field="product_category" data-scope="parent" data-input-type="category" tabindex="0" title="Double-click to edit">—</span>
+                                </div>
+                                <div class="pcc-v202-field-row" data-supplier-field="rate">
+                                    <span class="pcc-v202-field-label">Current Rate</span>
+                                    <span class="pcc-v202-field-value pcc-dblclick-edit" data-field="rate" data-scope="parent" data-input-type="decimal" tabindex="0" title="Double-click to edit">—</span>
+                                    <button type="button" class="pcc-v202-adjust-mini pcc-v202-adjust-trigger" data-adjust-scope="parent" data-adjust-mode="price" data-adjust-index="" title="Adjust Rate" aria-label="Adjust Rate">Rate</button>
+                                </div>
+                                <div class="pcc-v202-field-row" data-supplier-field="low_warning">
+                                    <span class="pcc-v202-field-label">Low Warning</span>
+                                    <span class="pcc-v202-field-value pcc-dblclick-edit" data-field="low_warning" data-scope="parent" data-input-type="integer" tabindex="0" title="Double-click to edit"></span>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <section class="pcc-v202-options" id="pccVariantSection" hidden>
+                        <div class="pcc-v202-options-head">
+                            <h3 class="pcc-v202-options-title">Option Rows</h3>
+                            <span class="pcc-v202-options-hint">Double-click cell to edit</span>
+                        </div>
+                        <div class="pcc-v202-table-wrap">
+                            <table class="data-table pcc-variant-lines-table pcc-v202-table pcc-dropflow-table" id="pccVariantLinesTable">
+                                <thead>
+                                    <tr>
+                                        <th class="pcc-vcol-image">Image</th>
+                                        <th class="pcc-vcol-model">OC Model</th>
+                                        <th class="pcc-vcol-vendor">IBS Model</th>
+                                        <th class="pcc-vcol-sm">SM Model</th>
+                                        <th class="pcc-vcol-cost">Rate</th>
+                                        <th class="pcc-vcol-vstock">IBS Stock</th>
+                                        <th class="pcc-vcol-warn">Low Warning</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pccVariantLinesBody"></tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="pcc-v202-options" id="pccSimpleTableSection" hidden>
+                        <div class="pcc-v202-options-head">
+                            <h3 class="pcc-v202-options-title">Product Row</h3>
+                            <span class="pcc-v202-options-hint">Double-click cell to edit</span>
+                        </div>
+                        <div class="pcc-v202-table-wrap">
+                            <table class="data-table pcc-variant-lines-table pcc-v202-table pcc-dropflow-table" id="pccSimpleLinesTable">
+                                <thead>
+                                    <tr>
+                                        <th class="pcc-vcol-image">Image</th>
+                                        <th class="pcc-vcol-model">OC Model</th>
+                                        <th class="pcc-vcol-vendor">IBS Model</th>
+                                        <th class="pcc-vcol-sm">SM Model</th>
+                                        <th class="pcc-vcol-category">Product Category</th>
+                                        <th class="pcc-vcol-cost">Rate</th>
+                                        <th class="pcc-vcol-vstock">IBS Stock</th>
+                                        <th class="pcc-vcol-warn">Low Warning</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pccSimpleLinesBody"></tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="pcc-v202-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" id="pccCancelBtn" hidden>Cancel Changes</button>
+                    <button type="submit" class="btn btn-primary" id="pccSaveBtn" disabled>Save All Changes</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-close-control-modal>Close</button>
+                </div>
             </div>
 
-            <div class="product-control-modal__footer">
-                <button type="button" class="product-control-btn product-control-btn--secondary" data-close-control-modal>Cancel</button>
-                <button type="submit" id="control-save-btn" class="product-control-btn product-control-btn--primary" disabled>Save locally</button>
+            <div class="pcc-tab-panel pcc-v202-tab-panel" data-pcc-panel="history" hidden>
+                <div class="pcc-v202-history-wrap">
+                    <table class="data-table pcc-history-table">
+                        <thead>
+                            <tr>
+                                <th>Date / Time</th>
+                                <th>Product / Variant Model</th>
+                                <th>Type</th>
+                                <th>Old</th>
+                                <th>New</th>
+                                <th>Difference</th>
+                                <th>Reason</th>
+                                <th>Note</th>
+                                <th>User</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pccHistoryRows">
+                            <tr><td colspan="9" class="pcc-muted-cell">Open a product to view history.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pcc-v202-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-close-control-modal>Close</button>
+                </div>
             </div>
         </form>
+    </div>
+</div>
 
-        <div id="control-adjust-popover" class="product-control-popover hidden" role="dialog" aria-modal="true" aria-labelledby="control-popover-title">
-            <div class="product-control-popover__inner">
-                <h4 id="control-popover-title" class="product-control-popover__title">Adjust Rate &amp; Stock</h4>
-                <input type="hidden" id="control-popover-row-key" value="">
-
-                <div class="product-control-popover__section">
-                    <h5 class="product-control-popover__section-title">Rate</h5>
-                    <p class="product-control-popover__current">Current: <strong id="control-popover-rate-current">—</strong></p>
-                    <div class="product-control-popover__field">
-                        <label class="product-control-label" for="control-popover-rate-mode">Change</label>
-                        <select id="control-popover-rate-mode" class="product-control-select product-control-select--compact">
-                            <option value="">No change</option>
-                            <option value="set">Set</option>
-                            <option value="increase">Increase</option>
-                            <option value="decrease">Decrease</option>
-                        </select>
-                    </div>
-                    <div class="product-control-popover__field">
-                        <label class="product-control-label" for="control-popover-rate-amount">Amount</label>
-                        <input type="number" step="any" min="0" id="control-popover-rate-amount" class="product-control-input product-control-input--compact" placeholder="Amount">
-                    </div>
-                    <span id="control-popover-rate-error" class="product-control-popover-error hidden"></span>
-                </div>
-
-                <div class="product-control-popover__section">
-                    <h5 class="product-control-popover__section-title">IBS Stock</h5>
-                    <p class="product-control-popover__current">Current: <strong id="control-popover-stock-current">—</strong></p>
-                    <div class="product-control-popover__field">
-                        <label class="product-control-label" for="control-popover-stock-mode">Change</label>
-                        <select id="control-popover-stock-mode" class="product-control-select product-control-select--compact">
-                            <option value="">No change</option>
-                            <option value="set">Set</option>
-                            <option value="increase">Increase</option>
-                            <option value="decrease">Decrease</option>
-                        </select>
-                    </div>
-                    <div class="product-control-popover__field">
-                        <label class="product-control-label" for="control-popover-stock-amount">Amount</label>
-                        <input type="number" step="1" min="0" id="control-popover-stock-amount" class="product-control-input product-control-input--compact" placeholder="Amount">
-                    </div>
-                    <div id="control-popover-reason-wrap" class="product-control-popover__field hidden">
-                        <label class="product-control-label" for="control-popover-stock-reason">Reason</label>
-                        <select id="control-popover-stock-reason" class="product-control-select product-control-select--compact">
-                            <option value="">Select reason</option>
-                            @foreach ($stockReasons as $reason)
-                                <option value="{{ $reason }}">{{ $reason }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <span id="control-popover-stock-error" class="product-control-popover-error hidden"></span>
-                </div>
-
-                <div class="product-control-popover__actions">
-                    <button type="button" class="product-control-btn product-control-btn--secondary" id="control-popover-cancel">Cancel</button>
-                    <button type="button" class="product-control-btn product-control-btn--primary" id="control-popover-apply">Apply</button>
-                </div>
-            </div>
+<div class="pcc-adjust-popover pcc-v202-adjust-modal" id="pccAdjustPopover" hidden>
+    <div class="pcc-adjust-popover-inner">
+        <p class="pcc-adjust-title" id="pccAdjustTitle">Adjust Rate</p>
+        <label class="pcc-field pcc-field-compact" id="pccAdjustCurrentWrap">Current Value
+            <input type="text" id="pccAdjustCurrent" class="form-input pcc-adjust-current-input" readonly disabled aria-readonly="true">
+        </label>
+        <label class="pcc-field pcc-field-compact" id="pccAdjustChangeTypeWrap">Change Type
+            <select id="pccAdjustChangeType" class="form-input">
+                <option value="increase">Increase</option>
+                <option value="decrease">Decrease</option>
+            </select>
+        </label>
+        <label class="pcc-field pcc-field-compact" id="pccAdjustMethodWrap">Method
+            <select id="pccAdjustMethod" class="form-input">
+                <option value="fixed">Fixed Amount</option>
+                <option value="percent">Percentage</option>
+            </select>
+        </label>
+        <label class="pcc-field pcc-field-compact" id="pccAdjustAmountWrap">
+            <span class="pcc-label-inline"><span id="pccAdjustAmountLabel">Amount</span><span class="pcc-required">*</span></span>
+            <input type="number" id="pccAdjustAmount" class="form-input" min="0" step="any" placeholder="Enter amount" required>
+        </label>
+        <label class="pcc-field pcc-field-compact" id="pccAdjustReasonWrap">
+            <span class="pcc-label-inline">Reason<span class="pcc-required">*</span></span>
+            <select id="pccAdjustReason" class="form-input" required>
+                <option value="">Select reason</option>
+                @foreach ($stockReasons as $reason)
+                    <option value="{{ $reason }}">{{ $reason }}</option>
+                @endforeach
+            </select>
+        </label>
+        <label class="pcc-field pcc-field-compact" id="pccAdjustNoteWrap">Note (optional)
+            <input type="text" id="pccAdjustNote" class="form-input" placeholder="Optional note">
+        </label>
+        <p class="pcc-adjust-preview" id="pccAdjustPreview"></p>
+        <div class="pcc-adjust-actions">
+            <button type="button" class="btn btn-primary btn-sm" id="pccAdjustApply">Apply</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="pccAdjustCancel">Cancel</button>
         </div>
     </div>
 </div>

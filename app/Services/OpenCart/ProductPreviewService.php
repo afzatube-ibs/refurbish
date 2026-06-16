@@ -65,6 +65,7 @@ class ProductPreviewService
                     'active' => 'LK Model',
                     'reserved' => 'SM Model',
                     'rate' => 'IBS supplier cost (local)',
+                    'supplier_cost' => 'Alias of rate for supplier payable reports',
                     'low_warning' => 'Low stock threshold (local)',
                 ],
                 'local_defaults' => [
@@ -373,6 +374,7 @@ class ProductPreviewService
             'ibs_model' => $ibsModel,
             'sm_model' => '',
             'rate' => null,
+            'supplier_cost' => null,
             'low_warning' => $lowWarning,
             'stock' => $parentStock,
             'ibs_stock' => null,
@@ -403,6 +405,9 @@ class ProductPreviewService
             return array_merge($product, [
                 'options' => $normalizedOptions,
                 'variants' => $normalizedOptions,
+                'supplier_cost' => array_key_exists('rate', $product) && $product['rate'] !== null
+                    ? (float) $product['rate']
+                    : null,
                 'health' => $this->assessParentHealth($product, $normalizedOptions, $lowWarning, $duplicateIbsModels),
             ]);
         }, $products);
@@ -505,9 +510,11 @@ class ProductPreviewService
             'option_value' => $value !== '' ? $value : '—',
             'lk_model' => $displayModel,
             'model' => $displayModel,
+            'variant_key' => $displayModel !== '—' ? $displayModel : '',
             'ibs_model' => $ibsModel,
             'sm_model' => '',
             'rate' => null,
+            'supplier_cost' => null,
             'low_warning' => null,
             'quantity' => $stock,
             'stock' => $stock,
@@ -528,16 +535,25 @@ class ProductPreviewService
         $stock = (int) ($option['stock'] ?? 0);
         $image = $option['image'] ?? null;
         $isDuplicate = $ibsModel !== '' && in_array($ibsModel, $duplicateIbsModels, true);
+        $optionLow = $this->optionLowWarning($option, $lowWarning);
+        $ibsStock = array_key_exists('ibs_stock', $option) && $option['ibs_stock'] !== null
+            ? (int) $option['ibs_stock']
+            : null;
+        $rate = array_key_exists('rate', $option) && $option['rate'] !== null
+            ? (float) $option['rate']
+            : null;
+
+        $localHealth = $this->assessLocalHealth($rate, $ibsStock, $optionLow, false);
+        $ocHealth = $this->buildOcHealth(
+            stock: $stock,
+            image: is_string($image) ? $image : null,
+            ibsModel: $ibsModel,
+            isOption: true,
+            isDuplicateIbs: $isDuplicate,
+        );
 
         return array_merge($option, [
-            'health' => $this->buildHealth(
-                stock: $stock,
-                image: is_string($image) ? $image : null,
-                ibsModel: $ibsModel,
-                lowWarning: $this->optionLowWarning($option, $lowWarning),
-                isOption: true,
-                isDuplicateIbs: $isDuplicate,
-            ),
+            'health' => $this->mergeHealthPriority($localHealth, $ocHealth),
         ]);
     }
 
@@ -567,22 +583,52 @@ class ProductPreviewService
         $image = $product['image'] ?? null;
         $isDuplicate = $ibsModel !== '' && in_array($ibsModel, $duplicateIbsModels, true);
         $isVariable = count($options) > 0;
+        $rate = array_key_exists('rate', $product) && $product['rate'] !== null
+            ? (float) $product['rate']
+            : null;
+        $ibsStock = array_key_exists('ibs_stock', $product) && $product['ibs_stock'] !== null
+            ? (int) $product['ibs_stock']
+            : null;
 
-        $health = $this->buildHealth(
+        $healths = [];
+
+        if ($isVariable) {
+            if ($rate === null) {
+                $healths[] = $this->healthResult('critical', 'Critical', ['Missing Rate']);
+            }
+
+            foreach ($options as $option) {
+                $optionLow = $this->optionLowWarning($option, $lowWarning);
+                $variantIbsStock = array_key_exists('ibs_stock', $option) && $option['ibs_stock'] !== null
+                    ? (int) $option['ibs_stock']
+                    : null;
+                $healths[] = $this->assessLocalHealth(null, $variantIbsStock, $optionLow, false);
+            }
+        } else {
+            $healths[] = $this->assessLocalHealth($rate, $ibsStock, $lowWarning, true);
+        }
+
+        $healths[] = $this->buildOcHealth(
             stock: $isVariable ? $this->resolveVariableParentStock($options, $stock) : $stock,
             image: is_string($image) ? $image : null,
             ibsModel: $ibsModel,
-            lowWarning: $lowWarning,
             isOption: false,
             isDuplicateIbs: $isDuplicate,
-            skipLowStock: $isVariable,
         );
 
         if ($isVariable) {
-            $health = $this->mergeHealth($health, $this->rollupVariantStockHealth($options, $lowWarning));
+            foreach ($options as $option) {
+                $healths[] = $this->buildOcHealth(
+                    stock: (int) ($option['stock'] ?? 0),
+                    image: is_string($option['image'] ?? null) ? $option['image'] : null,
+                    ibsModel: (string) ($option['ibs_model'] ?? ''),
+                    isOption: true,
+                    isDuplicateIbs: in_array((string) ($option['ibs_model'] ?? ''), $duplicateIbsModels, true),
+                );
+            }
         }
 
-        return $health;
+        return $this->mergeHealthPriority(...$healths);
     }
 
     /**
@@ -600,35 +646,115 @@ class ProductPreviewService
     }
 
     /**
-     * @param  array<int, array<string, mixed>>  $options
      * @return array{status: string, label: string, issues: array<int, string>}
      */
-    protected function rollupVariantStockHealth(array $options, int $parentLowWarning): array
-    {
-        $issues = [];
-
-        foreach ($options as $option) {
-            $stock = (int) ($option['stock'] ?? 0);
-            $lowWarning = $this->optionLowWarning($option, $parentLowWarning);
-
-            if ($stock < 0) {
-                $issues[] = 'Negative stock';
-            } elseif ($stock < $lowWarning) {
-                $issues[] = 'Stock below low warning';
-            }
+    protected function assessLocalHealth(
+        ?float $rate,
+        ?int $ibsStock,
+        int $lowWarning,
+        bool $checkRate,
+    ): array {
+        if ($checkRate && $rate === null) {
+            return $this->healthResult('critical', 'Critical', ['Missing Rate']);
         }
 
-        $issues = array_values(array_unique($issues));
-
-        if (in_array('Negative stock', $issues, true)) {
-            return $this->healthResult('needs_attention', 'Review', $issues);
+        if ($ibsStock === null) {
+            return $this->healthResult('warning', 'Warning', ['Missing IBS Stock']);
         }
 
-        if ($issues !== []) {
-            return $this->healthResult('low', 'Low', $issues);
+        if ($ibsStock < $lowWarning) {
+            return $this->healthResult('alert', 'Alert', ['Low stock']);
         }
 
         return $this->healthResult('ok', 'OK', []);
+    }
+
+    /**
+     * @return array{status: string, label: string, issues: array<int, string>}
+     */
+    protected function buildOcHealth(
+        int $stock,
+        ?string $image,
+        string $ibsModel,
+        bool $isOption,
+        bool $isDuplicateIbs,
+    ): array {
+        $issues = [];
+
+        if ($stock < 0) {
+            $issues[] = 'Negative stock';
+        }
+
+        if ($ibsModel === '') {
+            $issues[] = 'Missing IBS model';
+        }
+
+        if (blank($image)) {
+            $issues[] = $isOption ? 'Missing option image' : 'Missing main image';
+        }
+
+        if ($isDuplicateIbs) {
+            $issues[] = 'Duplicate IBS model';
+        }
+
+        if ($issues !== []) {
+            return $this->healthResult('needs_attention', 'Review', array_values(array_unique($issues)));
+        }
+
+        return $this->healthResult('ok', 'OK', []);
+    }
+
+    /** @var array<string, int> */
+    protected const HEALTH_PRIORITY = [
+        'critical' => 5,
+        'warning' => 4,
+        'alert' => 3,
+        'low' => 3,
+        'needs_attention' => 2,
+        'ok' => 1,
+    ];
+
+    /**
+     * @param  array{status: string, label: string, issues: array<int, string>}  ...$healths
+     * @return array{status: string, label: string, issues: array<int, string>}
+     */
+    protected function mergeHealthPriority(array ...$healths): array
+    {
+        $winner = $this->healthResult('ok', 'OK', []);
+        $winnerPriority = 1;
+        $allIssues = [];
+
+        foreach ($healths as $health) {
+            $status = $health['status'] ?? 'ok';
+            $priority = self::HEALTH_PRIORITY[$status] ?? 1;
+
+            if ($priority > $winnerPriority) {
+                $winnerPriority = $priority;
+                $winner = $health;
+            }
+
+            foreach ($health['issues'] ?? [] as $issue) {
+                $allIssues[] = $issue;
+            }
+        }
+
+        if ($winnerPriority <= 1) {
+            return $this->healthResult('ok', 'OK', []);
+        }
+
+        $status = $winner['status'] ?? 'ok';
+        $label = $winner['label'] ?? 'OK';
+
+        if ($status === 'low') {
+            $status = 'alert';
+            $label = 'Alert';
+        }
+
+        return [
+            'status' => $status,
+            'label' => $label,
+            'issues' => array_values(array_unique($allIssues)),
+        ];
     }
 
     /**
@@ -669,7 +795,7 @@ class ProductPreviewService
         }
 
         if ($lowIssues !== []) {
-            return $this->healthResult('low', 'Low', $lowIssues);
+            return $this->healthResult('alert', 'Alert', $lowIssues);
         }
 
         return $this->healthResult('ok', 'OK', []);
@@ -682,23 +808,7 @@ class ProductPreviewService
      */
     protected function mergeHealth(array $base, array $rollup): array
     {
-        if ($base['status'] === 'needs_attention' || $rollup['status'] === 'needs_attention') {
-            return $this->healthResult(
-                'needs_attention',
-                'Review',
-                array_values(array_unique(array_merge($base['issues'], $rollup['issues']))),
-            );
-        }
-
-        if ($base['status'] === 'low' || $rollup['status'] === 'low') {
-            return $this->healthResult(
-                'low',
-                'Low',
-                array_values(array_unique(array_merge($base['issues'], $rollup['issues']))),
-            );
-        }
-
-        return $base;
+        return $this->mergeHealthPriority($base, $rollup);
     }
 
     /**
@@ -794,5 +904,84 @@ class ProductPreviewService
         $preview['summary'] = $this->buildSummary(array_fill(0, max(0, $apiReturned), []), $products);
 
         return $preview;
+    }
+
+    /**
+     * @param  array<string, mixed>  $fresh
+     * @param  array<string, mixed>  $existing
+     * @return array<string, mixed>
+     */
+    public function mergeLocalPreview(array $fresh, array $existing): array
+    {
+        $existingProducts = is_array($existing['products'] ?? null) ? $existing['products'] : [];
+
+        if ($existingProducts === []) {
+            return $fresh;
+        }
+
+        $existingById = [];
+
+        foreach ($existingProducts as $product) {
+            if (! is_array($product)) {
+                continue;
+            }
+
+            $id = (string) ($product['product_id'] ?? $product['source_product_id'] ?? $product['oc_product_id'] ?? '');
+
+            if ($id !== '') {
+                $existingById[$id] = $product;
+            }
+        }
+
+        $localFields = ['rate', 'ibs_stock', 'ibs_model', 'sm_model', 'low_warning'];
+        $freshProducts = is_array($fresh['products'] ?? null) ? $fresh['products'] : [];
+
+        foreach ($freshProducts as $index => $product) {
+            if (! is_array($product)) {
+                continue;
+            }
+
+            $id = (string) ($product['product_id'] ?? $product['source_product_id'] ?? $product['oc_product_id'] ?? '');
+
+            if ($id === '' || ! isset($existingById[$id])) {
+                continue;
+            }
+
+            $old = $existingById[$id];
+
+            foreach ($localFields as $field) {
+                if (array_key_exists($field, $old)) {
+                    $product[$field] = $old[$field];
+                }
+            }
+
+            $oldOptions = is_array($old['options'] ?? null) ? $old['options'] : [];
+            $options = is_array($product['options'] ?? null) ? $product['options'] : [];
+
+            foreach ($options as $variantIndex => $option) {
+                if (! is_array($option) || ! isset($oldOptions[$variantIndex]) || ! is_array($oldOptions[$variantIndex])) {
+                    continue;
+                }
+
+                foreach ($localFields as $field) {
+                    if (array_key_exists($field, $oldOptions[$variantIndex])) {
+                        $option[$field] = $oldOptions[$variantIndex][$field];
+                    }
+                }
+
+                $options[$variantIndex] = $option;
+            }
+
+            $product['options'] = $options;
+            $product['variants'] = $options;
+            $freshProducts[$index] = $product;
+        }
+
+        $fresh['products'] = $freshProducts;
+        $fresh['activity'] = is_array($existing['activity'] ?? null) ? $existing['activity'] : [];
+        $fresh['meta'] = is_array($fresh['meta'] ?? null) ? $fresh['meta'] : [];
+        $fresh['meta']['has_local_edits'] = (bool) ($existing['meta']['has_local_edits'] ?? false);
+
+        return $this->refreshPreviewState($fresh);
     }
 }

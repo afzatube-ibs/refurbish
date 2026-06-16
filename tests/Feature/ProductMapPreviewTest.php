@@ -178,12 +178,41 @@ class ProductMapPreviewTest extends TestCase
             ->assertSee('IBS Model')
             ->assertSee('SM Model')
             ->assertSee('IBS Stock')
+            ->assertSee('Total Products')
+            ->assertSee('Ready')
+            ->assertSee('Needs Work')
+            ->assertSee('Search & Filter')
+            ->assertSee('Page size')
             ->assertSee('Product Type')
+            ->assertSee('Category')
             ->assertSee('History')
+            ->assertSee('Page 1 of 3 · 42 records')
+            ->assertSee('Previous')
+            ->assertSee('Next')
             ->assertSee('Variable (5)')
             ->assertDontSee('Advanced Diagnostics')
             ->assertDontSee('Option Name')
             ->assertDontSee('Option Value');
+    }
+
+    public function test_preview_listing_pagination_page_two_shows_next_slice(): void
+    {
+        $this->activeConnection();
+        $user = $this->adminUser();
+
+        $this->actingAs($user)
+            ->post(route('product-map.load'));
+
+        $preview = session('product_preview');
+        $pageOneIds = array_slice(array_column($preview['products'] ?? [], 'model'), 0, 20);
+        $pageTwoIds = array_slice(array_column($preview['products'] ?? [], 'model'), 20, 20);
+
+        $this->actingAs($user)
+            ->get(route('product-map.index', ['page' => 2]))
+            ->assertOk()
+            ->assertSee('Page 2 of 3 · 42 records')
+            ->assertSee($pageTwoIds[0] ?? 'missing-page-two-model')
+            ->assertDontSee($pageOneIds[0] ?? 'missing-page-one-model');
     }
 
     public function test_parent_health_rolls_up_variant_negative_stock_but_not_missing_option_image(): void
@@ -203,8 +232,9 @@ class ProductMapPreviewTest extends TestCase
             'ibs_model' => 'IBS-PARENT-1',
             'image' => 'catalog/p.jpg',
             'stock' => 10,
+            'rate' => 10.0,
             'options' => [
-                ['model' => 'OPT-1', 'quantity' => -1, 'image' => 'catalog/opt.jpg', 'ibs_model' => 'IBS-OPT-1'],
+                ['model' => 'OPT-1', 'quantity' => -1, 'image' => 'catalog/opt.jpg', 'ibs_model' => 'IBS-OPT-1', 'ibs_stock' => 5],
             ],
         ]);
 
@@ -216,17 +246,18 @@ class ProductMapPreviewTest extends TestCase
             'ibs_model' => 'IBS-PARENT-2',
             'image' => 'catalog/p.jpg',
             'stock' => 10,
+            'rate' => 10.0,
             'options' => [
-                ['model' => 'OPT-2', 'quantity' => 10, 'image' => null, 'ibs_model' => 'IBS-OPT-2'],
+                ['model' => 'OPT-2', 'quantity' => 10, 'image' => null, 'ibs_model' => 'IBS-OPT-2', 'ibs_stock' => 10],
             ],
         ]);
 
-        $this->assertSame('ok', $missingOptionImage['health']['status']);
+        $this->assertSame('needs_attention', $missingOptionImage['health']['status']);
         $this->assertSame('needs_attention', $missingOptionImage['options'][0]['health']['status']);
         $this->assertContains('Missing option image', $missingOptionImage['options'][0]['health']['issues']);
     }
 
-    public function test_low_warning_marks_parent_and_variant_low(): void
+    public function test_low_warning_marks_variant_alert_when_ibs_stock_below_threshold(): void
     {
         $service = new class(app(\App\Services\OpenCart\OpenCartHttpClient::class), app(\App\Services\OpenCart\ConnectionService::class)) extends \App\Services\OpenCart\ProductPreviewService
         {
@@ -243,14 +274,21 @@ class ProductMapPreviewTest extends TestCase
             'ibs_model' => 'IBS-PARENT-LOW',
             'image' => 'catalog/p.jpg',
             'stock' => 20,
+            'rate' => 99.0,
             'options' => [
-                ['model' => 'OPT-LOW', 'quantity' => 3, 'image' => 'catalog/opt.jpg', 'ibs_model' => 'IBS-OPT-LOW'],
+                [
+                    'model' => 'OPT-LOW',
+                    'quantity' => 20,
+                    'image' => 'catalog/opt.jpg',
+                    'ibs_model' => 'IBS-OPT-LOW',
+                    'ibs_stock' => 3,
+                ],
             ],
         ]);
 
-        $this->assertSame('low', $product['health']['status']);
-        $this->assertContains('Stock below low warning', $product['health']['issues']);
-        $this->assertSame('low', $product['options'][0]['health']['status']);
+        $this->assertSame('alert', $product['health']['status']);
+        $this->assertContains('Low stock', $product['health']['issues']);
+        $this->assertSame('alert', $product['options'][0]['health']['status']);
     }
 
     public function test_duplicate_ibs_model_marks_review(): void
@@ -274,6 +312,8 @@ class ProductMapPreviewTest extends TestCase
                 'ibs_model' => 'IBS-DUP',
                 'image' => 'catalog/a.jpg',
                 'stock' => 10,
+                'rate' => 10.0,
+                'ibs_stock' => 8,
                 'options' => [],
             ],
             [
@@ -281,6 +321,8 @@ class ProductMapPreviewTest extends TestCase
                 'ibs_model' => 'IBS-DUP',
                 'image' => 'catalog/b.jpg',
                 'stock' => 10,
+                'rate' => 10.0,
+                'ibs_stock' => 8,
                 'options' => [],
             ],
         ]);
@@ -307,6 +349,8 @@ class ProductMapPreviewTest extends TestCase
             'ibs_model' => 'IBS-NEG-001',
             'image' => 'catalog/p.jpg',
             'stock' => -3,
+            'rate' => 10.0,
+            'ibs_stock' => 5,
             'options' => [],
         ]);
 

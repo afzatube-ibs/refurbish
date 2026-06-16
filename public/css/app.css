@@ -1815,3 +1815,303 @@ body {
 .order-status-row-muted td {
     color: rgb(148 163 184);
 }
+
+/* Order Status Mapping safety UI */
+.osm-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 17rem;
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.osm-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.osm-toolbar-note {
+    font-size: 0.875rem;
+    color: rgb(100 116 139);
+    margin: 0;
+}
+
+.osm-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.osm-save-bar {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.osm-section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: rgb(15 23 42);
+    margin: 0;
+}
+
+.osm-section-desc {
+    font-size: 0.8125rem;
+    color: rgb(100 116 139);
+    margin: 0.35rem 0 0;
+}
+
+.osm-section-head {
+    margin-bottom: 0.75rem;
+}
+
+.osm-table-card {
+    background: rgb(255 255 255);
+    border: 1px solid rgb(226 232 240);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.osm-table-card-muted {
+    background: rgb(248 250 252);
+    border-color: rgb(241 245 249);
+}
+
+.osm-table-wrap {
+    overflow-x: auto;
+}
+
+.osm-table {
+    width: 100%;
+    font-size: 0.875rem;
+}
+
+.osm-table th,
+.osm-table td {
+    padding: 0.75rem 0.875rem;
+    vertical-align: top;
+    border-bottom: 1px solid rgb(241 245 249);
+}
+
+.osm-table thead th {
+    background: rgb(248 250 252);
+    font-weight: 600;
+    color: rgb(71 85 105);
+    white-space: nowrap;
+}
+
+.osm-table-muted tbody tr {
+    opacity: 0.85;
+}
+
+.osm-row-reference td {
+    color: rgb(148 163 184);
+}
+
+.osm-select {
+    width: 100%;
+    min-width: 10rem;
+    border-radius: 0.375rem;
+    border: 1px solid rgb(203 213 225);
+    font-size: 0.875rem;
+    padding: 0.375rem 0.5rem;
+}
+
+.osm-select-locked {
+    background: rgb(241 245 249);
+    color: rgb(148 163 184);
+    cursor: not-allowed;
+}
+
+.osm-helper-text {
+    margin: 0.35rem 0 0;
+    font-size: 0.75rem;
+    color: rgb(100 116 139);
+    line-height: 1.35;
+}
+
+.osm-ibs-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 0.15rem 0.55rem;
+}
+
+.osm-badge-new { background: rgb(219 234 254); color: rgb(30 64 175); }
+.osm-badge-rejected { background: rgb(254 226 226); color: rgb(153 27 27); }
+.osm-badge-return-queue { background: rgb(255 237 213); color: rgb(154 52 18); }
+.osm-badge-return-received { background: rgb(254 249 195); color: rgb(133 77 14); }
+.osm-badge-completed { background: rgb(209 250 229); color: rgb(6 95 70); }
+.osm-badge-ignore { background: rgb(241 245 249); color: rgb(100 116 139); }
+.osm-badge-default { background: rgb(241 245 249); color: rgb(71 85 105); }
+
+.osm-behavior-text {
+    font-size: 0.8125rem;
+    color: rgb(71 85 105);
+}
+
+.osm-reference-details {
+    border: 1px solid rgb(226 232 240);
+    border-radius: 0.5rem;
+    background: rgb(248 250 252);
+    padding: 0.75rem 1rem;
+}
+
+.osm-reference-summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.osm-reference-summary::-webkit-details-marker {
+    display: none;
+}
+
+.osm-reference-count {
+    font-size: 0.75rem;
+    color: rgb(100 116 139);
+}
+
+.osm-reference-details[open] .osm-section-desc {
+    margin-top: 0.75rem;
+}
+
+.osm-empty {
+    text-align: center;
+    color: rgb(100 116 139);
+    padding: 2rem 1rem;
+    margin: 0;
+}
+
+.osm-aside {
+    position: sticky;
+    top: 1rem;
+}
+
+.osm-recommended-card {
+    background: rgb(255 255 255);
+    border: 1px solid rgb(226 232 240);
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+
+.osm-recommended-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: rgb(15 23 42);
+    margin: 0;
+}
+
+.osm-recommended-note {
+    font-size: 0.75rem;
+    color: rgb(100 116 139);
+    margin: 0.35rem 0 0.75rem;
+}
+
+.osm-recommended-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 0.8125rem;
+}
+
+.osm-recommended-list li {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 0.35rem;
+    align-items: center;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid rgb(241 245 249);
+}
+
+.osm-recommended-list li:last-child {
+    border-bottom: none;
+}
+
+.osm-rec-oc {
+    color: rgb(51 65 85);
+}
+
+.osm-rec-arrow {
+    color: rgb(148 163 184);
+}
+
+.osm-rec-ibs {
+    font-weight: 600;
+    color: rgb(30 41 59);
+}
+
+.osm-confirm-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.osm-confirm-modal[hidden] {
+    display: none;
+}
+
+.osm-confirm-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgb(15 23 42 / 0.45);
+}
+
+.osm-confirm-panel {
+    position: relative;
+    width: min(100%, 28rem);
+    background: white;
+    border-radius: 0.5rem;
+    border: 1px solid rgb(226 232 240);
+    padding: 1.25rem;
+    box-shadow: 0 10px 30px rgb(15 23 42 / 0.12);
+}
+
+.osm-confirm-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: rgb(15 23 42);
+}
+
+.osm-confirm-warning {
+    margin: 0.75rem 0;
+    font-size: 0.875rem;
+    color: rgb(180 83 9);
+    background: rgb(255 251 235);
+    border: 1px solid rgb(253 230 138);
+    border-radius: 0.375rem;
+    padding: 0.625rem 0.75rem;
+}
+
+.osm-confirm-list {
+    margin: 0 0 1rem 1.1rem;
+    font-size: 0.8125rem;
+    color: rgb(51 65 85);
+}
+
+.osm-confirm-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+@media (max-width: 1024px) {
+    .osm-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .osm-aside {
+        position: static;
+    }
+}

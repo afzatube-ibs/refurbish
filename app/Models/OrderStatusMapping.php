@@ -22,4 +22,16 @@ class OrderStatusMapping extends Model
             'sfm_status' => SfmOrderStatus::class,
         ];
     }
+
+    public function scopeSyncActive($query)
+    {
+        return $query
+            ->where('oc_selected', true)
+            ->where('sfm_status', '!=', SfmOrderStatus::Ignore);
+    }
+
+    public function isSyncActive(): bool
+    {
+        return $this->oc_selected && $this->sfm_status !== SfmOrderStatus::Ignore;
+    }
 }

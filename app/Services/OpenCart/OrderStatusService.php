@@ -117,6 +117,10 @@ class OrderStatusService
             ->where('source_status_id', $statusId)
             ->first();
 
-        return $mapping?->sfm_status ?? SfmOrderStatus::Ignore;
+        if (! $mapping || ! $mapping->oc_selected) {
+            return SfmOrderStatus::Ignore;
+        }
+
+        return $mapping->sfm_status ?? SfmOrderStatus::Ignore;
     }
 }

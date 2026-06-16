@@ -50,7 +50,7 @@ class OrderSyncService
         }
 
         $statusIds = OrderStatusMapping::query()
-            ->where('sfm_status', '!=', SfmOrderStatus::Ignore)
+            ->syncActive()
             ->pluck('source_status_id')
             ->all();
 

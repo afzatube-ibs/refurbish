@@ -46,6 +46,7 @@ class OrderMapLoadTest extends TestCase
             'source_status_id' => 2,
             'source_status_name' => 'Processing',
             'sfm_status' => SfmOrderStatus::New,
+            'oc_selected' => true,
         ]);
     }
 

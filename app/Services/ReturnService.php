@@ -60,8 +60,8 @@ class ReturnService
                 }
             }
 
-            if ($order->sfm_status !== SfmOrderStatus::Returned) {
-                $order->update(['sfm_status' => SfmOrderStatus::Returned]);
+            if ($order->sfm_status !== SfmOrderStatus::ReturnQueue) {
+                $order->update(['sfm_status' => SfmOrderStatus::ReturnQueue]);
             }
 
             $this->activityLog->log('return.pending', ReturnModel::class, $return->id, [

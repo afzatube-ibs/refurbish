@@ -42,31 +42,37 @@ return [
     'roadmap' => [
         1 => ['key' => 'connection', 'label' => 'Connection', 'status' => 'active'],
         2 => ['key' => 'product_map', 'label' => 'Product Map', 'status' => 'preview'],
-        3 => ['key' => 'order_map', 'label' => 'Order Map', 'status' => 'pending'],
+        3 => ['key' => 'order_map', 'label' => 'Order Map', 'status' => 'active'],
     ],
 
     'status_ranks' => [
         'ignore' => 0,
-        'cancelled' => 1,
-        'hold' => 2,
-        'new' => 3,
-        'accepted' => 4,
-        'packed' => 5,
-        'dispatched' => 6,
-        'returned' => 7,
-        'delivered' => 8,
+        'rejected' => 1,
+        'new' => 2,
+        'accepted' => 3,
+        'packed' => 4,
+        'dispatched' => 5,
+        'return_queue' => 6,
+        'return_received' => 7,
+        'completed' => 8,
     ],
 
     'supplier_transitions' => [
-        'new' => ['accepted', 'cancelled'],
-        'accepted' => ['packed', 'cancelled'],
-        'packed' => ['dispatched', 'cancelled'],
-        'dispatched' => [],
+        'new' => ['accepted', 'rejected'],
+        'accepted' => ['packed', 'rejected'],
+        'packed' => ['dispatched', 'rejected'],
+        'dispatched' => ['return_queue'],
+        'return_queue' => ['return_received'],
+        'return_received' => [],
+        'rejected' => [],
+        'completed' => [],
     ],
 
-    'oc_override_statuses' => ['hold', 'cancelled'],
+    'oc_override_statuses' => [],
 
     'default_new_oc_statuses' => [
         'new', 'pending', 'processing', 'awaiting payment', 'awaiting fulfillment',
     ],
+
+    'order_stock_reason' => 'Correction',
 ];

@@ -276,6 +276,20 @@ class OpenCartHttpClient
             $data['orders'] = array_slice($data['orders'], 0, (int) $params['limit']);
         }
 
+        if (isset($data['orders']) && is_array($data['orders']) && isset($params['status_ids'])) {
+            $statusIds = array_map('intval', (array) $params['status_ids']);
+            if ($statusIds !== []) {
+                $data['orders'] = array_values(array_filter(
+                    $data['orders'],
+                    function (array $order) use ($statusIds): bool {
+                        $statusId = (int) ($order['current_oc_status_id'] ?? $order['order_status_id'] ?? 0);
+
+                        return in_array($statusId, $statusIds, true);
+                    }
+                ));
+            }
+        }
+
         return $data;
     }
 

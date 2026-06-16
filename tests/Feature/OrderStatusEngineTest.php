@@ -15,16 +15,19 @@ class OrderStatusEngineTest extends TestCase
         $this->assertTrue($engine->canTransition(SfmOrderStatus::New, SfmOrderStatus::Accepted));
         $this->assertTrue($engine->canTransition(SfmOrderStatus::Accepted, SfmOrderStatus::Packed));
         $this->assertTrue($engine->canTransition(SfmOrderStatus::Packed, SfmOrderStatus::Dispatched));
+        $this->assertTrue($engine->canTransition(SfmOrderStatus::New, SfmOrderStatus::Rejected));
+        $this->assertTrue($engine->canTransition(SfmOrderStatus::Dispatched, SfmOrderStatus::ReturnQueue));
         $this->assertFalse($engine->canTransition(SfmOrderStatus::New, SfmOrderStatus::Dispatched));
     }
 
-    public function test_oc_status_never_moves_backward(): void
+    public function test_source_update_allowed_only_for_accepted_and_packed(): void
     {
         $engine = new OrderStatusEngine;
-        $order = new \App\Models\Order(['sfm_status' => SfmOrderStatus::Dispatched]);
 
-        $merged = $engine->mergeOcStatus($order, SfmOrderStatus::New);
+        $accepted = new \App\Models\Order(['sfm_status' => SfmOrderStatus::Accepted]);
+        $new = new \App\Models\Order(['sfm_status' => SfmOrderStatus::New]);
 
-        $this->assertSame(SfmOrderStatus::Dispatched, $merged);
+        $this->assertTrue($engine->canUpdateFromSource($accepted));
+        $this->assertFalse($engine->canUpdateFromSource($new));
     }
 }

@@ -5,6 +5,9 @@
          colors="true"
 >
     <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
         </testsuite>
@@ -22,5 +25,7 @@
         <env name="DROPflow_LIVE_READ_ONLY" value="false"/>
         <env name="DROPflow_ALLOW_OPENCART_SYNC" value="false"/>
         <env name="DROPflow_MODULE_PRODUCT_MAP" value="true"/>
+        <env name="DROPflow_MODULE_ORDER_MAP" value="true"/>
+        <env name="DROPflow_ALLOW_OPENCART_SYNC" value="true"/>
     </php>
 </phpunit>

@@ -2,7 +2,7 @@
 
 @section('title', 'Order Status Mapping — DropFlow SFM')
 @section('page-title', 'Order Status Mapping')
-@section('page-subtitle', 'Map OpenCart order statuses to SFM workflow states')
+@section('page-subtitle', 'Map OpenCart order statuses to IBS workflow states')
 
 @section('content')
 <div class="mb-4 flex flex-wrap items-center gap-3">
@@ -26,7 +26,7 @@
                     <tr>
                         <th class="text-left font-medium text-slate-600">OC ID</th>
                         <th class="text-left font-medium text-slate-600">OpenCart Status</th>
-                        <th class="text-left font-medium text-slate-600">SFM Status</th>
+                        <th class="text-left font-medium text-slate-600">IBS Status</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -35,7 +35,7 @@
                             <td class="text-slate-500">{{ $mapping->source_status_id }}</td>
                             <td class="font-medium text-slate-900">{{ $mapping->source_status_name }}</td>
                             <td>
-                                <input type="hidden" name="mappings[{{ $loop->index }}][source_status_id]" value="{{ $mapping->source_status_id }}">
+                                <input type="hidden" name="mappings[{{ $loop->index }}][id]" value="{{ $mapping->id }}">
                                 <select name="mappings[{{ $loop->index }}][sfm_status]"
                                         class="rounded-md border-slate-300 text-sm shadow-sm focus:border-slate-500 focus:ring-slate-500 min-w-[160px]">
                                     @foreach (\App\Enums\SfmOrderStatus::forMappingDropdown() as $status)

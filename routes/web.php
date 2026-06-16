@@ -5,6 +5,7 @@ use App\Http\Controllers\LogsController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductMapController;
 use App\Http\Controllers\Settings\ConnectionController;
+use App\Http\Controllers\Settings\OrderStatusMappingController;
 use App\Models\ReturnModel;
 use Illuminate\Support\Facades\Route;
 
@@ -20,6 +21,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/connection/clear-logs', [ConnectionController::class, 'clearLogs'])->name('connection.clear-logs');
 
         Route::redirect('/settings/connection', '/connection');
+
+        Route::middleware(['module:order_map'])->prefix('settings/order-status-mapping')->name('settings.order-status-mapping.')->group(function () {
+            Route::get('/', [OrderStatusMappingController::class, 'index'])->name('index');
+            Route::post('/sync', [OrderStatusMappingController::class, 'syncFromOpenCart'])->name('sync');
+            Route::put('/', [OrderStatusMappingController::class, 'update'])->name('update');
+        });
     });
 
     Route::middleware(['admin', 'module:product_map'])->prefix('product-map')->name('product-map.')->group(function () {
@@ -36,9 +43,11 @@ Route::middleware(['auth'])->group(function () {
 
     Route::middleware(['module:order_map'])->prefix('order-map')->name('order-map.')->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index');
+        Route::get('/{order}/print-invoice', [OrderController::class, 'printInvoice'])->name('print-invoice');
         Route::get('/{order}', [OrderController::class, 'show'])->name('show');
 
         Route::middleware(['admin'])->group(function () {
+            Route::post('/load', [OrderController::class, 'load'])->name('load');
             Route::post('/sync', [OrderController::class, 'sync'])->name('sync');
         });
 
@@ -46,7 +55,11 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/{order}/accept', [OrderController::class, 'accept'])->name('accept');
             Route::post('/{order}/pack', [OrderController::class, 'pack'])->name('pack');
             Route::post('/{order}/dispatch', [OrderController::class, 'dispatch'])->name('dispatch');
-            Route::post('/{order}/cancel', [OrderController::class, 'cancel'])->name('cancel');
+            Route::post('/{order}/reject', [OrderController::class, 'reject'])->name('reject');
+            Route::post('/{order}/return-queue', [OrderController::class, 'returnQueue'])->name('return-queue');
+            Route::post('/{order}/return-received', [OrderController::class, 'returnReceived'])->name('return-received');
+            Route::post('/{order}/complete', [OrderController::class, 'complete'])->name('complete');
+            Route::post('/{order}/cancel', [OrderController::class, 'reject'])->name('cancel');
         });
     });
 });

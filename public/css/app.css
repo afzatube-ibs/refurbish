@@ -1636,3 +1636,156 @@ body {
         font-size: 1.125rem;
     }
 }
+
+/* Order Map */
+.order-map-filters {
+    margin-bottom: 1rem;
+}
+
+.order-map-filter-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: rgb(71 85 105);
+}
+
+.order-map-list-card {
+    background: rgb(255 255 255);
+    border: 1px solid rgb(226 232 240);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.order-map-table-wrap {
+    overflow-x: auto;
+}
+
+.order-map-table {
+    width: 100%;
+    font-size: 0.875rem;
+}
+
+.order-map-table th,
+.order-map-table td {
+    padding: 0.75rem 0.875rem;
+    vertical-align: top;
+    border-bottom: 1px solid rgb(241 245 249);
+}
+
+.order-map-table thead th {
+    background: rgb(248 250 252);
+    font-weight: 600;
+    color: rgb(71 85 105);
+    white-space: nowrap;
+}
+
+.order-map-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.order-map-customer-name {
+    font-weight: 600;
+    color: rgb(15 23 42);
+}
+
+.order-map-customer-phone {
+    font-size: 0.75rem;
+    color: rgb(100 116 139);
+    margin-top: 0.125rem;
+}
+
+.order-map-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.order-map-card {
+    border: 1px solid rgb(226 232 240);
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.625rem;
+    background: rgb(248 250 252);
+}
+
+.order-map-card--unmatched {
+    border-color: rgb(251 191 36);
+    background: rgb(255 251 235);
+}
+
+.order-map-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.order-map-card-name {
+    font-weight: 600;
+    color: rgb(15 23 42);
+}
+
+.order-map-card-meta {
+    font-size: 0.75rem;
+    color: rgb(100 116 139);
+    margin-top: 0.125rem;
+}
+
+.order-map-card-foot {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    margin-top: 0.375rem;
+    color: rgb(71 85 105);
+}
+
+.order-map-unmatched-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    background: rgb(254 243 199);
+    color: rgb(146 64 14);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+}
+
+.order-map-empty {
+    text-align: center;
+    color: rgb(100 116 139);
+    padding: 2.5rem 1rem;
+}
+
+.order-map-row-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.order-map-invoice-placeholder {
+    background: rgb(248 250 252);
+    padding: 2rem;
+}
+
+.order-map-invoice-sheet {
+    max-width: 40rem;
+    margin: 0 auto;
+    background: white;
+    border: 1px solid rgb(226 232 240);
+    border-radius: 0.5rem;
+    padding: 2rem;
+}
+
+.order-map-invoice-tag {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgb(100 116 139);
+}
+
+.order-map-invoice-note {
+    margin-top: 1.5rem;
+    font-size: 0.875rem;
+    color: rgb(100 116 139);
+}

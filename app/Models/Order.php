@@ -22,6 +22,8 @@ class Order extends Model
         'consignment_id',
         'courier_name',
         'oc_created_at',
+        'source_snapshot',
+        'stock_deducted',
     ];
 
     protected function casts(): array
@@ -30,6 +32,8 @@ class Order extends Model
             'sale_amount' => 'decimal:2',
             'sfm_status' => SfmOrderStatus::class,
             'oc_created_at' => 'datetime',
+            'source_snapshot' => 'array',
+            'stock_deducted' => 'boolean',
         ];
     }
 

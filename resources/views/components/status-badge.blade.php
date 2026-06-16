@@ -10,10 +10,10 @@
         'accepted' => 'bg-indigo-100 text-indigo-800 ring-indigo-200',
         'packed' => 'bg-amber-100 text-amber-800 ring-amber-200',
         'dispatched' => 'bg-violet-100 text-violet-800 ring-violet-200',
-        'delivered' => 'bg-emerald-100 text-emerald-800 ring-emerald-200',
-        'returned' => 'bg-orange-100 text-orange-800 ring-orange-200',
-        'hold' => 'bg-yellow-100 text-yellow-800 ring-yellow-200',
-        'cancelled' => 'bg-red-100 text-red-800 ring-red-200',
+        'rejected' => 'bg-red-100 text-red-800 ring-red-200',
+        'return_queue' => 'bg-orange-100 text-orange-800 ring-orange-200',
+        'return_received' => 'bg-yellow-100 text-yellow-800 ring-yellow-200',
+        'completed' => 'bg-emerald-100 text-emerald-800 ring-emerald-200',
         default => 'bg-slate-100 text-slate-700 ring-slate-200',
     };
 @endphp

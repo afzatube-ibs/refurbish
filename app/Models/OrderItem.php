@@ -15,6 +15,10 @@ class OrderItem extends Model
         'product_name',
         'model',
         'variant_label',
+        'option_name',
+        'option_value',
+        'is_unmatched',
+        'source_variant_key',
         'quantity',
         'sale_price',
         'supplier_product_cost_snapshot',
@@ -30,6 +34,7 @@ class OrderItem extends Model
             'supplier_product_cost_snapshot' => 'decimal:2',
             'cost_snapshotted_at' => 'datetime',
             'item_status' => OrderItemStatus::class,
+            'is_unmatched' => 'boolean',
         ];
     }
 

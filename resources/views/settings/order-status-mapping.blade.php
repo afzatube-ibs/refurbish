@@ -12,7 +12,7 @@
             Fetch statuses from OpenCart
         </button>
     </form>
-    <p class="text-sm text-slate-500">Statuses marked Ignore will not import orders.</p>
+    <p class="text-sm text-slate-500">Statuses marked <strong>Selected</strong> are enabled in the OpenCart order queue. Map them to IBS workflow states.</p>
 </div>
 
 <form method="POST" action="{{ route('settings.order-status-mapping.update') }}">
@@ -26,14 +26,22 @@
                     <tr>
                         <th class="text-left font-medium text-slate-600">OC ID</th>
                         <th class="text-left font-medium text-slate-600">OpenCart Status</th>
+                        <th class="text-left font-medium text-slate-600">Queue</th>
                         <th class="text-left font-medium text-slate-600">IBS Status</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse ($mappings as $mapping)
-                        <tr class="hover:bg-slate-50">
+                        <tr class="hover:bg-slate-50 @if (! $mapping->oc_selected) order-status-row-muted @endif">
                             <td class="text-slate-500">{{ $mapping->source_status_id }}</td>
                             <td class="font-medium text-slate-900">{{ $mapping->source_status_name }}</td>
+                            <td>
+                                @if ($mapping->oc_selected)
+                                    <span class="order-status-selected-badge">Selected</span>
+                                @else
+                                    <span class="order-status-unselected-badge">Not selected</span>
+                                @endif
+                            </td>
                             <td>
                                 <input type="hidden" name="mappings[{{ $loop->index }}][id]" value="{{ $mapping->id }}">
                                 <select name="mappings[{{ $loop->index }}][sfm_status]"
@@ -49,7 +57,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="text-center text-slate-500 py-12">
+                            <td colspan="4" class="text-center text-slate-500 py-12">
                                 No status mappings yet. Fetch statuses from OpenCart to begin.
                             </td>
                         </tr>

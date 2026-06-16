@@ -95,8 +95,72 @@ class OrderMapLoadTest extends TestCase
 
         $result = $service->load($user);
 
+        $this->assertSame(0, $result['imported']);
         $this->assertSame(0, $result['updated']);
         $this->assertGreaterThanOrEqual(1, $result['skipped']);
+    }
+
+    public function test_duplicate_new_mapping_does_not_reimport_existing_order(): void
+    {
+        $user = $this->adminUser('order-map');
+        $service = app(OrderSyncService::class);
+
+        $service->load($user);
+        $this->assertSame(1, Order::query()->where('source_order_id', '10045')->count());
+
+        $result = $service->load($user);
+
+        $this->assertSame(0, $result['imported']);
+        $this->assertSame(0, $result['updated']);
+        $this->assertGreaterThanOrEqual(1, $result['skipped']);
+        $this->assertSame(1, Order::query()->where('source_order_id', '10045')->count());
+    }
+
+    public function test_completed_mapping_does_not_create_new_order(): void
+    {
+        OrderStatusMapping::query()->create([
+            'source_status_id' => 5,
+            'source_status_name' => 'Complete',
+            'sfm_status' => SfmOrderStatus::Completed,
+            'oc_selected' => true,
+        ]);
+
+        $user = $this->adminUser('order-map');
+        $result = app(OrderSyncService::class)->load($user);
+
+        $this->assertNull(Order::query()->where('source_order_id', '10052')->first());
+        $this->assertGreaterThanOrEqual(1, $result['skipped']);
+    }
+
+    public function test_completed_mapping_syncs_existing_order_status(): void
+    {
+        $user = $this->adminUser('order-map');
+        $supplier = Supplier::query()->where('is_active', true)->firstOrFail();
+
+        Order::query()->create([
+            'supplier_id' => $supplier->id,
+            'source_order_id' => '10052',
+            'customer_name' => 'Existing Customer',
+            'customer_phone' => '+8801700000099',
+            'customer_address' => 'Existing',
+            'sale_amount' => 1200,
+            'current_oc_status' => 'Shipped',
+            'sfm_status' => SfmOrderStatus::Dispatched,
+        ]);
+
+        OrderStatusMapping::query()->create([
+            'source_status_id' => 5,
+            'source_status_name' => 'Complete',
+            'sfm_status' => SfmOrderStatus::Completed,
+            'oc_selected' => true,
+        ]);
+
+        $result = app(OrderSyncService::class)->load($user);
+
+        $order = Order::query()->where('source_order_id', '10052')->firstOrFail();
+        $this->assertSame(SfmOrderStatus::Completed, $order->sfm_status);
+        $this->assertSame(1, $result['updated']);
+        $this->assertSame(1, $result['imported']);
     }
 
     public function test_duplicate_import_updates_when_accepted(): void

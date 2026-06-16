@@ -64,6 +64,31 @@ enum SfmOrderStatus: string
         return in_array($this, [self::Accepted, self::Packed], true);
     }
 
+    public function allowsImportCreate(): bool
+    {
+        return $this === self::New;
+    }
+
+    /**
+     * OC mappings that may sync an existing IBS order but never create a new one.
+     *
+     * @return list<self>
+     */
+    public static function externalSyncOnlyCases(): array
+    {
+        return [
+            self::Rejected,
+            self::Completed,
+            self::ReturnQueue,
+            self::ReturnReceived,
+        ];
+    }
+
+    public function isExternalSyncOnly(): bool
+    {
+        return in_array($this, self::externalSyncOnlyCases(), true);
+    }
+
     public function isSourceUpdateLocked(): bool
     {
         return ! $this->allowsSourceUpdate() && $this !== self::Ignore;

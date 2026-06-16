@@ -10,6 +10,7 @@ class OrderStatusMapping extends Model
     protected $fillable = [
         'source_status_id',
         'source_status_name',
+        'oc_selected',
         'sfm_status',
     ];
 
@@ -17,6 +18,7 @@ class OrderStatusMapping extends Model
     {
         return [
             'source_status_id' => 'integer',
+            'oc_selected' => 'boolean',
             'sfm_status' => SfmOrderStatus::class,
         ];
     }

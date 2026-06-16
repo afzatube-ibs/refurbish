@@ -87,12 +87,28 @@ class OrderSyncService
                 ->first();
 
             if ($existing) {
-                if ($existing->sfm_status?->allowsSourceUpdate()) {
-                    $this->updateExistingOrder($existing, $normalized);
+                if ($mappedStatus->isExternalSyncOnly()) {
+                    $this->syncExistingOrder($existing, $normalized, $mappedStatus, true);
+                    $updated++;
+                } elseif ($mappedStatus === SfmOrderStatus::New) {
+                    if ($existing->sfm_status?->allowsSourceUpdate()) {
+                        $this->syncExistingOrder($existing, $normalized, $mappedStatus, false);
+                        $updated++;
+                    } else {
+                        $skipped++;
+                    }
+                } elseif ($existing->sfm_status?->allowsSourceUpdate()) {
+                    $this->syncExistingOrder($existing, $normalized, $mappedStatus, false);
                     $updated++;
                 } else {
                     $skipped++;
                 }
+
+                continue;
+            }
+
+            if (! $mappedStatus->allowsImportCreate()) {
+                $skipped++;
 
                 continue;
             }
@@ -205,10 +221,14 @@ class OrderSyncService
     /**
      * @param  array<string, mixed>  $orderData
      */
-    protected function updateExistingOrder(Order $order, array $orderData): void
-    {
-        DB::transaction(function () use ($order, $orderData) {
-            $order->update([
+    protected function syncExistingOrder(
+        Order $order,
+        array $orderData,
+        SfmOrderStatus $mappedStatus,
+        bool $syncIbsStatus
+    ): void {
+        DB::transaction(function () use ($order, $orderData, $mappedStatus, $syncIbsStatus) {
+            $updates = [
                 'customer_name' => $orderData['customer_name'] ?: $order->customer_name,
                 'customer_phone' => $orderData['customer_phone'] ?: $order->customer_phone,
                 'customer_address' => $orderData['customer_address'] ?: $order->customer_address,
@@ -217,11 +237,26 @@ class OrderSyncService
                 'courier_status' => $orderData['courier_status'] ?? $order->courier_status,
                 'consignment_id' => $orderData['consignment_id'] ?? $order->consignment_id,
                 'source_snapshot' => $orderData['source_snapshot'],
-            ]);
+            ];
+
+            if ($syncIbsStatus) {
+                $updates['sfm_status'] = $mappedStatus;
+            }
+
+            $order->update($updates);
 
             $order->items()->delete();
             $this->syncOrderItems($order, $order->supplier, $orderData['items'] ?? []);
         });
+    }
+
+    /**
+     * @param  array<string, mixed>  $orderData
+     * @deprecated Use syncExistingOrder()
+     */
+    protected function updateExistingOrder(Order $order, array $orderData): void
+    {
+        $this->syncExistingOrder($order, $orderData, $order->sfm_status ?? SfmOrderStatus::New, false);
     }
 
     /**

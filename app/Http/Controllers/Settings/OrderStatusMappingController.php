@@ -18,18 +18,24 @@ class OrderStatusMappingController extends Controller
     public function index(): View
     {
         return view('settings.order-status-mapping', [
-            'mappings' => OrderStatusMapping::orderBy('source_status_name')->get(),
+            'mappings' => OrderStatusMapping::query()
+                ->orderByDesc('oc_selected')
+                ->orderBy('source_status_name')
+                ->get(),
         ]);
     }
 
     public function syncFromOpenCart(): RedirectResponse
     {
-        $statuses = $this->orderStatusService->fetchFromOpenCart();
-        $count = count($statuses);
+        $result = $this->orderStatusService->fetchFromOpenCart();
 
         return redirect()
             ->route('settings.order-status-mapping.index')
-            ->with('success', "Loaded {$count} order status(es) from OpenCart.");
+            ->with('success', sprintf(
+                'Loaded %d selected order status(es) from OpenCart (%d total).',
+                $result['selected'],
+                $result['total']
+            ));
     }
 
     public function update(UpdateOrderStatusMappingsRequest $request): RedirectResponse

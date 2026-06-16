@@ -1,13 +1,12 @@
 {
     "success": true,
-    "statuses": [
-        { "id": 1, "name": "Pending" },
-        { "id": 2, "name": "Processing" },
-        { "id": 3, "name": "On Hold" },
-        { "id": 4, "name": "Cancelled" },
-        { "id": 5, "name": "Shipped" },
-        { "id": 6, "name": "Delivered" },
-        { "id": 7, "name": "Returned" },
-        { "id": 8, "name": "Failed Delivery" }
+    "queue_statuses": [
+        { "status_id": "7", "name": "Canceled", "selected": true },
+        { "status_id": "5", "name": "Complete", "selected": true },
+        { "status_id": "25", "name": "From Warehouse", "selected": true },
+        { "status_id": "43", "name": "R-Return-Warehouse", "selected": true },
+        { "status_id": "11", "name": "R-Returning", "selected": true },
+        { "status_id": "2", "name": "Processing", "selected": false },
+        { "status_id": "3", "name": "On Hold", "selected": false }
     ]
 }

@@ -1789,3 +1789,29 @@ body {
     font-size: 0.875rem;
     color: rgb(100 116 139);
 }
+
+.order-status-selected-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    background: rgb(220 252 231);
+    color: rgb(21 128 61);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+}
+
+.order-status-unselected-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    background: rgb(241 245 249);
+    color: rgb(100 116 139);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+}
+
+.order-status-row-muted td {
+    color: rgb(148 163 184);
+}

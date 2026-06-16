@@ -1757,6 +1757,104 @@ body {
     padding: 2.5rem 1rem;
 }
 
+.order-map-oc-status {
+    font-size: 0.8125rem;
+    color: rgb(51 65 85);
+    white-space: nowrap;
+}
+
+.order-map-sync-panel {
+    background: rgb(248 250 252);
+    border: 1px solid rgb(226 232 240);
+    border-radius: 0.5rem;
+    padding: 1rem 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.order-map-sync-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: rgb(30 41 59);
+    margin: 0;
+}
+
+.order-map-sync-time {
+    font-size: 0.75rem;
+    color: rgb(100 116 139);
+    margin: 0.2rem 0 0.75rem;
+}
+
+.order-map-sync-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    gap: 0.5rem 1rem;
+    margin: 0;
+}
+
+.order-map-sync-stats div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.order-map-sync-stats dt {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: rgb(100 116 139);
+    margin: 0;
+}
+
+.order-map-sync-stats dd {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: rgb(30 41 59);
+    margin: 0;
+}
+
+.order-map-sync-details {
+    margin-top: 0.85rem;
+    font-size: 0.8125rem;
+}
+
+.order-map-sync-details summary {
+    cursor: pointer;
+    color: rgb(37 99 235);
+    font-weight: 500;
+}
+
+.order-map-skipped-panel {
+    margin-top: 1rem;
+}
+
+.order-map-skipped-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: rgb(30 41 59);
+    margin: 0 0 0.5rem;
+}
+
+.order-map-sync-table-wrap {
+    overflow-x: auto;
+}
+
+.order-map-sync-table {
+    width: 100%;
+    font-size: 0.8125rem;
+}
+
+.order-map-sync-table th,
+.order-map-sync-table td {
+    padding: 0.35rem 0.5rem;
+    border-bottom: 1px solid rgb(241 245 249);
+    text-align: left;
+}
+
+.order-map-skip-bug td {
+    background: rgb(254 242 242);
+    color: rgb(153 27 27);
+}
+
 .order-map-row-actions {
     display: flex;
     flex-direction: column;

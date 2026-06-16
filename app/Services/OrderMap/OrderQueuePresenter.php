@@ -27,8 +27,30 @@ class OrderQueuePresenter
             'total_qty' => $totalQty,
             'total_cost' => $totalCost,
             'has_unmatched' => $hasUnmatched,
+            'oc_status_label' => $this->ocStatusLabel($order),
             'product_cards' => $this->productCards($order->items),
         ];
+    }
+
+    protected function ocStatusLabel(Order $order): string
+    {
+        $statusId = (int) ($order->current_oc_status_id ?? 0);
+        $statusName = (string) ($order->current_oc_status ?? '');
+
+        if ($statusId === 0 && is_array($order->source_snapshot)) {
+            $statusId = (int) ($order->source_snapshot['current_oc_status_id'] ?? $order->source_snapshot['order_status_id'] ?? 0);
+            $statusName = (string) ($order->source_snapshot['current_oc_status'] ?? $order->source_snapshot['order_status_name'] ?? $statusName);
+        }
+
+        if ($statusName !== '' && $statusId > 0) {
+            return sprintf('%s (#%d)', $statusName, $statusId);
+        }
+
+        if ($statusId > 0) {
+            return sprintf('#%d', $statusId);
+        }
+
+        return $statusName !== '' ? $statusName : '—';
     }
 
     /**

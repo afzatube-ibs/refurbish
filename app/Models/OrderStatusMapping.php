@@ -37,7 +37,8 @@ class OrderStatusMapping extends Model
     {
         return $query
             ->where('oc_selected', true)
-            ->where('sync_role', OrderSyncRole::ImportTrigger);
+            ->where('sync_role', OrderSyncRole::ImportTrigger)
+            ->where('sfm_status', SfmOrderStatus::New);
     }
 
     public function scopeUpdateExisting($query)

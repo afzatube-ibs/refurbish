@@ -23,15 +23,19 @@ class OpenCartHttpClient
         $this->assertReadOnlyMode();
 
         if ($this->usesMock()) {
-            return $this->getMockResponse($endpoint, $params);
+            $data = $this->getMockResponse($endpoint, $params);
+        } else {
+            $timeout ??= config('dropflow.connection_test_timeout', 8);
+
+            $data = $this->parseJsonResponse(
+                $this->httpClient($timeout)->get($this->requestUrl($endpoint, $params)),
+                'GET'
+            );
+
+            $data = $this->applyOrderStatusFilter($data, $params);
         }
 
-        $timeout ??= config('dropflow.connection_test_timeout', 8);
-
-        $response = $this->httpClient($timeout)
-            ->get($this->requestUrl($endpoint, $params));
-
-        return $this->parseJsonResponse($response, 'GET');
+        return $data;
     }
 
     /**
@@ -276,19 +280,43 @@ class OpenCartHttpClient
             $data['orders'] = array_slice($data['orders'], 0, (int) $params['limit']);
         }
 
-        if (isset($data['orders']) && is_array($data['orders']) && isset($params['status_ids'])) {
-            $statusIds = array_map('intval', (array) $params['status_ids']);
-            if ($statusIds !== []) {
-                $data['orders'] = array_values(array_filter(
-                    $data['orders'],
-                    function (array $order) use ($statusIds): bool {
-                        $statusId = (int) ($order['current_oc_status_id'] ?? $order['order_status_id'] ?? 0);
+        return $this->applyOrderStatusFilter($data, $params);
+    }
 
-                        return in_array($statusId, $statusIds, true);
-                    }
-                ));
-            }
+    /**
+     * @param  array<string, mixed>  $data
+     * @param  array<string, mixed>  $params
+     * @return array<string, mixed>
+     */
+    protected function applyOrderStatusFilter(array $data, array $params): array
+    {
+        if (! isset($data['orders']) || ! is_array($data['orders']) || ! array_key_exists('status_ids', $params)) {
+            return $data;
         }
+
+        $statusIds = array_values(array_unique(array_filter(
+            array_map('intval', (array) $params['status_ids']),
+            fn (int $id) => $id > 0
+        )));
+
+        if ($statusIds === []) {
+            $data['orders'] = [];
+
+            return $data;
+        }
+
+        $data['orders'] = array_values(array_filter(
+            $data['orders'],
+            function ($order) use ($statusIds): bool {
+                if (! is_array($order)) {
+                    return false;
+                }
+
+                $statusId = (int) ($order['current_oc_status_id'] ?? $order['order_status_id'] ?? 0);
+
+                return in_array($statusId, $statusIds, true);
+            }
+        ));
 
         return $data;
     }

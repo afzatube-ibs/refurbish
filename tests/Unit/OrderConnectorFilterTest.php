@@ -39,6 +39,9 @@ class OrderConnectorFilterTest extends TestCase
 
         $none = $client->get($connection->order_api_endpoint, ['status_ids' => [999]]);
         $this->assertSame([], $none['orders']);
+
+        $empty = $client->get($connection->order_api_endpoint, ['status_ids' => []]);
+        $this->assertSame([], $empty['orders']);
     }
 
     public function test_order_load_params_do_not_include_warehouse_flags(): void
@@ -54,7 +57,8 @@ class OrderConnectorFilterTest extends TestCase
         $reflection = new \ReflectionClass($service);
         $source = file_get_contents($reflection->getFileName());
 
-        $this->assertStringContainsString("'status_ids' => \$statusIds", $source);
+        $this->assertStringContainsString('fetchOrdersByStatusIds', $source);
+        $this->assertStringContainsString('importTrigger()', $source);
         $this->assertStringNotContainsString('from_warehouse', $source);
         $this->assertStringNotContainsString("'supplier_filter' =>", $source);
         $this->assertStringNotContainsString("'since' =>", $source);

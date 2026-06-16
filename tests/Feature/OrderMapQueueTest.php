@@ -38,6 +38,7 @@ class OrderMapQueueTest extends TestCase
             'customer_address' => 'Hidden address line',
             'sale_amount' => 1500,
             'current_oc_status' => 'Processing',
+            'current_oc_status_id' => 2,
             'sfm_status' => SfmOrderStatus::New,
             'courier_status' => 'In Transit',
             'consignment_id' => 'CNS-5001',
@@ -64,6 +65,7 @@ class OrderMapQueueTest extends TestCase
             'source_status_id' => 2,
             'source_status_name' => 'Processing',
             'sfm_status' => SfmOrderStatus::New,
+            'sync_role' => \App\Enums\OrderSyncRole::ImportTrigger,
             'oc_selected' => true,
         ]);
     }
@@ -76,6 +78,7 @@ class OrderMapQueueTest extends TestCase
         $response->assertOk()
             ->assertSee('Order No')
             ->assertSee('Customer')
+            ->assertSee('OC Status')
             ->assertSee('Product Card')
             ->assertSee('Total Qty')
             ->assertSee('Total Cost')
@@ -84,22 +87,21 @@ class OrderMapQueueTest extends TestCase
             ->assertSee('Actions')
             ->assertSee('#5001')
             ->assertSee('Queue Customer')
+            ->assertSee('Processing (#2)')
             ->assertSee('Brown')
             ->assertSee('CNS-5001')
             ->assertSee('Print Invoice');
     }
 
-    public function test_order_queue_hides_oc_status_courier_and_address(): void
+    public function test_order_queue_hides_courier_and_address(): void
     {
         $response = $this->actingAs($this->adminUser('order-map'))
             ->get(route('order-map.index'));
 
         $response->assertOk()
-            ->assertDontSee('OC Status')
             ->assertDontSee('Courier Status')
             ->assertDontSee('Shipping Address')
             ->assertDontSee('Hidden address line')
-            ->assertDontSee('In Transit')
-            ->assertDontSee('Processing');
+            ->assertDontSee('In Transit');
     }
 }

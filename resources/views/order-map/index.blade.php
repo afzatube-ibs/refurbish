@@ -21,6 +21,13 @@
 @section('content')
 @include('order-map.partials.filters', ['statusFilter' => $statusFilter ?? null])
 
+@if (! empty($lastSync))
+    @include('order-map.partials.last-sync-panel', [
+        'lastSync' => $lastSync,
+        'loadLogService' => $loadLogService,
+    ])
+@endif
+
 <div class="order-map-list-card">
     <div class="order-map-table-wrap">
         <table class="data-table order-map-table">
@@ -29,6 +36,7 @@
                 <tr>
                     <th>Order No</th>
                     <th>Customer</th>
+                    <th>OC Status</th>
                     <th>Product Card</th>
                     <th class="order-map-num">Total Qty</th>
                     <th class="order-map-num">Total Cost</th>
@@ -46,6 +54,7 @@
                             <div class="order-map-customer-name">{{ $order->customer_name }}</div>
                             <div class="order-map-customer-phone">{{ $order->customer_phone }}</div>
                         </td>
+                        <td class="order-map-oc-status">{{ $row['oc_status_label'] ?? '—' }}</td>
                         <td class="order-map-product-card">
                             @include('order-map.partials.product-card', [
                                 'cards' => $row['product_cards'] ?? [],
@@ -62,7 +71,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="order-map-empty">No orders in queue yet.@if (auth()->user()->isAdmin()) Use <strong>Load New Orders</strong> after mapping Import Trigger statuses.@endif</td>
+                        <td colspan="9" class="order-map-empty">No orders in queue yet.@if (auth()->user()->isAdmin()) Use <strong>Load New Orders</strong> after mapping Import Trigger statuses.@endif</td>
                     </tr>
                 @endforelse
             </tbody>

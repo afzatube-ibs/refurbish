@@ -100,45 +100,71 @@ class OrderSyncService
         $supplier = $this->resolveSupplier($connection);
         $user = $this->resolveUser($user);
 
-        $orders = $this->fetchOrdersForRole(OrderSyncRole::ImportTrigger);
+        $fetchResult = $this->fetchOrdersForImport();
+        $orders = $fetchResult['orders'];
+        $requestedStatusIds = $fetchResult['requested_status_ids'];
 
         $fetched = count($orders);
         $imported = 0;
         $duplicatesSkipped = 0;
+        $updateOnlySkipped = 0;
         $unmatchedLines = 0;
         $skipLog = [];
 
         foreach ($orders as $orderData) {
             $normalized = $this->normalizeOrderPayload($orderData);
             $sourceOrderId = $normalized['source_order_id'];
+            $ocStatusId = (int) $normalized['current_oc_status_id'];
+            $ocStatusName = (string) $normalized['current_oc_status'];
 
             if ($sourceOrderId === '') {
-                $this->recordSkip($skipLog, '—', 'missing_order_id', 'Order payload missing source order id.', 'import');
+                $this->recordSkip($skipLog, '—', 'missing_order_id', 'Order payload missing source order id.', 'import', $ocStatusId, $ocStatusName);
 
                 continue;
             }
 
-            $mapping = $this->orderStatusService->findMapping($normalized['current_oc_status_id']);
+            if ($requestedStatusIds !== [] && ! in_array($ocStatusId, $requestedStatusIds, true)) {
+                $updateOnlySkipped++;
+                $this->recordSkip(
+                    $skipLog,
+                    $sourceOrderId,
+                    'update_only_status',
+                    'Update-only status; not eligible for import.',
+                    'import',
+                    $ocStatusId,
+                    $ocStatusName
+                );
+
+                continue;
+            }
+
+            $mapping = $this->orderStatusService->findMapping($ocStatusId);
 
             if (! $mapping || $mapping->effectiveSyncRole() !== OrderSyncRole::ImportTrigger) {
+                $updateOnlySkipped++;
                 $this->recordSkip(
                     $skipLog,
                     $sourceOrderId,
                     'not_import_trigger',
-                    sprintf('OC status %d is not configured as Import Trigger.', $normalized['current_oc_status_id']),
-                    'import'
+                    sprintf('OC status %d is not configured as Import Trigger.', $ocStatusId),
+                    'import',
+                    $ocStatusId,
+                    $ocStatusName
                 );
 
                 continue;
             }
 
             if ($mapping->sfm_status !== SfmOrderStatus::New) {
+                $updateOnlySkipped++;
                 $this->recordSkip(
                     $skipLog,
                     $sourceOrderId,
                     'invalid_import_mapping',
                     'Import Trigger requires IBS Status New.',
-                    'import'
+                    'import',
+                    $ocStatusId,
+                    $ocStatusName
                 );
 
                 continue;
@@ -155,7 +181,9 @@ class OrderSyncService
                     $sourceOrderId,
                     'duplicate_existing',
                     'Order already exists in IBS queue.',
-                    'import'
+                    'import',
+                    $ocStatusId,
+                    $ocStatusName
                 );
 
                 continue;
@@ -171,7 +199,11 @@ class OrderSyncService
             'fetched' => $fetched,
             'imported' => $imported,
             'duplicates_skipped' => $duplicatesSkipped,
+            'update_only_skipped' => $updateOnlySkipped,
             'unmatched_lines' => $unmatchedLines,
+            'requested_status_ids' => $requestedStatusIds,
+            'connector_raw_count' => $fetchResult['raw_orders_count'],
+            'connector_orders' => $fetchResult['connector_orders'],
             'skip_log' => $skipLog,
         ];
 
@@ -196,7 +228,8 @@ class OrderSyncService
         app(ConnectionService::class)->assertSyncAllowed();
         $user = $this->resolveUser($user);
 
-        $orders = $this->fetchOrdersForRole(OrderSyncRole::UpdateExisting);
+        $fetchResult = $this->fetchOrdersForUpdate();
+        $orders = $fetchResult['orders'];
 
         $fetched = count($orders);
         $updated = 0;
@@ -207,22 +240,26 @@ class OrderSyncService
         foreach ($orders as $orderData) {
             $normalized = $this->normalizeOrderPayload($orderData);
             $sourceOrderId = $normalized['source_order_id'];
+            $ocStatusId = (int) $normalized['current_oc_status_id'];
+            $ocStatusName = (string) $normalized['current_oc_status'];
 
             if ($sourceOrderId === '') {
-                $this->recordSkip($skipLog, '—', 'missing_order_id', 'Order payload missing source order id.', 'update');
+                $this->recordSkip($skipLog, '—', 'missing_order_id', 'Order payload missing source order id.', 'update', $ocStatusId, $ocStatusName);
 
                 continue;
             }
 
-            $mapping = $this->orderStatusService->findMapping($normalized['current_oc_status_id']);
+            $mapping = $this->orderStatusService->findMapping($ocStatusId);
 
             if (! $mapping || $mapping->effectiveSyncRole() !== OrderSyncRole::UpdateExisting) {
                 $this->recordSkip(
                     $skipLog,
                     $sourceOrderId,
                     'not_update_existing',
-                    sprintf('OC status %d is not configured as Update Existing Only.', $normalized['current_oc_status_id']),
-                    'update'
+                    sprintf('OC status %d is not configured as Update Existing Only.', $ocStatusId),
+                    'update',
+                    $ocStatusId,
+                    $ocStatusName
                 );
 
                 continue;
@@ -236,7 +273,9 @@ class OrderSyncService
                     $sourceOrderId,
                     'ignored_mapping',
                     'Mapped IBS status is Ignore.',
-                    'update'
+                    'update',
+                    $ocStatusId,
+                    $ocStatusName
                 );
 
                 continue;
@@ -253,7 +292,9 @@ class OrderSyncService
                     $sourceOrderId,
                     'update_only_not_found',
                     'Update-only status; order not found in IBS.',
-                    'update'
+                    'update',
+                    $ocStatusId,
+                    $ocStatusName
                 );
 
                 continue;
@@ -266,7 +307,9 @@ class OrderSyncService
                     $sourceOrderId,
                     'locked_status',
                     sprintf('Order is locked at %s and cannot be updated from source.', $existing->sfm_status?->label() ?? 'unknown'),
-                    'update'
+                    'update',
+                    $ocStatusId,
+                    $ocStatusName
                 );
 
                 continue;
@@ -284,6 +327,9 @@ class OrderSyncService
             'updated' => $updated,
             'not_found_skipped' => $notFoundSkipped,
             'locked_skipped' => $lockedSkipped,
+            'requested_status_ids' => $fetchResult['requested_status_ids'],
+            'connector_raw_count' => $fetchResult['raw_orders_count'],
+            'connector_orders' => $fetchResult['connector_orders'],
             'skip_log' => $skipLog,
         ];
 
@@ -294,23 +340,116 @@ class OrderSyncService
     }
 
     /**
-     * @return list<array<string, mixed>>
+     * @return array{
+     *     orders: list<array<string, mixed>>,
+     *     requested_status_ids: list<int>,
+     *     raw_orders_count: int,
+     *     connector_orders: list<array{order_id: string, order_status_id: int, order_status_name: string}>
+     * }
      */
-    protected function fetchOrdersForRole(OrderSyncRole $role): array
+    protected function fetchOrdersForImport(): array
     {
+        $statusIds = OrderStatusMapping::query()
+            ->importTrigger()
+            ->pluck('source_status_id')
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+
+        return $this->fetchOrdersByStatusIds($statusIds, 'import');
+    }
+
+    /**
+     * @return array{
+     *     orders: list<array<string, mixed>>,
+     *     requested_status_ids: list<int>,
+     *     raw_orders_count: int,
+     *     connector_orders: list<array{order_id: string, order_status_id: int, order_status_name: string}>
+     * }
+     */
+    protected function fetchOrdersForUpdate(): array
+    {
+        $statusIds = OrderStatusMapping::query()
+            ->updateExisting()
+            ->pluck('source_status_id')
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+
+        return $this->fetchOrdersByStatusIds($statusIds, 'update');
+    }
+
+    /**
+     * @param  list<int>  $statusIds
+     * @return array{
+     *     orders: list<array<string, mixed>>,
+     *     requested_status_ids: list<int>,
+     *     raw_orders_count: int,
+     *     connector_orders: list<array{order_id: string, order_status_id: int, order_status_name: string}>
+     * }
+     */
+    protected function fetchOrdersByStatusIds(array $statusIds, string $mode): array
+    {
+        $statusIds = array_values(array_unique(array_filter(
+            array_map('intval', $statusIds),
+            fn (int $id) => $id > 0
+        )));
+
+        if ($statusIds === []) {
+            Log::info('order_map.sync.fetch_skipped', [
+                'mode' => $mode,
+                'reason' => 'no_matching_status_ids',
+            ]);
+
+            return [
+                'orders' => [],
+                'requested_status_ids' => [],
+                'raw_orders_count' => 0,
+                'connector_orders' => [],
+            ];
+        }
+
         $connection = Connection::getInstance();
 
-        $statusIds = OrderStatusMapping::query()
-            ->where('oc_selected', true)
-            ->where('sync_role', $role)
-            ->pluck('source_status_id')
-            ->all();
+        Log::info('order_map.sync.fetch', [
+            'mode' => $mode,
+            'status_ids' => $statusIds,
+        ]);
 
         $response = $this->client->get($connection->order_api_endpoint, [
             'status_ids' => $statusIds,
         ]);
 
-        return is_array($response['orders'] ?? null) ? $response['orders'] : [];
+        $rawOrders = is_array($response['orders'] ?? null) ? $response['orders'] : [];
+        $connectorOrders = array_values(array_map(function ($order) {
+            if (! is_array($order)) {
+                return [
+                    'order_id' => '',
+                    'order_status_id' => 0,
+                    'order_status_name' => '',
+                ];
+            }
+
+            return [
+                'order_id' => (string) ($order['source_order_id'] ?? $order['order_id'] ?? ''),
+                'order_status_id' => (int) ($order['current_oc_status_id'] ?? $order['order_status_id'] ?? 0),
+                'order_status_name' => (string) ($order['current_oc_status'] ?? $order['order_status_name'] ?? ''),
+            ];
+        }, $rawOrders));
+
+        Log::info('order_map.sync.connector_response', [
+            'mode' => $mode,
+            'requested_status_ids' => $statusIds,
+            'raw_orders_count' => count($rawOrders),
+            'orders' => $connectorOrders,
+        ]);
+
+        return [
+            'orders' => $rawOrders,
+            'requested_status_ids' => $statusIds,
+            'raw_orders_count' => count($rawOrders),
+            'connector_orders' => $connectorOrders,
+        ];
     }
 
     protected function resolveUser(?User $user): User
@@ -367,10 +506,19 @@ class OrderSyncService
     /**
      * @param  list<array{order_id: string, reason: string, detail: string}>  $skipLog
      */
-    protected function recordSkip(array &$skipLog, string $orderId, string $reason, string $detail, string $mode): void
-    {
+    protected function recordSkip(
+        array &$skipLog,
+        string $orderId,
+        string $reason,
+        string $detail,
+        string $mode,
+        int $ocStatusId = 0,
+        string $ocStatusName = '',
+    ): void {
         $entry = [
             'order_id' => $orderId,
+            'oc_status_id' => $ocStatusId,
+            'oc_status_name' => $ocStatusName,
             'reason' => $reason,
             'detail' => $detail,
             'mode' => $mode,
@@ -458,6 +606,7 @@ class OrderSyncService
                 'customer_address' => $orderData['customer_address'],
                 'sale_amount' => $orderData['sale_amount'],
                 'current_oc_status' => $orderData['current_oc_status'],
+                'current_oc_status_id' => $orderData['current_oc_status_id'] ?? null,
                 'sfm_status' => $mappedStatus,
                 'courier_status' => $orderData['courier_status'],
                 'consignment_id' => $orderData['consignment_id'],
@@ -508,6 +657,7 @@ class OrderSyncService
                 'customer_address' => $orderData['customer_address'] ?: $order->customer_address,
                 'sale_amount' => $orderData['sale_amount'] ?: $order->sale_amount,
                 'current_oc_status' => $orderData['current_oc_status'] ?: $order->current_oc_status,
+                'current_oc_status_id' => $orderData['current_oc_status_id'] ?: $order->current_oc_status_id,
                 'courier_status' => $orderData['courier_status'] ?? $order->courier_status,
                 'consignment_id' => $orderData['consignment_id'] ?? $order->consignment_id,
                 'source_snapshot' => $orderData['source_snapshot'],

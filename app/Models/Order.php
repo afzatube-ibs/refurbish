@@ -17,6 +17,7 @@ class Order extends Model
         'customer_address',
         'sale_amount',
         'current_oc_status',
+        'current_oc_status_id',
         'sfm_status',
         'courier_status',
         'consignment_id',
@@ -30,6 +31,7 @@ class Order extends Model
     {
         return [
             'sale_amount' => 'decimal:2',
+            'current_oc_status_id' => 'integer',
             'sfm_status' => SfmOrderStatus::class,
             'oc_created_at' => 'datetime',
             'source_snapshot' => 'array',

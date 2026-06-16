@@ -1,6 +1,7 @@
 <colgroup>
     <col class="order-map-col-order">
     <col class="order-map-col-customer">
+    <col class="order-map-col-oc-status">
     <col class="order-map-col-products">
     <col class="order-map-col-qty">
     <col class="order-map-col-cost">

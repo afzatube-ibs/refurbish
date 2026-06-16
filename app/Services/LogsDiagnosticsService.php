@@ -453,7 +453,12 @@ class LogsDiagnosticsService
 
             if ($lastSync !== []) {
                 $context['last_sync'] = $this->orderMapLoadLogService->diagnosticsSummary();
-                $context['skip_log'] = $lastSync['skip_log'] ?? [];
+                $context['requested_status_ids'] = $lastSync['requested_status_ids'] ?? [];
+                $context['connector_orders'] = $lastSync['connector_orders'] ?? [];
+                $context['skip_log'] = array_map(
+                    fn (array $entry) => $this->orderMapLoadLogService->formatSkipRow($entry),
+                    is_array($lastSync['skip_log'] ?? null) ? $lastSync['skip_log'] : []
+                );
             }
 
             return $context;

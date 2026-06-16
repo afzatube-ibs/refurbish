@@ -46,6 +46,8 @@ class OrderController extends Controller
             'orders' => $orders,
             'queueRows' => $orders->getCollection()->map(fn (Order $order) => $this->queuePresenter->present($order)),
             'statusFilter' => $status,
+            'lastSync' => $this->loadLogService->last(),
+            'loadLogService' => $this->loadLogService,
         ]);
     }
 

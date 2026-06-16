@@ -20,6 +20,7 @@ class OrderMapStockService
         }
 
         $order->loadMissing('items');
+        $deductedAny = false;
 
         foreach ($order->items as $item) {
             if ($item->is_unmatched || $item->item_status === \App\Enums\OrderItemStatus::Unmatched) {
@@ -27,9 +28,12 @@ class OrderMapStockService
             }
 
             $this->adjustItemStock($order, $item, -1 * (int) $item->quantity, $user, 'Order import #'.$order->source_order_id);
+            $deductedAny = true;
         }
 
-        $order->update(['stock_deducted' => true]);
+        if ($deductedAny) {
+            $order->update(['stock_deducted' => true]);
+        }
     }
 
     public function restoreForOrder(Order $order, User $user): void

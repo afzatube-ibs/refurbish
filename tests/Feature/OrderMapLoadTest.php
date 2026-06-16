@@ -338,7 +338,7 @@ class OrderMapLoadTest extends TestCase
         $this->assertSame($result['imported'], Order::query()->count());
     }
 
-    public function test_from_warehouse_status_with_unmapped_product_imports(): void
+    public function test_order_31475_with_unmapped_products_imports_without_skip_or_stock_move(): void
     {
         OrderStatusMapping::query()->where('source_status_id', 2)->delete();
         $this->createImportMapping(25, 'From Warehouse', SfmOrderStatus::New);
@@ -348,7 +348,7 @@ class OrderMapLoadTest extends TestCase
                 ->once()
                 ->andReturn([
                     'orders' => [[
-                        'source_order_id' => '31470',
+                        'source_order_id' => '31475',
                         'order_status_id' => 25,
                         'current_oc_status_id' => 25,
                         'current_oc_status' => 'From Warehouse',
@@ -380,10 +380,17 @@ class OrderMapLoadTest extends TestCase
         $this->assertSame(1, $result['imported']);
         $this->assertSame(1, $result['fetched']);
         $this->assertSame([25], $result['requested_status_ids']);
+        $this->assertSame([], array_values(array_filter(
+            $result['skip_log'],
+            fn (array $entry) => ($entry['order_id'] ?? null) === '31475'
+        )));
 
-        $order = Order::query()->where('source_order_id', '31470')->firstOrFail();
+        $order = Order::query()->where('source_order_id', '31475')->firstOrFail();
         $this->assertSame(25, $order->current_oc_status_id);
         $this->assertTrue($order->items()->where('is_unmatched', true)->exists());
+        $this->assertSame(0.0, (float) $order->items()->sum('supplier_product_cost_snapshot'));
+        $this->assertFalse((bool) $order->fresh()->stock_deducted);
+        $this->assertSame(0, StockAdjustmentHistory::query()->count());
     }
 
     public function test_load_new_shows_skipped_panel_after_import(): void

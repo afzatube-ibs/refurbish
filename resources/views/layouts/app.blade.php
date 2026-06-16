@@ -32,9 +32,7 @@
                     <a href="{{ route('connection.edit') }}"
                        class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('connection.*') ? 'sidebar-link-active' : '' }}">
                         Connection
-                        @if ($modules['connection'] ?? false)
-                            <span class="ml-1 text-[10px] uppercase text-emerald-400">Step 1</span>
-                        @endif
+                        <span class="ml-1 text-[10px] uppercase text-emerald-400">Step 1</span>
                     </a>
 
                     @if ($modules['product_map'] ?? false)
@@ -43,9 +41,17 @@
                             Product Map
                             <span class="ml-1 text-[10px] uppercase text-sky-400">Step 2A</span>
                         </a>
+                        <a href="{{ route('product-map.index') }}"
+                           class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('product-map.*') ? 'sidebar-link-active' : '' }}">
+                            Product Control
+                            <span class="ml-1 text-[10px] uppercase text-violet-400">Step 2B</span>
+                        </a>
                     @else
-                        <span class="block rounded-md px-3 py-2 text-slate-500 cursor-not-allowed" title="Enabled after Step 1 approval">
-                            Product Map <span class="text-[10px] uppercase">Soon</span>
+                        <span class="block rounded-md px-3 py-2 text-slate-500 cursor-not-allowed">
+                            Product Map <span class="ml-1 text-[10px] uppercase text-sky-400">Step 2A</span>
+                        </span>
+                        <span class="block rounded-md px-3 py-2 text-slate-500 cursor-not-allowed">
+                            Product Control <span class="ml-1 text-[10px] uppercase text-violet-400">Step 2B</span>
                         </span>
                     @endif
 
@@ -53,10 +59,11 @@
                         <a href="{{ route('order-map.index') }}"
                            class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('order-map.*') ? 'sidebar-link-active' : '' }}">
                             Order Map
+                            <span class="ml-1 text-[10px] uppercase text-amber-400">Step 3</span>
                         </a>
                     @else
-                        <span class="block rounded-md px-3 py-2 text-slate-500 cursor-not-allowed" title="Enabled after Step 2 approval">
-                            Order Map <span class="text-[10px] uppercase">Soon</span>
+                        <span class="block rounded-md px-3 py-2 text-slate-500 cursor-not-allowed" title="Order Map — Step 3 (in progress)">
+                            Order Map <span class="ml-1 text-[10px] uppercase text-amber-400">Step 3</span>
                         </span>
                     @endif
                 @endif

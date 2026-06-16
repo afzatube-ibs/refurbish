@@ -22,36 +22,47 @@
     <div class="bg-white rounded-lg border border-slate-200 p-6">
         <h2 class="font-medium text-slate-900 mb-4">Build Roadmap</h2>
         <ol class="space-y-4">
-            @foreach ($roadmap as $step => $item)
-                @php
-                    $isActive = ($modules[$item['key']] ?? false) || $item['key'] === 'connection';
-                    $isCurrent = ($item['key'] === 'product_map' && ($modules['product_map'] ?? false))
-                        || ($item['key'] === 'connection' && ! ($modules['product_map'] ?? false));
-                @endphp
-                <li class="flex gap-4">
-                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold
-                        {{ $isCurrent ? 'bg-slate-900 text-white' : ($isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500') }}">
-                        {{ $step }}
-                    </div>
-                    <div>
-                        <p class="font-medium text-slate-900">
-                            {{ $item['label'] }}
-                            @if ($isCurrent)
-                                <span class="ml-2 text-xs font-normal text-slate-500">← current focus</span>
-                            @elseif (! ($modules[$item['key']] ?? false) && $item['key'] !== 'connection')
-                                <span class="ml-2 text-xs font-normal text-slate-400">waiting</span>
-                            @endif
-                        </p>
-                        @if ($step === 1)
-                            <p class="text-sm text-slate-500 mt-1">Live read-only OpenCart connection. Test all checks, then save.</p>
-                        @elseif ($step === 2)
-                            <p class="text-sm text-slate-500 mt-1">Step 2A: Live product preview — IBS Model master key, warehouse only, no import.</p>
-                        @elseif ($step === 3)
-                            <p class="text-sm text-slate-500 mt-1">Import supplier-assigned orders. Product must exist in Product Map.</p>
-                        @endif
-                    </div>
-                </li>
-            @endforeach
+            <li class="flex gap-4">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold bg-emerald-100 text-emerald-800">1</div>
+                <div>
+                    <p class="font-medium text-slate-900">
+                        Connection
+                        <span class="ml-2 text-xs font-normal text-emerald-700">Complete</span>
+                    </p>
+                    <p class="text-sm text-slate-500 mt-1">Live read-only OpenCart connection. Test all checks, then save.</p>
+                </div>
+            </li>
+            <li class="flex gap-4">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold bg-emerald-100 text-emerald-800">2</div>
+                <div>
+                    <p class="font-medium text-slate-900">
+                        Product Map
+                        <span class="ml-2 text-xs font-normal text-emerald-700">Complete</span>
+                    </p>
+                    <p class="text-sm text-slate-500 mt-1">Step 2A: Live product preview — IBS Model master key, warehouse only, no import.</p>
+                </div>
+            </li>
+            <li class="flex gap-4">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold bg-emerald-100 text-emerald-800">2B</div>
+                <div>
+                    <p class="font-medium text-slate-900">
+                        Product Control
+                        <span class="ml-2 text-xs font-normal text-emerald-700">Complete</span>
+                    </p>
+                    <p class="text-sm text-slate-500 mt-1">Local supplier fields — rate, IBS stock, low warning, partial save.</p>
+                </div>
+            </li>
+            <li class="flex gap-4">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold bg-slate-900 text-white">3</div>
+                <div>
+                    <p class="font-medium text-slate-900">
+                        Order Map
+                        <span class="ml-2 text-xs font-normal text-amber-700">50% complete</span>
+                        <span class="ml-2 text-xs font-normal text-slate-500">← current focus</span>
+                    </p>
+                    <p class="text-sm text-slate-500 mt-1">Import supplier-assigned orders.</p>
+                </div>
+            </li>
         </ol>
     </div>
 

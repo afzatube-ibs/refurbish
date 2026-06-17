@@ -37,7 +37,7 @@ class OrderMapPackingInvoiceTest extends TestCase
         $this->supplier = Supplier::query()->where('is_active', true)->firstOrFail();
     }
 
-    public function test_packing_invoice_renders_lk_order_customer_and_products(): void
+    public function test_packing_invoice_renders_lokkisona_layout_customer_and_products(): void
     {
         $order = Order::query()->create([
             'supplier_id' => $this->supplier->id,
@@ -55,6 +55,7 @@ class OrderMapPackingInvoiceTest extends TestCase
             'source_snapshot' => [
                 'cod_amount' => 2850.00,
                 'order_total' => 2850.00,
+                'payment_method' => 'Cash On Delivery',
             ],
         ]);
 
@@ -75,26 +76,96 @@ class OrderMapPackingInvoiceTest extends TestCase
         $this->actingAs($this->adminUser('packing-invoice-lk'))
             ->get(route('order-map.print-invoice', $order))
             ->assertOk()
-            ->assertSee('Packing Invoice', false)
-            ->assertSee('Lokkisona', false)
-            ->assertSee('Order #7001', false)
+            ->assertSee('Lokkisona Baby Store', false)
+            ->assertSee('ORDER #7001', false)
+            ->assertSee('Customer Details', false)
+            ->assertSee('Delivery Address', false)
             ->assertSee('Invoice Customer', false)
             ->assertSee('+8801700000111', false)
             ->assertSee('12 Packing Lane', false)
             ->assertSee('Warehouse Chair', false)
             ->assertSee('CH-01', false)
-            ->assertSee('Brown', false)
+            ->assertSee('Color: Brown', false)
+            ->assertSee('Consignment ID', false)
             ->assertSee('CNS-7001', false)
-            ->assertSee('Dispatched', false)
-            ->assertSee('COD / order amount', false)
+            ->assertSee('DUE', false)
             ->assertSee('2,850.00', false)
+            ->assertSee('+8801932263545', false)
+            ->assertSee('24 hours', false)
             ->assertSee('Back to Order Queue', false)
-            ->assertSee('order-map-invoice-no-print', false)
+            ->assertSee('print-actions', false)
+            ->assertSee('data-qr="https://steadfast.com.bd/t/CNS-7001"', false)
+            ->assertDontSee('IBS', false)
+            ->assertDontSee('Supplier fulfillment', false)
             ->assertDontSee('Supplier Ledger', false)
             ->assertDontSee('Profit', false)
-            ->assertDontSee('margin', false)
             ->assertDontSee('settlement', false)
-            ->assertDontSee('supplier_product_cost', false);
+            ->assertDontSee('supplier_product_cost', false)
+            ->assertDontSee('Store Name:', false)
+            ->assertDontSee('unmatched', false);
+    }
+
+    public function test_packing_invoice_shows_paid_seal_for_bkash_payment(): void
+    {
+        $order = Order::query()->create([
+            'supplier_id' => $this->supplier->id,
+            'source_order_id' => '7003',
+            'customer_name' => 'Bkash Customer',
+            'customer_phone' => '+8801700000444',
+            'customer_address' => 'Bkash address',
+            'sale_amount' => 1500,
+            'current_oc_status' => 'Processing',
+            'current_oc_status_id' => 2,
+            'sfm_status' => SfmOrderStatus::Dispatched,
+            'oc_created_at' => now(),
+            'source_snapshot' => [
+                'payment_method' => 'bKash Payment',
+                'order_total' => 1500.00,
+            ],
+        ]);
+
+        OrderItem::query()->create([
+            'order_id' => $order->id,
+            'source_product_id' => '402',
+            'product_name' => 'Paid Product',
+            'model' => 'PD-01',
+            'quantity' => 1,
+            'sale_price' => 1500,
+            'item_status' => \App\Enums\OrderItemStatus::Active,
+            'is_unmatched' => false,
+        ]);
+
+        $this->actingAs($this->adminUser('packing-invoice-bkash'))
+            ->get(route('order-map.print-invoice', $order))
+            ->assertOk()
+            ->assertSee('PAID', false)
+            ->assertSee('seal-paid', false);
+    }
+
+    public function test_packing_invoice_uses_snapshot_tracking_url_for_qr_payload(): void
+    {
+        $order = Order::query()->create([
+            'supplier_id' => $this->supplier->id,
+            'source_order_id' => '7004',
+            'customer_name' => 'Tracking Customer',
+            'customer_phone' => '+8801700000555',
+            'customer_address' => 'Tracking address',
+            'sale_amount' => 900,
+            'current_oc_status' => 'Shipped',
+            'current_oc_status_id' => 3,
+            'sfm_status' => SfmOrderStatus::Dispatched,
+            'consignment_id' => 'CNS-TRACK',
+            'oc_created_at' => now(),
+            'source_snapshot' => [
+                'tracking_url' => 'https://steadfast.com.bd/t/CUSTOM-TRACK',
+                'order_total' => 900.00,
+            ],
+        ]);
+
+        $this->actingAs($this->adminUser('packing-invoice-tracking'))
+            ->get(route('order-map.print-invoice', $order))
+            ->assertOk()
+            ->assertSee('data-qr="https://steadfast.com.bd/t/CUSTOM-TRACK"', false);
     }
 
     public function test_packing_invoice_renders_manual_order(): void
@@ -119,12 +190,13 @@ class OrderMapPackingInvoiceTest extends TestCase
         $this->actingAs($user)
             ->get(route('order-map.print-invoice', $order))
             ->assertOk()
-            ->assertSee('Packing Invoice', false)
+            ->assertSee('Lokkisona Baby Store', false)
             ->assertSee('MAN-', false)
             ->assertSee('Manual Invoice Customer', false)
             ->assertSee('Manual Lamp', false)
             ->assertSee('LP-MAN', false)
-            ->assertSee('1,200.00', false);
+            ->assertSee('1,200.00', false)
+            ->assertSee('24 hours', false);
     }
 
     public function test_dispatched_order_modal_shows_print_invoice_action(): void

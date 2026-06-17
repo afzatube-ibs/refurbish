@@ -269,7 +269,7 @@ class LogsDiagnosticsService
         }
 
         $summary = [
-            'App version' => (string) config('dropflow.version', 'v0.6.6'),
+            'App version' => (string) config('dropflow.version', 'v0.6.7'),
             'Catalog source' => $hasPreview ? 'DropFlow database' : '—',
             'Warehouse products' => $hasPreview ? (string) ($meta['warehouse_count'] ?? count($preview['products'] ?? [])) : '—',
             'Last product sync' => $hasPreview && filled($meta['last_product_sync_at'] ?? null)
@@ -338,7 +338,7 @@ class LogsDiagnosticsService
 
         $summary = [
             'Environment' => config('app.env'),
-            'App version' => (string) config('dropflow.version', 'v0.6.6'),
+            'App version' => (string) config('dropflow.version', 'v0.6.7'),
             'Debug mode' => config('app.debug') ? 'On' : 'Off',
             'PHP' => PHP_VERSION,
             'Laravel' => app()->version(),

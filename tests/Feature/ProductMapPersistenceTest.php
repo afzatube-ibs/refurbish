@@ -26,7 +26,7 @@ class ProductMapPersistenceTest extends TestCase
 
         config([
             'dropflow.modules.product_map' => true,
-            'dropflow.version' => 'v0.6.6',
+            'dropflow.version' => 'v0.6.7',
             'dropflow.oc_mock' => true,
             'dropflow.live_read_only' => false,
             'dropflow.product_preview_target' => 42,
@@ -66,8 +66,9 @@ class ProductMapPersistenceTest extends TestCase
             ->get(route('product-map.index'))
             ->assertOk()
             ->assertSee('PARENT-9509')
-            ->assertSee('Refresh Local List')
-            ->assertSee('v0.6.6');
+            ->assertSee('Refresh')
+            ->assertSee('Load Products')
+            ->assertSee('v0.6.7');
     }
 
     public function test_refresh_local_list_does_not_call_opencart(): void
@@ -83,7 +84,7 @@ class ProductMapPersistenceTest extends TestCase
         $this->actingAs($user)
             ->post(route('product-map.refresh'))
             ->assertRedirect(route('product-map.index'))
-            ->assertSessionHas('success', 'Local product list refreshed from database.');
+            ->assertSessionHas('success', 'Product list refreshed.');
 
         $this->assertSame(1, ProductMapProduct::query()->count());
     }
@@ -161,17 +162,17 @@ class ProductMapPersistenceTest extends TestCase
             ->assertOk()
             ->assertSee('PARENT-9509')
             ->assertSee('Products')
-            ->assertDontSee('No LK products saved yet');
+            ->assertDontSee('No products loaded yet.');
     }
 
     public function test_version_appears_in_ui_and_config(): void
     {
-        $this->assertSame('v0.6.6', config('dropflow.version'));
+        $this->assertSame('v0.6.7', config('dropflow.version'));
 
         $this->actingAs($this->adminUser())
             ->get(route('product-map.index'))
             ->assertOk()
-            ->assertSee('v0.6.6');
+            ->assertSee('v0.6.7');
     }
 
     public function test_confirm_sync_persists_products_to_database(): void
@@ -221,7 +222,7 @@ class ProductMapPersistenceTest extends TestCase
         $this->actingAs($user)
             ->post(route('product-map.refresh'))
             ->assertRedirect(route('product-map.index'))
-            ->assertSessionHas('success', 'Local product list refreshed from database.');
+            ->assertSessionHas('success', 'Product list refreshed.');
 
         $this->actingAs($user)
             ->get(route('product-map.index'))

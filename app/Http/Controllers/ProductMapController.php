@@ -203,7 +203,7 @@ class ProductMapController extends Controller
         if (! is_array($pending) || empty($pending['products'])) {
             return redirect()
                 ->route('product-map.index')
-                ->with('error', 'No pending products to sync. Use Sync LK Products first.');
+                ->with('error', 'No pending products. Use Load Products first.');
         }
 
         try {
@@ -250,7 +250,7 @@ class ProductMapController extends Controller
         if (! $this->catalogService->hasProductsSafely()) {
             return redirect()
                 ->route('product-map.index')
-                ->with('error', 'No LK products saved yet. Click Sync LK Products.');
+                ->with('error', 'No products loaded yet. Use Load Products first.');
         }
 
         try {
@@ -270,7 +270,7 @@ class ProductMapController extends Controller
 
             return redirect()
                 ->route('product-map.index')
-                ->with('success', 'Local product list refreshed from database.');
+                ->with('success', 'Product list refreshed.');
         } catch (\Throwable $exception) {
             $message = $exception->getMessage();
             $this->productMapLogsService->recordError($message);

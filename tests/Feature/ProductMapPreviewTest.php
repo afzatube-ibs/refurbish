@@ -156,9 +156,10 @@ class ProductMapPreviewTest extends TestCase
         $this->actingAs($this->adminUser())
             ->get(route('product-map.index'))
             ->assertOk()
-            ->assertSee('DropFlow warehouse catalog')
-            ->assertSee('Sync LK Products')
-            ->assertSee('No LK products saved yet')
+            ->assertSee('Supplier product catalog and inventory control')
+            ->assertSee('Load Products')
+            ->assertSee('No products loaded yet.')
+            ->assertSee('Click Load Products to import the supplier catalog.')
             ->assertDontSee('Parent View')
             ->assertDontSee('Variant View');
     }
@@ -219,7 +220,7 @@ class ProductMapPreviewTest extends TestCase
         $this->actingAs($this->adminUser())
             ->post(route('product-map.refresh'))
             ->assertRedirect(route('product-map.index'))
-            ->assertSessionHas('error', 'No LK products saved yet. Click Sync LK Products.');
+            ->assertSessionHas('error', 'No products loaded yet. Use Load Products first.');
 
         $this->assertSame(0, ProductMapProduct::query()->count());
     }
@@ -345,22 +346,24 @@ class ProductMapPreviewTest extends TestCase
         $this->actingAs($user)
             ->get(route('product-map.index'))
             ->assertOk()
-            ->assertSee('Sync LK Products')
-            ->assertSee('Refresh Local List')
-            ->assertSee('Product ID')
+            ->assertSee('Load Products')
+            ->assertSee('Refresh')
+            ->assertSee('LK Product ID')
             ->assertSee('Main Image')
             ->assertSee('IBS Model')
             ->assertSee('SM Model')
+            ->assertSee('LK Stock')
             ->assertSee('IBS Stock')
             ->assertSee('Products')
             ->assertSee('Ready')
-            ->assertSee('Needs work')
-            ->assertSee('Filter catalog')
+            ->assertSee('Needs Work')
+            ->assertSee('Saved products')
+            ->assertSee('Filter Products')
             ->assertSee('Page size')
-            ->assertSee('Product Type')
+            ->assertSee('Type')
             ->assertSee('Category')
             ->assertSee('Actions')
-            ->assertSee('Edit fields')
+            ->assertSee('Edit')
             ->assertSee('Page 1 of 3 · 42 records')
             ->assertSee('Previous')
             ->assertSee('Next')
@@ -571,7 +574,7 @@ class ProductMapPreviewTest extends TestCase
             ->assertSee('Variable (5)')
             ->assertSee('Confirm Sync')
             ->assertSee('Cancel')
-            ->assertDontSee('No LK products saved yet');
+            ->assertDontSee('Click Load Products to import the supplier catalog.');
     }
 
     public function test_pending_load_incremental_review_shows_only_new_count_message(): void
@@ -590,7 +593,7 @@ class ProductMapPreviewTest extends TestCase
             ->assertOk()
             ->assertSee('Review LK changes')
             ->assertSee('Confirm Sync')
-            ->assertDontSee('No LK products saved yet');
+            ->assertDontSee('Click Load Products to import the supplier catalog.');
     }
 
     public function test_load_blocked_without_active_connection(): void

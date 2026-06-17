@@ -90,7 +90,7 @@
 
             <div class="px-5 py-4 border-t border-slate-700 text-xs">
                 <p class="text-slate-400 truncate">{{ auth()->user()->name }}</p>
-                <p class="text-slate-500 mt-1">{{ config('dropflow.version', 'v0.6.6') }}</p>
+                <p class="text-slate-500 mt-1">{{ config('dropflow.version', 'v0.6.7') }}</p>
                 <form method="POST" action="{{ route('logout') }}" class="mt-2">
                     @csrf
                     <button type="submit" class="text-slate-400 hover:text-white">Sign out</button>
@@ -100,7 +100,7 @@
 
         <div class="app-layout-main flex-1 flex flex-col min-w-0">
             <header class="app-page-header bg-white border-b border-slate-200 px-6 py-4">
-                <div class="flex flex-wrap items-start justify-between gap-3">
+                <div class="flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <h1 class="text-xl font-semibold text-slate-900">@yield('page-title', 'Dashboard')</h1>
                         @hasSection('page-subtitle')

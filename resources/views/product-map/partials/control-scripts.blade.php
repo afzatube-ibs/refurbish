@@ -21,7 +21,6 @@
     var vendorMappingCard = document.getElementById('pccVendorMappingCard');
     var workspaceEl = document.getElementById('pccWorkspace');
     var saveBtn = document.getElementById('pccSaveBtn');
-    var cancelBtn = document.getElementById('pccCancelBtn');
     var modalErrorEl = document.getElementById('pccModalError');
     var adjustPopover = document.getElementById('pccAdjustPopover');
 
@@ -220,7 +219,6 @@
             saveBtn.disabled = !isDirty;
             saveBtn.classList.toggle('pcc-save-dirty', isDirty);
         }
-        if (cancelBtn) cancelBtn.hidden = !isDirty;
         form.classList.toggle('pcc-form-dirty', isDirty);
     }
 
@@ -979,7 +977,7 @@
     }
 
     function closeModal(force) {
-        if (!force && isDirty && !window.confirm('Discard unsaved changes?')) return;
+        if (!force && isDirty && !window.confirm('Close without saving changes?')) return;
         modal.hidden = true;
         modal.setAttribute('aria-hidden', 'true');
         document.body.classList.remove('modal-open');
@@ -1008,9 +1006,7 @@
         setCellOn(row, 'rate', formatRate(product.rate));
         setCellOn(row, 'ibs_stock', formatStock(product.ibs_stock));
         var btn = group.querySelector('[data-control-open]');
-        if (btn && historyCounts[pid] !== undefined) {
-            btn.textContent = historyCounts[pid] > 0 ? 'Edit (' + historyCounts[pid] + ')' : 'Edit';
-        }
+        if (btn) btn.textContent = 'Edit';
         (product.options || []).forEach(function (opt, i) {
             var vRow = document.getElementById('product-row-' + index + '-variant-' + i);
             if (!vRow) return;
@@ -1033,8 +1029,6 @@
         if (el) el.addEventListener('input', updateAdjustPreview);
         if (el) el.addEventListener('change', updateAdjustPreview);
     });
-
-    if (cancelBtn) cancelBtn.addEventListener('click', restoreBaseline);
 
     form.addEventListener('submit', function (e) {
         e.preventDefault();
@@ -1080,13 +1074,6 @@
             e.preventDefault();
             e.stopPropagation();
             openModal(parseInt(el.getAttribute('data-product-index') || '0', 10));
-        });
-    });
-
-    document.querySelectorAll('.product-map-parent-row[data-control-open-row]').forEach(function (row) {
-        row.addEventListener('click', function (e) {
-            if (e.target.closest('.expand-toggle, [data-control-open], button, a')) return;
-            openModal(parseInt(row.getAttribute('data-product-index') || '0', 10));
         });
     });
 

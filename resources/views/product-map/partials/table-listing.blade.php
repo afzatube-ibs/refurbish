@@ -46,9 +46,9 @@
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">IBS Model</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">SM Model</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap" title="IBS supplier cost (local)">Rate</th>
-                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">Stock</th>
+                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">LK Stock</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">IBS Stock</th>
-                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">Product Type</th>
+                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">Type</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">Category</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">Health</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">Actions</th>
@@ -80,7 +80,7 @@
                 <table class="min-w-full text-sm table-compact product-map-table product-map-table-layout">
                     @include('product-map.partials.table-colgroup')
                     <tbody>
-                        <tr id="{{ $rowId }}" class="product-map-parent-row hover:bg-slate-50 product-map-row-open cursor-pointer" data-product-index="{{ $index }}" data-control-open-row>
+                        <tr id="{{ $rowId }}" class="product-map-parent-row hover:bg-slate-50" data-product-index="{{ $index }}">
                             <td class="col-center font-mono text-xs text-slate-700 whitespace-nowrap">
                                 {{ $displayField($productId) }}
                             </td>
@@ -129,8 +129,8 @@
                                         data-control-open
                                         data-product-index="{{ $index }}"
                                         data-product-id="{{ $productId }}"
-                                        title="Edit IBS rate, stock, models, and category">
-                                    Edit fields
+                                        title="Edit supplier product">
+                                    Edit
                                 </button>
                             </td>
                         </tr>
@@ -200,8 +200,8 @@
                     <p class="pm-empty-state-title">No products match your filters</p>
                     <p class="pm-empty-state-text">Try adjusting search or filter options, or <a href="{{ route('product-map.index') }}" class="text-slate-700 underline">clear filters</a>.</p>
                 @else
-                    <p class="pm-empty-state-title">No LK products saved yet</p>
-                    <p class="pm-empty-state-text">Click <strong>Sync LK Products</strong> to fetch a Lokkisona snapshot and save it into DropFlow. Supplier fields are edited from each row after sync.</p>
+                    <p class="pm-empty-state-title">No products loaded yet.</p>
+                    <p class="pm-empty-state-text">Click Load Products to import the supplier catalog.</p>
                 @endif
             </div>
         </div>

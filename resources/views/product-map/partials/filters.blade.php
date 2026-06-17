@@ -10,7 +10,7 @@
 
 <div class="pm-filter-card">
     <div class="pm-filter-card-head">
-        <h2 class="pm-filter-title">Filter catalog</h2>
+        <h2 class="pm-filter-title">Filter Products</h2>
     </div>
     <form method="GET" action="{{ route('product-map.index') }}" class="pm-filter-form">
         <div class="pm-filter-row">
@@ -20,7 +20,7 @@
                        name="q"
                        value="{{ $searchQuery }}"
                        class="pm-filter-input"
-                       placeholder="Model, ID, IBS model…"
+                       placeholder="Search product, model, IBS model..."
                        autocomplete="off">
             </label>
 
@@ -48,7 +48,7 @@
                 <select name="health" class="pm-filter-input">
                     <option value="all" @selected($selectedHealth === 'all')>All readiness</option>
                     <option value="ok" @selected($selectedHealth === 'ok')>Ready</option>
-                    <option value="needs" @selected($selectedHealth === 'needs')>Needs work</option>
+                    <option value="needs" @selected($selectedHealth === 'needs')>Needs Work</option>
                 </select>
             </label>
 

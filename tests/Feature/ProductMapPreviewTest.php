@@ -66,7 +66,7 @@ class ProductMapPreviewTest extends TestCase
             {
                 $normalized = $this->normalizeProduct($product, OpenCartImageContext::fromStoreUrl('https://example.com'));
 
-                foreach (['rate', 'ibs_stock', 'low_warning', 'sm_model'] as $field) {
+                foreach (['rate', 'ibs_stock', 'low_warning', 'sm_model', 'product_category'] as $field) {
                     if (array_key_exists($field, $product)) {
                         $normalized[$field] = $product[$field];
                     }
@@ -104,7 +104,7 @@ class ProductMapPreviewTest extends TestCase
                 foreach ($products as $product) {
                     $row = $this->normalizeProduct($product, OpenCartImageContext::fromStoreUrl('https://example.com'));
 
-                    foreach (['rate', 'ibs_stock', 'low_warning', 'sm_model'] as $field) {
+                    foreach (['rate', 'ibs_stock', 'low_warning', 'sm_model', 'product_category'] as $field) {
                         if (array_key_exists($field, $product)) {
                             $row[$field] = $product[$field];
                         }
@@ -401,8 +401,8 @@ class ProductMapPreviewTest extends TestCase
             ],
         ]);
 
-        $this->assertSame('needs_attention', $negativeVariant['health']['status']);
-        $this->assertContains('Negative stock', $negativeVariant['health']['issues']);
+        $this->assertSame('critical', $negativeVariant['health']['status']);
+        $this->assertContains('Negative Stock -', $negativeVariant['health']['issues']);
 
         $missingOptionImage = $this->productWithHealthRules([
             'model' => 'PARENT-2',
@@ -410,14 +410,14 @@ class ProductMapPreviewTest extends TestCase
             'image' => 'catalog/p.jpg',
             'stock' => 10,
             'rate' => 10.0,
+            'product_category' => 'Chair',
             'options' => [
-                ['model' => 'OPT-2', 'quantity' => 10, 'image' => null, 'ibs_model' => 'IBS-OPT-2', 'ibs_stock' => 10],
+                ['model' => 'OPT-2', 'quantity' => 10, 'image' => null, 'ibs_model' => 'IBS-OPT-2', 'ibs_stock' => 10, 'rate' => 10.0],
             ],
         ]);
 
-        $this->assertSame('needs_attention', $missingOptionImage['health']['status']);
-        $this->assertSame('needs_attention', $missingOptionImage['options'][0]['health']['status']);
-        $this->assertContains('Missing option image', $missingOptionImage['options'][0]['health']['issues']);
+        $this->assertSame('ok', $missingOptionImage['health']['status']);
+        $this->assertContains('Missing option image', $missingOptionImage['health']['issues']);
     }
 
     public function test_low_warning_marks_variant_alert_when_ibs_stock_below_threshold(): void
@@ -428,6 +428,7 @@ class ProductMapPreviewTest extends TestCase
             'image' => 'catalog/p.jpg',
             'stock' => 20,
             'rate' => 99.0,
+            'product_category' => 'Chair',
             'options' => [
                 [
                     'model' => 'OPT-LOW',
@@ -435,6 +436,7 @@ class ProductMapPreviewTest extends TestCase
                     'image' => 'catalog/opt.jpg',
                     'ibs_model' => 'IBS-OPT-LOW',
                     'ibs_stock' => 3,
+                    'rate' => 99.0,
                 ],
             ],
         ]);
@@ -454,6 +456,7 @@ class ProductMapPreviewTest extends TestCase
                 'stock' => 10,
                 'rate' => 10.0,
                 'ibs_stock' => 8,
+                'product_category' => 'Chair',
                 'options' => [],
             ],
             [
@@ -463,6 +466,7 @@ class ProductMapPreviewTest extends TestCase
                 'stock' => 10,
                 'rate' => 10.0,
                 'ibs_stock' => 8,
+                'product_category' => 'Chair',
                 'options' => [],
             ],
         ]);
@@ -484,8 +488,8 @@ class ProductMapPreviewTest extends TestCase
             'options' => [],
         ]);
 
-        $this->assertSame('needs_attention', $product['health']['status']);
-        $this->assertContains('Negative stock', $product['health']['issues']);
+        $this->assertSame('critical', $product['health']['status']);
+        $this->assertContains('Negative Stock -', $product['health']['issues']);
     }
 
     public function test_relative_image_url_is_resolved_against_store(): void

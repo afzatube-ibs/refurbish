@@ -2,7 +2,7 @@
     $totalProducts = (int) ($previewSummary['warehouse_preview'] ?? 0);
     $readyCount = (int) ($previewSummary['health_ok'] ?? 0);
     $variantRows = (int) ($previewSummary['variant_rows'] ?? 0);
-    $needsWork = max(0, $totalProducts - $readyCount);
+    $needsWork = (int) ($previewSummary['health_needs_work'] ?? max(0, $totalProducts - $readyCount));
 @endphp
 
 <div class="pm-stats-grid">

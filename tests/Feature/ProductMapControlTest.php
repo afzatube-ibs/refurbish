@@ -593,9 +593,10 @@ class ProductMapControlTest extends TestCase
             'stock' => 20,
             'rate' => 10.0,
             'low_warning' => 5,
+            'product_category' => 'Chair',
             'options' => [
-                ['model' => 'V1', 'stock' => 10, 'image' => 'catalog/o.jpg', 'ibs_model' => 'IBS-V1', 'ibs_stock' => 2],
-                ['model' => 'V2', 'stock' => 10, 'image' => 'catalog/o2.jpg', 'ibs_model' => 'IBS-V2', 'ibs_stock' => 1],
+                ['model' => 'V1', 'stock' => 10, 'image' => 'catalog/o.jpg', 'ibs_model' => 'IBS-V1', 'ibs_stock' => 2, 'rate' => 10.0],
+                ['model' => 'V2', 'stock' => 10, 'image' => 'catalog/o2.jpg', 'ibs_model' => 'IBS-V2', 'ibs_stock' => 1, 'rate' => 10.0],
             ],
         ]);
 
@@ -609,8 +610,9 @@ class ProductMapControlTest extends TestCase
             'stock' => 20,
             'rate' => 10.0,
             'low_warning' => 5,
+            'product_category' => 'Chair',
             'options' => [
-                ['model' => 'V1', 'stock' => 10, 'image' => 'catalog/o.jpg', 'ibs_model' => 'IBS-V1', 'ibs_stock' => null],
+                ['model' => 'V1', 'stock' => 10, 'image' => 'catalog/o.jpg', 'ibs_model' => 'IBS-V1', 'ibs_stock' => null, 'rate' => 10.0],
             ],
         ]);
 

@@ -181,9 +181,15 @@ class ProductPreviewServiceTest extends TestCase
         {
             public function healthFor(array $product): array
             {
-                $normalized = $this->normalizeProduct($product, OpenCartImageContext::fromStoreUrl('https://example.com'));
+                $context = OpenCartImageContext::fromStoreUrl('https://example.com');
+                $normalized = $this->normalizeProduct($product, $context);
+                $merged = $this->overlayLocalFields(
+                    $normalized,
+                    $product,
+                    ['rate', 'ibs_stock', 'ibs_model', 'sm_model', 'low_warning', 'product_category'],
+                );
 
-                return $this->applyHealthRules([$normalized])[0]['health'];
+                return $this->applyHealthRules([$merged])[0]['health'];
             }
         };
 
@@ -194,6 +200,7 @@ class ProductPreviewServiceTest extends TestCase
             'stock' => 100,
             'rate' => 25.0,
             'ibs_stock' => 2,
+            'product_category' => 'Chair',
             'options' => [],
         ]);
 

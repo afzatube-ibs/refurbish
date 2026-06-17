@@ -403,7 +403,7 @@ class OrderMapLoadTest extends TestCase
         $this->assertSame(0, StockAdjustmentHistory::query()->count());
     }
 
-    public function test_load_new_shows_skipped_panel_after_import(): void
+    public function test_load_new_hides_debug_panel_from_main_queue(): void
     {
         $user = $this->adminUser('order-map');
         $service = app(OrderSyncService::class);
@@ -414,10 +414,7 @@ class OrderMapLoadTest extends TestCase
         $this->actingAs($user)
             ->get(route('order-map.index'))
             ->assertOk()
-            ->assertSee('Last Load New Orders')
-            ->assertSee('Skipped orders')
-            ->assertSee('Duplicate source_order_id')
-            ->assertSee('Requested status_ids');
+            ->assertDontSee('order-map-sync-panel', false);
     }
 
     public function test_duplicate_load_records_duplicates_skipped(): void

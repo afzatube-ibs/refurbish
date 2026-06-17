@@ -34,6 +34,10 @@ class OrderController extends Controller
     {
         $this->authorize('viewAny', Order::class);
 
+        if ($request->boolean('dismiss_audit')) {
+            session()->forget('order_connector_audit_visible');
+        }
+
         $query = Order::with(['items'])
             ->orderByDesc('oc_created_at')
             ->orderByDesc('id');
@@ -146,6 +150,8 @@ class OrderController extends Controller
         try {
             $audit = $this->connectorAuditService->runImportTriggerAudit(auth()->user());
 
+            session(['order_connector_audit_visible' => true]);
+
             return redirect()
                 ->route('order-map.index')
                 ->with('success', $this->connectorAuditService->formatBannerMessage($audit));
@@ -184,7 +190,7 @@ class OrderController extends Controller
 
         $this->orderWorkflowService->dispatch(
             $order,
-            $request->validated('courier'),
+            (string) ($request->validated('courier') ?? ''),
             $request->validated('consignment_id'),
             $request->validated('dispatch_date'),
         );

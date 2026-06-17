@@ -2,38 +2,40 @@
 
 @section('title', 'Order Queue — DropFlow SFM')
 @section('page-title', 'Order Queue')
-@section('page-subtitle', 'IBS fulfillment workflow — manual import and status sync')
+@section('page-subtitle', 'Supplier order queue and fulfillment workflow')
 
 @section('page-actions')
     @if (auth()->user()->isAdmin())
-        <a href="{{ route('order-map.create') }}" class="header-action-btn header-action-btn--secondary">Create Manual Order</a>
-        <a href="{{ route('settings.order-status-mapping.index') }}" class="header-action-btn header-action-btn--secondary">Status Mapping</a>
-        <form method="POST" action="{{ route('order-map.load') }}" class="inline">
-            @csrf
-            <button type="submit" class="header-action-btn header-action-btn--primary">Load New Orders</button>
-        </form>
-        <form method="POST" action="{{ route('order-map.sync-updates') }}" class="inline">
-            @csrf
-            <button type="submit" class="header-action-btn header-action-btn--secondary">Sync Status Updates</button>
-        </form>
-        <form method="POST" action="{{ route('order-map.audit-connector') }}" class="inline">
-            @csrf
-            <button type="submit" class="header-action-btn header-action-btn--secondary">Run Connector Audit</button>
-        </form>
+        <div class="order-map-header-actions">
+            <form method="POST" action="{{ route('order-map.load') }}" class="inline">
+                @csrf
+                <button type="submit" class="header-action-btn header-action-btn--primary">Load Orders</button>
+            </form>
+            <form method="POST" action="{{ route('order-map.sync-updates') }}" class="inline">
+                @csrf
+                <button type="submit" class="header-action-btn header-action-btn--secondary">Sync Updates</button>
+            </form>
+            <a href="{{ route('order-map.create') }}" class="header-action-btn header-action-btn--secondary">Create Order</a>
+            <div class="header-more-menu" data-header-more>
+                <button type="button" class="header-action-btn header-action-btn--secondary" data-header-more-toggle aria-expanded="false">
+                    More <span aria-hidden="true">▾</span>
+                </button>
+                <div class="header-more-dropdown" data-header-more-menu hidden>
+                    <a href="{{ route('settings.order-status-mapping.index') }}" class="header-more-item">Status Mapping</a>
+                    <form method="POST" action="{{ route('order-map.audit-connector') }}">
+                        @csrf
+                        <button type="submit" class="header-more-item header-more-item--button">Audit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
     @endif
 @endsection
 
 @section('content')
 @include('order-map.partials.filters', ['statusFilter' => $statusFilter ?? null])
 
-@if (! empty($lastSync))
-    @include('order-map.partials.last-sync-panel', [
-        'lastSync' => $lastSync,
-        'loadLogService' => $loadLogService,
-    ])
-@endif
-
-@if (! empty($lastConnectorAudit))
+@if (session('order_connector_audit_visible') && ! empty($lastConnectorAudit))
     @include('order-map.partials.connector-audit-panel', [
         'lastConnectorAudit' => $lastConnectorAudit,
     ])
@@ -82,7 +84,9 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="order-map-empty">No orders in queue yet.@if (auth()->user()->isAdmin()) Use <strong>Load New Orders</strong> after mapping Import Trigger statuses.@endif</td>
+                        <td colspan="9" class="order-map-empty">
+                            No orders in queue yet.@if (auth()->user()->isAdmin()) Click Load Orders after mapping import statuses.@endif
+                        </td>
                     </tr>
                 @endforelse
             </tbody>
@@ -115,6 +119,32 @@
 
     if (!modal || !body) return;
 
+    function initOrderPanelInteractions(root) {
+        if (!root) return;
+
+        root.querySelectorAll('[data-order-edit-toggle]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var targetId = btn.getAttribute('data-order-edit-target');
+                var form = targetId ? document.getElementById(targetId) : null;
+                if (!form) return;
+                form.hidden = !form.hidden;
+                btn.textContent = form.hidden ? 'Edit Order' : 'Hide Edit Form';
+            });
+        });
+
+        root.querySelectorAll('[data-dispatch-reveal]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var targetId = btn.getAttribute('data-dispatch-target');
+                var form = targetId ? document.getElementById(targetId) : null;
+                if (!form) return;
+                form.hidden = false;
+                btn.hidden = true;
+                var input = form.querySelector('input[name="consignment_id"]');
+                if (input) input.focus();
+            });
+        });
+    }
+
     function openPanel(url) {
         body.innerHTML = '<p class="text-sm text-slate-500">Loading…</p>';
         modal.hidden = false;
@@ -131,6 +161,7 @@
             })
             .then(function (html) {
                 body.innerHTML = html;
+                initOrderPanelInteractions(body);
                 var header = body.querySelector('.order-map-detail-header h2');
                 if (header && title) {
                     title.textContent = header.textContent.trim();
@@ -165,6 +196,27 @@
 
         if (e.target === modal) {
             closePanel();
+        }
+
+        var moreToggle = e.target.closest('[data-header-more-toggle]');
+        if (moreToggle) {
+            var menu = moreToggle.closest('[data-header-more]');
+            var dropdown = menu ? menu.querySelector('[data-header-more-menu]') : null;
+            if (dropdown) {
+                var open = dropdown.hasAttribute('hidden');
+                dropdown.toggleAttribute('hidden', !open);
+                moreToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            }
+            return;
+        }
+
+        if (!e.target.closest('[data-header-more]')) {
+            document.querySelectorAll('[data-header-more-menu]').forEach(function (dropdown) {
+                dropdown.setAttribute('hidden', 'hidden');
+            });
+            document.querySelectorAll('[data-header-more-toggle]').forEach(function (btn) {
+                btn.setAttribute('aria-expanded', 'false');
+            });
         }
     });
 

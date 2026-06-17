@@ -22,7 +22,7 @@ class DispatchOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'courier' => ['required', 'string', 'max:255'],
+            'courier' => ['nullable', 'string', 'max:255'],
             'consignment_id' => ['required', 'string', 'max:255'],
             'dispatch_date' => ['nullable', 'date'],
         ];

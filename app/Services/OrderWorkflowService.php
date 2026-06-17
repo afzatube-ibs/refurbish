@@ -46,10 +46,6 @@ class OrderWorkflowService
         $courier = trim($courier);
         $consignmentId = trim($consignmentId);
 
-        if ($courier === '') {
-            throw new InvalidArgumentException('Courier is required for dispatch.');
-        }
-
         if ($consignmentId === '') {
             throw new InvalidArgumentException('Consignment ID is required for dispatch.');
         }

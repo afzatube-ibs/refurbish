@@ -14,10 +14,15 @@
 @if (! empty($lastConnectorAudit))
     <section class="order-map-sync-panel order-map-audit-panel" aria-label="Connector orders audit">
         <div class="order-map-sync-summary">
-            <h2 class="order-map-sync-title">Connector Orders Audit</h2>
-            @if (! empty($lastConnectorAudit['recorded_at']))
-                <p class="order-map-sync-time">{{ \Carbon\Carbon::parse($lastConnectorAudit['recorded_at'])->format('d M Y H:i') }}</p>
-            @endif
+            <div class="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                    <h2 class="order-map-sync-title">Connector Orders Audit</h2>
+                    @if (! empty($lastConnectorAudit['recorded_at']))
+                        <p class="order-map-sync-time">{{ \Carbon\Carbon::parse($lastConnectorAudit['recorded_at'])->format('d M Y H:i') }}</p>
+                    @endif
+                </div>
+                <a href="{{ route('order-map.index', ['dismiss_audit' => 1]) }}" class="header-action-btn header-action-btn--secondary">Dismiss</a>
+            </div>
             <dl class="order-map-sync-stats">
                 <div><dt>Connector build</dt><dd>{{ $lastConnectorAudit['connector_build'] ?? '—' }}</dd></div>
                 <div><dt>Connector version</dt><dd>{{ $lastConnectorAudit['connector_version'] ?? '—' }}</dd></div>

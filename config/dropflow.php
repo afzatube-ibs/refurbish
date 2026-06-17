@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'version' => 'v0.6.7',
+    'version' => 'v0.7.0',
 
     'product_batch_size' => 50,
     'product_preview_target' => (int) env('DROPflow_PRODUCT_PREVIEW_TARGET', 42),
@@ -45,6 +45,8 @@ return [
         'connection_test' => 'index.php?route=api/ibs/connection_test',
         'products' => 'index.php?route=api/ibs/products',
         'orders' => 'index.php?route=api/ibs/orders',
+        'orders_audit' => 'index.php?route=api/ibs/orders_audit',
+        'orders_audit_fallback' => 'index.php?route=api/ibs/orders/audit',
         'order_statuses' => 'index.php?route=api/ibs/order_queue_statuses',
     ],
 

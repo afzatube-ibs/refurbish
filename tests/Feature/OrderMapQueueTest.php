@@ -77,6 +77,9 @@ class OrderMapQueueTest extends TestCase
 
         $response->assertOk()
             ->assertSee('Order No')
+            ->assertSee('Load Orders')
+            ->assertSee('Sync Updates')
+            ->assertSee('Create Order')
             ->assertSee('Customer')
             ->assertSee('LK Status')
             ->assertSee('Product Card')
@@ -90,7 +93,7 @@ class OrderMapQueueTest extends TestCase
             ->assertSee('Processing (#2)')
             ->assertSee('Brown')
             ->assertSee('CNS-5001')
-            ->assertSee('Print Invoice');
+            ->assertSee('Print');
     }
 
     public function test_order_queue_hides_courier_and_address(): void

@@ -2087,6 +2087,167 @@ body {
     color: rgb(153 27 27);
 }
 
+.app-version-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.125rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.375rem;
+    border: 1px solid rgb(226 232 240);
+    background: rgb(248 250 252);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgb(100 116 139);
+    line-height: 1.2;
+}
+
+.header-more-menu {
+    position: relative;
+    display: inline-flex;
+}
+
+.header-more-dropdown {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    right: 0;
+    z-index: 30;
+    min-width: 11rem;
+    padding: 0.35rem;
+    background: rgb(255 255 255);
+    border: 1px solid rgb(226 232 240);
+    border-radius: 0.375rem;
+    box-shadow: 0 8px 20px rgb(15 23 42 / 0.08);
+}
+
+.header-more-item {
+    display: block;
+    width: 100%;
+    padding: 0.45rem 0.65rem;
+    border-radius: 0.25rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: rgb(51 65 85);
+    text-decoration: none;
+    text-align: left;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.header-more-item:hover {
+    background: rgb(248 250 252);
+    color: rgb(15 23 42);
+}
+
+.header-more-item--button {
+    font-family: inherit;
+}
+
+.order-map-header-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.order-map-detail-section-title {
+    margin: 0 0 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: rgb(15 23 42);
+}
+
+.order-map-detail-facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem 1rem;
+    margin: 0;
+    font-size: 0.8125rem;
+}
+
+.order-map-detail-facts dt {
+    margin: 0;
+    color: rgb(100 116 139);
+    font-weight: 500;
+}
+
+.order-map-detail-facts dd {
+    margin: 0.15rem 0 0;
+    color: rgb(15 23 42);
+    font-weight: 500;
+}
+
+.order-map-detail-fact-wide {
+    grid-column: 1 / -1;
+}
+
+.order-map-detail-products-wrap {
+    overflow-x: auto;
+}
+
+.order-map-detail-products-table th,
+.order-map-detail-products-table td {
+    font-size: 0.8125rem;
+}
+
+.order-map-match-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.25rem;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1.2;
+    border: 1px solid transparent;
+}
+
+.order-map-match--matched {
+    color: rgb(51 65 85);
+    background: rgb(248 250 252);
+    border-color: rgb(226 232 240);
+}
+
+.order-map-match--unmatched {
+    color: rgb(127 29 29);
+    background: rgb(254 242 242);
+    border-color: rgb(254 202 202);
+}
+
+.order-map-match--manual {
+    color: rgb(51 65 85);
+    background: rgb(241 245 249);
+    border-color: rgb(203 213 225);
+}
+
+.order-map-edit-locked {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: rgb(100 116 139);
+}
+
+.order-map-workflow-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.order-map-workflow-form {
+    margin: 0;
+}
+
+.order-map-dispatch-form {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgb(241 245 249);
+}
+
+.order-map-detail-footer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding-top: 0.25rem;
+}
+
 .order-map-row-actions {
     display: flex;
     flex-direction: column;

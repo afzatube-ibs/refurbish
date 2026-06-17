@@ -4,10 +4,6 @@
 @section('page-title', 'Product Map')
 @section('page-subtitle', 'Supplier product catalog and inventory control')
 
-@section('page-badge')
-    <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">{{ config('dropflow.version', 'v0.6.7') }}</span>
-@endsection
-
 @section('page-actions')
 @php
     $hasPreview = ! empty($products);

@@ -25,6 +25,7 @@ class OrderConnectorAuditTest extends TestCase
         config([
             'dropflow.modules.order_map' => true,
             'dropflow.oc_mock' => true,
+            'dropflow.live_read_only' => false,
             'dropflow.allow_opencart_sync' => true,
         ]);
 

@@ -1,3 +1,4 @@
+{{-- Lokkisona invoice layout ported from reference/lokkisona-custom-invoice/ (reference only; not loaded at runtime). --}}
 <!DOCTYPE html>
 <html lang="en">
 <head>

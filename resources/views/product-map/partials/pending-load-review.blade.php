@@ -18,12 +18,12 @@
             @if ($isFirstLoad)
                 <p class="pm-pending-review-subtitle">
                     {{ $pendingCount === 1 ? '1 product fetched' : $pendingCount.' products fetched' }} from OpenCart.
-                    Confirm below to add {{ $pendingCount === 1 ? 'it' : 'them' }} to your Product Map.
+                    Confirm below to sync {{ $pendingCount === 1 ? 'it' : 'them' }} into your Product Map database.
                 </p>
             @else
                 <p class="pm-pending-review-subtitle">
-                    {{ $pendingCount === 1 ? '1 new product found' : $pendingCount.' new products found' }}.
-                    Review below before adding to your Product Map. Existing products are unchanged.
+                    {{ $pendingCount === 1 ? '1 product' : $pendingCount.' products' }} to sync from OpenCart.
+                    Review below before updating your Product Map. IBS local fields are never overwritten.
                 </p>
             @endif
         </div>
@@ -31,7 +31,7 @@
             <form method="POST" action="{{ route('product-map.load.confirm') }}">
                 @csrf
                 <button type="submit" class="header-action-btn header-action-btn--primary">
-                    Add All New
+                    Confirm Sync
                 </button>
             </form>
             <form method="POST" action="{{ route('product-map.load.cancel') }}">
@@ -44,7 +44,7 @@
     </div>
 
     <div class="pm-pending-review-meta">
-        Showing {{ $pendingCount }} {{ $pendingCount === 1 ? 'product' : 'products' }} · Status: New
+        Showing {{ $pendingCount }} {{ $pendingCount === 1 ? 'product' : 'products' }} pending sync
     </div>
 
     <div class="pm-pending-review-table-wrap overflow-x-auto">
@@ -90,7 +90,14 @@
                             @endif
                         </td>
                         <td class="col-center whitespace-nowrap">
-                            <span class="pm-status-new">New</span>
+                            @php
+                                $syncStatus = (string) ($product['_sync_status'] ?? 'new');
+                            @endphp
+                            @if ($syncStatus === 'changed')
+                                <span class="pm-status-changed">Changed</span>
+                            @else
+                                <span class="pm-status-new">New</span>
+                            @endif
                         </td>
                     </tr>
                 @endforeach

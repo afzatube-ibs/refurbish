@@ -3,19 +3,21 @@
 namespace Tests\Feature;
 
 use App\Models\Connection;
+use App\Models\ProductMap\ProductMapProduct;
 use App\Models\User;
-use App\Services\OpenCart\OpenCartImageContext;
-use App\Services\OpenCart\ProductPreviewService;
+use App\Services\ProductMap\ProductMapCatalogService;
 use App\Services\ProductMap\ProductMapLogsService;
 use Database\Seeders\SupplierSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\CreatesUniqueAdminUser;
+use Tests\Concerns\SeedsProductMapCatalog;
 use Tests\TestCase;
 
 class ProductMapLogsTest extends TestCase
 {
     use CreatesUniqueAdminUser;
     use RefreshDatabase;
+    use SeedsProductMapCatalog;
 
     protected function setUp(): void
     {
@@ -44,37 +46,6 @@ class ProductMapLogsTest extends TestCase
         ]);
     }
 
-    protected function seedPreviewSession(): void
-    {
-        $anonymous = new class(app(\App\Services\OpenCart\OpenCartHttpClient::class), app(\App\Services\OpenCart\ConnectionService::class)) extends ProductPreviewService
-        {
-            public function buildSample(): array
-            {
-                $product = $this->normalizeProduct([
-                    'product_id' => '9509',
-                    'model' => 'PARENT-9509',
-                    'ibs_model' => 'IBS-9509',
-                    'image' => 'catalog/p.jpg',
-                    'stock' => 12,
-                    'from_warehouse' => 1,
-                    'options' => [],
-                ], OpenCartImageContext::fromStoreUrl('https://example.com'));
-
-                $products = $this->applyHealthRules([$product]);
-
-                return [
-                    'products' => $products,
-                    'activity' => [],
-                    'meta' => ['has_local_edits' => false, 'loaded_at' => now()->toIso8601String()],
-                    'summary' => $this->buildSummary([[]], $products),
-                    'diagnostics' => ['raw_product_count' => 1, 'pagination' => ['page' => 1]],
-                ];
-            }
-        };
-
-        session(['product_preview' => $anonymous->buildSample()]);
-    }
-
     protected function loadAndConfirm(?User $user = null): void
     {
         $user = $user ?? $this->adminUser();
@@ -83,16 +54,18 @@ class ProductMapLogsTest extends TestCase
         $this->actingAs($user)->post(route('product-map.load.confirm'));
     }
 
-    public function test_clear_logs_keeps_product_preview_rows(): void
+    public function test_clear_logs_keeps_database_catalog_rows(): void
     {
         $this->activeConnection();
         $user = $this->adminUser();
 
         $this->loadAndConfirm($user);
+        $this->assertSame(42, ProductMapProduct::query()->count());
 
-        $preview = session('product_preview');
-        $this->assertNotEmpty($preview['products'] ?? []);
-        $this->assertNotEmpty($preview['diagnostics'] ?? []);
+        session()->put(\App\Http\Controllers\ProductMapController::SYNC_CONTEXT_SESSION_KEY, [
+            'diagnostics' => ['raw_product_count' => 42],
+            'meta' => ['pages_fetched' => 3],
+        ]);
 
         $this->actingAs($user)
             ->from(route('product-map.index'))
@@ -100,19 +73,15 @@ class ProductMapLogsTest extends TestCase
             ->assertRedirect(route('product-map.index'))
             ->assertSessionHas('logs_tab', 'product-map');
 
-        $after = session('product_preview');
-
-        $this->assertCount(42, $after['products'] ?? []);
-        $this->assertSame([], $after['diagnostics'] ?? null);
-        $this->assertSame([], $after['activity'] ?? null);
+        $this->assertSame(42, ProductMapProduct::query()->count());
         $this->assertNull(session(ProductMapLogsService::SESSION_KEY));
     }
 
-    public function test_reset_product_map_clears_session_products_but_not_db_control_state(): void
+    public function test_reset_product_map_clears_session_but_not_db_catalog_or_control_state(): void
     {
         $this->activeConnection();
         $user = $this->adminUser();
-        $this->seedPreviewSession();
+        $this->seedProductMapCatalog();
 
         $this->actingAs($user)
             ->postJson(route('product-map.control.save'), [
@@ -129,8 +98,8 @@ class ProductMapLogsTest extends TestCase
             ->assertRedirect(route('product-map.index'))
             ->assertSessionHas('logs_tab', 'product-map');
 
-        $this->assertNull(session('product_preview'));
         $this->assertNull(session('product_map_pending_load'));
+        $this->assertSame(1, ProductMapProduct::query()->count());
         $this->assertDatabaseHas('product_control_states', [
             'source_product_id' => '9509',
             'rate' => 88.5,
@@ -139,6 +108,11 @@ class ProductMapLogsTest extends TestCase
             'product_id' => '9509',
             'new_rate' => 88.5,
         ]);
+
+        $this->actingAs($user)
+            ->get(route('product-map.index'))
+            ->assertOk()
+            ->assertSee('PARENT-9509');
     }
 
     public function test_product_map_logs_panel_offers_reset_when_products_loaded(): void

@@ -7,6 +7,7 @@ use App\Services\OpenCart\ConnectionService;
 use App\Services\OpenCart\ProductPreviewService;
 use App\Services\ProductMap\ProductControlCategoryService;
 use App\Services\ProductMap\ProductControlMergeService;
+use App\Services\ProductMap\ProductMapCatalogService;
 use App\Services\ProductMap\ProductMapListingFilter;
 use App\Services\ProductMap\ProductMapLocalControlService;
 use App\Services\ProductMap\ProductMapLogsService;
@@ -17,6 +18,8 @@ use Illuminate\View\View;
 
 class ProductMapController extends Controller
 {
+    public const SYNC_CONTEXT_SESSION_KEY = 'product_map_sync_context';
+
     public function __construct(
         private readonly ProductPreviewService $previewService,
         private readonly ConnectionService $connectionService,
@@ -25,18 +28,19 @@ class ProductMapController extends Controller
         private readonly ProductControlCategoryService $categoryService,
         private readonly ProductMapListingFilter $listingFilter,
         private readonly ProductMapLogsService $productMapLogsService,
+        private readonly ProductMapCatalogService $catalogService,
     ) {}
 
     public function index(Request $request): View
     {
         $connection = $this->connectionService->getActive();
-        $preview = session('product_preview');
-
-        if (is_array($preview) && ! empty($preview['products'])) {
-            $preview = $this->controlMergeService->mergeIntoPreview($preview);
-            $preview = $this->previewService->refreshPreviewState($preview);
-            session()->put('product_preview', $preview);
-        }
+        $syncContext = $this->syncContext();
+        $preview = $this->catalogService->hasProducts()
+            ? $this->catalogService->buildPreview(
+                is_array($syncContext['meta'] ?? null) ? $syncContext['meta'] : null,
+                is_array($syncContext['diagnostics'] ?? null) ? $syncContext['diagnostics'] : null,
+            )
+            : null;
 
         $products = is_array($preview) ? ($preview['products'] ?? []) : [];
         $listingFilters = $this->listingFilter->resolveFromRequest($request);
@@ -83,16 +87,19 @@ class ProductMapController extends Controller
 
     public function saveControl(ProductMapControlSaveRequest $request): JsonResponse
     {
-        $preview = session('product_preview');
-
-        if (! is_array($preview) || empty($preview['products'])) {
+        if (! $this->catalogService->hasProducts()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Load products before saving local control changes.',
+                'message' => 'Sync products before saving local control changes.',
             ], 422);
         }
 
         try {
+            $syncContext = $this->syncContext();
+            $preview = $this->catalogService->buildPreview(
+                is_array($syncContext['meta'] ?? null) ? $syncContext['meta'] : null,
+                is_array($syncContext['diagnostics'] ?? null) ? $syncContext['diagnostics'] : null,
+            );
             $productIndex = (int) $request->validated('product_index');
             $preview = $this->localControlService->save(
                 $preview,
@@ -100,8 +107,6 @@ class ProductMapController extends Controller
                 $request->only(['changes']),
                 $request->user(),
             );
-
-            session()->put('product_preview', $preview);
 
             $product = $preview['products'][$productIndex] ?? null;
             $productId = (string) ($product['product_id'] ?? $product['oc_product_id'] ?? '');
@@ -146,15 +151,13 @@ class ProductMapController extends Controller
     {
         try {
             $fresh = $this->previewService->loadPreview();
-            $existing = session('product_preview');
-            $existingProducts = is_array($existing) ? ($existing['products'] ?? []) : [];
             $freshProducts = is_array($fresh['products'] ?? null) ? $fresh['products'] : [];
-            $newProducts = $this->previewService->detectNewProducts($freshProducts, $existingProducts);
+            $changes = $this->catalogService->detectSyncChanges($freshProducts);
 
-            if ($newProducts === []) {
-                $message = $existingProducts === []
-                    ? 'No products found in OpenCart.'
-                    : 'No new products found.';
+            if ($changes === []) {
+                $message = $this->catalogService->hasProducts()
+                    ? 'No new or changed products found.'
+                    : 'No products found in OpenCart.';
 
                 return redirect()
                     ->route('product-map.index')
@@ -162,20 +165,23 @@ class ProductMapController extends Controller
             }
 
             session()->put('product_map_pending_load', [
-                'count' => count($newProducts),
-                'products' => $newProducts,
+                'count' => count($changes),
+                'products' => $changes,
                 'fetch_meta' => is_array($fresh['meta'] ?? null) ? $fresh['meta'] : [],
                 'fetch_diagnostics' => is_array($fresh['diagnostics'] ?? null) ? $fresh['diagnostics'] : [],
             ]);
 
-            $this->productMapLogsService->recordLoadEvent('load_detect', [
-                'new_count' => count($newProducts),
+            $this->productMapLogsService->recordLoadEvent('sync_detect', [
+                'change_count' => count($changes),
             ]);
 
-            $count = count($newProducts);
-            $message = $count === 1
-                ? '1 new product found'
-                : $count.' new products found';
+            $newCount = count(array_filter($changes, fn (array $row) => ($row['_sync_status'] ?? '') === 'new'));
+            $changedCount = count($changes) - $newCount;
+            $message = match (true) {
+                $newCount > 0 && $changedCount > 0 => $newCount.' new and '.$changedCount.' changed products found',
+                $changedCount > 0 => ($changedCount === 1 ? '1 changed product' : $changedCount.' changed products').' found',
+                default => ($newCount === 1 ? '1 new product' : $newCount.' new products').' found',
+            };
 
             return redirect()
                 ->route('product-map.index')
@@ -196,47 +202,26 @@ class ProductMapController extends Controller
         if (! is_array($pending) || empty($pending['products'])) {
             return redirect()
                 ->route('product-map.index')
-                ->with('error', 'No pending products to add. Use Load Products first.');
+                ->with('error', 'No pending products to sync. Use Sync OC Products first.');
         }
 
         try {
-            $existing = session('product_preview');
-            $base = is_array($existing) ? $existing : [
-                'products' => [],
-                'activity' => [],
-                'meta' => [],
-                'summary' => [],
-                'diagnostics' => [],
-            ];
+            $saved = $this->catalogService->upsertProducts($pending['products']);
 
-            $preview = $this->previewService->appendNewProducts($base, $pending['products']);
-
-            if (is_array($pending['fetch_meta'] ?? null) && $pending['fetch_meta'] !== []) {
-                $preview['meta'] = array_merge(
-                    $pending['fetch_meta'],
-                    is_array($preview['meta'] ?? null) ? $preview['meta'] : [],
-                );
-                $preview['meta']['loaded_at'] = now()->toIso8601String();
-            }
-
-            if (is_array($pending['fetch_diagnostics'] ?? null) && $pending['fetch_diagnostics'] !== []) {
-                $preview['diagnostics'] = $pending['fetch_diagnostics'];
-            }
-
-            $preview = $this->controlMergeService->mergeIntoPreview($preview);
-            $preview = $this->previewService->refreshPreviewState($preview);
-
-            session()->put('product_preview', $preview);
+            session()->put(self::SYNC_CONTEXT_SESSION_KEY, [
+                'meta' => is_array($pending['fetch_meta'] ?? null) ? $pending['fetch_meta'] : [],
+                'diagnostics' => is_array($pending['fetch_diagnostics'] ?? null) ? $pending['fetch_diagnostics'] : [],
+                'synced_at' => now()->toIso8601String(),
+            ]);
             session()->forget('product_map_pending_load');
 
-            $this->productMapLogsService->recordLoadEvent('load_confirm', [
-                'added_count' => (int) ($pending['count'] ?? count($pending['products'])),
+            $this->productMapLogsService->recordLoadEvent('sync_confirm', [
+                'saved_count' => $saved,
             ]);
 
-            $count = (int) ($pending['count'] ?? count($pending['products']));
-            $message = $count === 1
-                ? '1 product added to Product Map.'
-                : $count.' products added to Product Map.';
+            $message = $saved === 1
+                ? '1 product synced to Product Map.'
+                : $saved.' products synced to Product Map.';
 
             return redirect()
                 ->route('product-map.index')
@@ -256,47 +241,42 @@ class ProductMapController extends Controller
 
         return redirect()
             ->route('product-map.index')
-            ->with('info', 'Add to Product Map cancelled.');
+            ->with('info', 'OpenCart sync cancelled.');
     }
 
     public function refresh(): RedirectResponse
     {
-        $existing = session('product_preview');
-        $existingProducts = is_array($existing) ? ($existing['products'] ?? []) : [];
-
-        if ($existingProducts === []) {
+        if (! $this->catalogService->hasProducts()) {
             return redirect()
                 ->route('product-map.index')
-                ->with('error', 'No products loaded yet. Please use Load Products first.');
+                ->with('error', 'No products in Product Map yet. Use Sync OC Products first.');
         }
 
         try {
-            $preview = $this->previewService->refreshExistingPreview($existing);
-            $preview = $this->controlMergeService->mergeIntoPreview($preview);
-            $preview = $this->previewService->refreshPreviewState($preview);
-
-            session()->put('product_preview', $preview);
-
-            $this->productMapLogsService->recordLoadEvent('refresh', [
-                'product_count' => count($preview['products'] ?? []),
+            $this->productMapLogsService->recordLoadEvent('refresh_local', [
+                'product_count' => $this->catalogService->productCount(),
             ]);
 
             return redirect()
                 ->route('product-map.index')
-                ->with('success', 'Product preview refreshed.');
+                ->with('success', 'Local product list refreshed.');
         } catch (\Throwable $exception) {
             $message = $exception->getMessage();
-            $hasExistingPreview = is_array(session('product_preview'));
             $this->productMapLogsService->recordError($message);
 
             return redirect()
                 ->route('product-map.index')
-                ->with(
-                    'error',
-                    $hasExistingPreview
-                        ? 'Refresh failed — showing last loaded preview. '.$message
-                        : $message
-                );
+                ->with('error', 'Refresh failed. '.$message);
         }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function syncContext(): array
+    {
+        $context = session(self::SYNC_CONTEXT_SESSION_KEY);
+
+        return is_array($context) ? $context : [];
     }
 }

@@ -22,7 +22,7 @@ class LogsController extends Controller
     {
         $this->productMapLogsService->resetProductMapSession();
 
-        return $this->redirectBackWithCleared('product-map', 'Product Map session reset. Loaded products were removed from this browser session. Control history in the database was not changed.');
+        return $this->redirectBackWithCleared('product-map', 'Product Map session reset. Pending sync and diagnostic logs were cleared. Database products and control history were not changed.');
     }
 
     protected function redirectBackWithCleared(string $tab, string $message): RedirectResponse

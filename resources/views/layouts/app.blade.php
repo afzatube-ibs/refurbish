@@ -97,6 +97,7 @@
 
             <div class="px-5 py-4 border-t border-slate-700 text-xs">
                 <p class="text-slate-400 truncate">{{ auth()->user()->name }}</p>
+                <p class="text-slate-500 mt-1">{{ config('dropflow.version', 'v0.6.2') }}</p>
                 <form method="POST" action="{{ route('logout') }}" class="mt-2">
                     @csrf
                     <button type="submit" class="text-slate-400 hover:text-white">Sign out</button>

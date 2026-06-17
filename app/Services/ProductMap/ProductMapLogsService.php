@@ -2,6 +2,8 @@
 
 namespace App\Services\ProductMap;
 
+use App\Http\Controllers\ProductMapController;
+
 class ProductMapLogsService
 {
     public const SESSION_KEY = 'product_map_logs';
@@ -18,16 +20,10 @@ class ProductMapLogsService
 
     public function hasClearableLogs(): bool
     {
-        $preview = session('product_preview');
+        $syncContext = session(ProductMapController::SYNC_CONTEXT_SESSION_KEY);
 
-        if (is_array($preview)) {
-            if ($this->hasContent($preview['diagnostics'] ?? null)) {
-                return true;
-            }
-
-            if ($this->hasContent($preview['activity'] ?? null)) {
-                return true;
-            }
+        if (is_array($syncContext) && $this->hasContent($syncContext['diagnostics'] ?? null)) {
+            return true;
         }
 
         return $this->hasContent($this->all());
@@ -54,6 +50,7 @@ class ProductMapLogsService
             str_contains($needle, 'preview')
             || str_contains($needle, 'refresh')
             || str_contains($needle, 'load')
+            || str_contains($needle, 'sync')
             || str_contains($needle, 'product map')
             || str_contains($needle, 'opencart')
         ) {
@@ -89,12 +86,11 @@ class ProductMapLogsService
 
     public function clear(): void
     {
-        $preview = session('product_preview');
+        $syncContext = session(ProductMapController::SYNC_CONTEXT_SESSION_KEY);
 
-        if (is_array($preview)) {
-            $preview['diagnostics'] = [];
-            $preview['activity'] = [];
-            session()->put('product_preview', $preview);
+        if (is_array($syncContext)) {
+            $syncContext['diagnostics'] = [];
+            session()->put(ProductMapController::SYNC_CONTEXT_SESSION_KEY, $syncContext);
         }
 
         session()->forget(self::SESSION_KEY);
@@ -105,6 +101,7 @@ class ProductMapLogsService
         session()->forget([
             'product_preview',
             'product_map_pending_load',
+            ProductMapController::SYNC_CONTEXT_SESSION_KEY,
             self::SESSION_KEY,
         ]);
     }

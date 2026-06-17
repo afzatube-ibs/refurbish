@@ -4,6 +4,10 @@
 @section('page-title', 'Product Map')
 @section('page-subtitle', 'Product Mapping Center')
 
+@section('page-badge')
+    <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">{{ config('dropflow.version', 'v0.6.2') }}</span>
+@endsection
+
 @section('page-actions')
 @php
     $hasPreview = ! empty($products);
@@ -13,19 +17,18 @@
     <button type="submit"
             @disabled(! ($connectionReady ?? false))
             class="header-action-btn header-action-btn--primary"
-            title="{{ ($connectionReady ?? false) ? 'Load live warehouse products' : 'Save an active connection first' }}">
-        Load Products
+            title="{{ ($connectionReady ?? false) ? 'Fetch OpenCart product snapshot' : 'Save an active connection first' }}">
+        Sync OC Products
     </button>
 </form>
 
-<form method="POST" action="{{ route('product-map.refresh') }}" id="product-map-refresh-form"
-      data-has-local-edits="{{ ($previewMeta['has_local_edits'] ?? false) ? '1' : '0' }}">
+<form method="POST" action="{{ route('product-map.refresh') }}" id="product-map-refresh-form">
     @csrf
     <button type="submit"
-            @disabled(! $hasPreview || ! ($connectionReady ?? false))
+            @disabled(! $hasPreview)
             class="header-action-btn header-action-btn--secondary"
-            title="{{ $hasPreview ? 'Refresh OpenCart data for loaded products only' : 'Load products first' }}">
-        Refresh Preview
+            title="{{ $hasPreview ? 'Reload products from DropFlow database' : 'Sync products first' }}">
+        Refresh Local List
     </button>
 </form>
 @push('scripts')
@@ -33,11 +36,8 @@
 (function () {
     var refreshForm = document.getElementById('product-map-refresh-form');
     if (!refreshForm) return;
-    refreshForm.addEventListener('submit', function (e) {
-        if (refreshForm.getAttribute('data-has-local-edits') !== '1') return;
-        if (!window.confirm('Refresh reloads live stock from OpenCart. Local rate/stock edits are kept. Continue?')) {
-            e.preventDefault();
-        }
+    refreshForm.addEventListener('submit', function () {
+        // Local DB reload only — no confirmation required.
     });
 })();
 </script>

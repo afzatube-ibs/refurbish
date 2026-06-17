@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'version' => 'v0.6.2',
+
     'product_batch_size' => 50,
     'product_preview_target' => (int) env('DROPflow_PRODUCT_PREVIEW_TARGET', 42),
     'product_preview_page_size' => (int) env('DROPflow_PRODUCT_PREVIEW_PAGE_SIZE', 20),

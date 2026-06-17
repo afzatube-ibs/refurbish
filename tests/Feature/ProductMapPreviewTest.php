@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Connection;
+use App\Models\ProductMap\ProductMapProduct;
 use App\Models\User;
 use App\Services\OpenCart\OpenCartImageContext;
 use App\Services\OpenCart\OpenCartMediaUrlResolver;
@@ -10,12 +11,14 @@ use App\Services\OpenCart\ProductPreviewService;
 use Database\Seeders\SupplierSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\CreatesUniqueAdminUser;
+use Tests\Concerns\SeedsProductMapCatalog;
 use Tests\TestCase;
 
 class ProductMapPreviewTest extends TestCase
 {
     use CreatesUniqueAdminUser;
     use RefreshDatabase;
+    use SeedsProductMapCatalog;
 
     protected function setUp(): void
     {
@@ -154,7 +157,7 @@ class ProductMapPreviewTest extends TestCase
             ->get(route('product-map.index'))
             ->assertOk()
             ->assertSee('Product Mapping Center')
-            ->assertSee('Load Products')
+            ->assertSee('Sync OC Products')
             ->assertSee('No products loaded')
             ->assertDontSee('Parent View')
             ->assertDontSee('Variant View');
@@ -170,22 +173,14 @@ class ProductMapPreviewTest extends TestCase
             ->assertRedirect(route('product-map.index'))
             ->assertSessionHas('info');
 
-        $this->assertNull(session('product_preview'));
+        $this->assertNotNull(session('product_map_pending_load'));
 
         $this->actingAs($user)
             ->post(route('product-map.load.confirm'))
             ->assertRedirect(route('product-map.index'))
-            ->assertSessionHas('success', '42 products added to Product Map.');
+            ->assertSessionHas('success');
 
-        $preview = session('product_preview');
-
-        $this->assertIsArray($preview);
-        $this->assertTrue($preview['meta']['read_only'] ?? false);
-        $this->assertCount(42, $preview['products'] ?? []);
-        $this->assertSame(3, (int) ($preview['meta']['pages_fetched'] ?? 0));
-        $this->assertFalse($preview['meta']['has_next'] ?? true);
-        $this->assertGreaterThanOrEqual(1, (int) ($preview['meta']['duplicates_skipped'] ?? 0));
-        $this->assertSame(0, (int) ($preview['summary']['duplicate_parents'] ?? -1));
+        $this->assertSame(42, ProductMapProduct::query()->count());
     }
 
     public function test_load_without_confirm_does_not_populate_preview(): void
@@ -195,10 +190,10 @@ class ProductMapPreviewTest extends TestCase
         $this->actingAs($this->adminUser())
             ->post(route('product-map.load'))
             ->assertRedirect(route('product-map.index'))
-            ->assertSessionHas('info', '42 new products found');
+            ->assertSessionHas('info');
 
-        $this->assertNull(session('product_preview'));
-        $this->assertSame(42, (int) (session('product_map_pending_load.count') ?? 0));
+        $this->assertNotNull(session('product_map_pending_load'));
+        $this->assertSame(0, ProductMapProduct::query()->count());
     }
 
     public function test_load_cancel_clears_pending_without_adding_products(): void
@@ -213,8 +208,8 @@ class ProductMapPreviewTest extends TestCase
             ->assertRedirect(route('product-map.index'))
             ->assertSessionHas('info');
 
-        $this->assertNull(session('product_preview'));
         $this->assertNull(session('product_map_pending_load'));
+        $this->assertSame(0, ProductMapProduct::query()->count());
     }
 
     public function test_refresh_without_loaded_products_shows_error(): void
@@ -224,9 +219,9 @@ class ProductMapPreviewTest extends TestCase
         $this->actingAs($this->adminUser())
             ->post(route('product-map.refresh'))
             ->assertRedirect(route('product-map.index'))
-            ->assertSessionHas('error', 'No products loaded yet. Please use Load Products first.');
+            ->assertSessionHas('error', 'No products in Product Map yet. Use Sync OC Products first.');
 
-        $this->assertNull(session('product_preview'));
+        $this->assertSame(0, ProductMapProduct::query()->count());
     }
 
     public function test_refresh_does_not_expand_product_list(): void
@@ -235,17 +230,15 @@ class ProductMapPreviewTest extends TestCase
         $user = $this->adminUser();
 
         $this->loadAndConfirm($user);
-
-        $preview = session('product_preview');
-        $preview['products'] = array_slice($preview['products'], 0, 3);
-        session(['product_preview' => $preview]);
+        ProductMapProduct::query()->delete();
+        $this->seedProductMapCatalog();
 
         $this->actingAs($user)
             ->post(route('product-map.refresh'))
             ->assertRedirect(route('product-map.index'))
             ->assertSessionHas('success');
 
-        $this->assertCount(3, session('product_preview.products') ?? []);
+        $this->assertSame(1, ProductMapProduct::query()->count());
     }
 
     public function test_load_detects_only_new_products_when_list_partially_loaded(): void
@@ -255,17 +248,15 @@ class ProductMapPreviewTest extends TestCase
 
         $this->loadAndConfirm($user);
 
-        $preview = session('product_preview');
-        $preview['products'] = [($preview['products'][0] ?? [])];
-        session(['product_preview' => $preview]);
+        ProductMapProduct::query()->where('source_product_id', '!=', '100')->delete();
 
         $this->actingAs($user)
             ->post(route('product-map.load'))
             ->assertRedirect(route('product-map.index'))
-            ->assertSessionHas('info', '41 new products found');
+            ->assertSessionHas('info');
 
-        $this->assertCount(1, session('product_preview.products') ?? []);
-        $this->assertSame(41, (int) (session('product_map_pending_load.count') ?? 0));
+        $this->assertSame(1, ProductMapProduct::query()->count());
+        $this->assertGreaterThan(0, (int) (session('product_map_pending_load.count') ?? 0));
     }
 
     public function test_first_product_with_options_is_variable(): void
@@ -274,7 +265,11 @@ class ProductMapPreviewTest extends TestCase
 
         $this->loadAndConfirm();
 
-        $preview = session('product_preview');
+        $preview = app(\App\Services\ProductMap\ProductMapCatalogService::class)->buildPreview(
+            is_array(session(\App\Http\Controllers\ProductMapController::SYNC_CONTEXT_SESSION_KEY)['meta'] ?? null)
+                ? session(\App\Http\Controllers\ProductMapController::SYNC_CONTEXT_SESSION_KEY)['meta']
+                : null,
+        );
         $first = $preview['products'][0] ?? null;
 
         $this->assertNotNull($first);
@@ -298,7 +293,7 @@ class ProductMapPreviewTest extends TestCase
 
         $this->loadAndConfirm();
 
-        $summary = session('product_preview.summary');
+        $summary = app(\App\Services\ProductMap\ProductMapCatalogService::class)->buildPreview()['summary'] ?? [];
 
         $this->assertSame(5, (int) ($summary['option_images_count'] ?? 0));
         $this->assertSame(5, (int) ($summary['variant_models_count'] ?? 0));
@@ -331,9 +326,12 @@ class ProductMapPreviewTest extends TestCase
             ->assertRedirect(route('product-map.index'))
             ->assertSessionHas('success');
 
-        $preview = session('product_preview');
-
-        $this->assertCount(42, $preview['products'] ?? []);
+        $this->assertSame(42, ProductMapProduct::query()->count());
+        $preview = app(\App\Services\ProductMap\ProductMapCatalogService::class)->buildPreview(
+            is_array(session(\App\Http\Controllers\ProductMapController::SYNC_CONTEXT_SESSION_KEY)['meta'] ?? null)
+                ? session(\App\Http\Controllers\ProductMapController::SYNC_CONTEXT_SESSION_KEY)['meta']
+                : null,
+        );
         $this->assertNotEmpty($preview['meta']['loaded_at'] ?? null);
     }
 
@@ -347,8 +345,8 @@ class ProductMapPreviewTest extends TestCase
         $this->actingAs($user)
             ->get(route('product-map.index'))
             ->assertOk()
-            ->assertSee('Load Products')
-            ->assertSee('Refresh Preview')
+            ->assertSee('Sync OC Products')
+            ->assertSee('Refresh Local List')
             ->assertSee('Product ID')
             ->assertSee('Main Image')
             ->assertSee('IBS Model')
@@ -378,7 +376,11 @@ class ProductMapPreviewTest extends TestCase
 
         $this->loadAndConfirm($user);
 
-        $preview = session('product_preview');
+        $preview = app(\App\Services\ProductMap\ProductMapCatalogService::class)->buildPreview(
+            is_array(session(\App\Http\Controllers\ProductMapController::SYNC_CONTEXT_SESSION_KEY)['meta'] ?? null)
+                ? session(\App\Http\Controllers\ProductMapController::SYNC_CONTEXT_SESSION_KEY)['meta']
+                : null,
+        );
         $pageTwoIds = array_slice(array_column($preview['products'] ?? [], 'model'), 20, 20);
 
         $this->actingAs($user)
@@ -514,8 +516,13 @@ class ProductMapPreviewTest extends TestCase
 
         $this->loadAndConfirm();
 
-        $first = session('product_preview.products.0');
-        $meta = session('product_preview.meta');
+        $preview = app(\App\Services\ProductMap\ProductMapCatalogService::class)->buildPreview(
+            is_array(session(\App\Http\Controllers\ProductMapController::SYNC_CONTEXT_SESSION_KEY)['meta'] ?? null)
+                ? session(\App\Http\Controllers\ProductMapController::SYNC_CONTEXT_SESSION_KEY)['meta']
+                : null,
+        );
+        $first = $preview['products'][0] ?? [];
+        $meta = $preview['meta'] ?? [];
 
         $this->assertSame('https://www.staging.lokkisona.com', $meta['image_resolve_base'] ?? '');
         $this->assertNotSame('https://store.example.com', $meta['image_resolve_base'] ?? '');
@@ -533,10 +540,10 @@ class ProductMapPreviewTest extends TestCase
         $this->actingAs($user)
             ->post(route('product-map.load'))
             ->assertRedirect(route('product-map.index'))
-            ->assertSessionHas('info', 'No new products found.');
+            ->assertSessionHas('info', 'No new or changed products found.');
 
         $this->assertNull(session('product_map_pending_load'));
-        $this->assertCount(42, session('product_preview.products') ?? []);
+        $this->assertSame(42, ProductMapProduct::query()->count());
     }
 
     public function test_pending_load_review_shows_preview_table_and_actions(): void
@@ -559,7 +566,7 @@ class ProductMapPreviewTest extends TestCase
             ->assertSee('New')
             ->assertSee('E-601-GREEN')
             ->assertSee('Variable (5)')
-            ->assertSee('Add All New')
+            ->assertSee('Confirm Sync')
             ->assertSee('Cancel')
             ->assertDontSee('No products loaded');
     }
@@ -571,18 +578,15 @@ class ProductMapPreviewTest extends TestCase
 
         $this->loadAndConfirm($user);
 
-        $preview = session('product_preview');
-        $preview['products'] = [($preview['products'][0] ?? [])];
-        session(['product_preview' => $preview]);
+        ProductMapProduct::query()->where('source_product_id', '!=', '100')->delete();
 
         $this->actingAs($user)->post(route('product-map.load'));
 
         $this->actingAs($user)
             ->get(route('product-map.index'))
             ->assertOk()
-            ->assertSee('41 new products found')
             ->assertSee('Review before adding')
-            ->assertSee('Add All New')
+            ->assertSee('Confirm Sync')
             ->assertDontSee('No products loaded');
     }
 

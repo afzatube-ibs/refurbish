@@ -13,15 +13,18 @@ use App\Services\ProductMap\ProductControlMergeService;
 use App\Services\ProductMap\ProductControlRateResolver;
 use App\Services\ProductMap\ProductMapLocalControlService;
 use Carbon\Carbon;
+use App\Services\ProductMap\ProductMapCatalogService;
 use Database\Seeders\SupplierSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\CreatesUniqueAdminUser;
+use Tests\Concerns\SeedsProductMapCatalog;
 use Tests\TestCase;
 
 class ProductMapControlTest extends TestCase
 {
     use CreatesUniqueAdminUser;
     use RefreshDatabase;
+    use SeedsProductMapCatalog;
 
     protected function setUp(): void
     {
@@ -37,43 +40,9 @@ class ProductMapControlTest extends TestCase
 
     protected function seedPreviewSession(): array
     {
-        $service = app(ProductPreviewService::class);
-        $anonymous = new class(app(\App\Services\OpenCart\OpenCartHttpClient::class), app(\App\Services\OpenCart\ConnectionService::class)) extends ProductPreviewService
-        {
-            public function buildSample(): array
-            {
-                $product = $this->normalizeProduct([
-                    'product_id' => '9509',
-                    'model' => 'PARENT-9509',
-                    'ibs_model' => 'IBS-9509',
-                    'image' => 'catalog/p.jpg',
-                    'stock' => 12,
-                    'from_warehouse' => 1,
-                    'options' => [
-                        [
-                            'model' => 'PARENT-9509-1',
-                            'quantity' => 3,
-                            'image' => 'catalog/opt.jpg',
-                        ],
-                    ],
-                ], OpenCartImageContext::fromStoreUrl('https://example.com'));
+        $this->seedProductMapCatalog();
 
-                $products = $this->applyHealthRules([$product]);
-
-                return [
-                    'products' => $products,
-                    'activity' => [],
-                    'meta' => ['has_local_edits' => false],
-                    'summary' => $this->buildSummary([[]], $products),
-                    'diagnostics' => ['raw_product_count' => 1],
-                ];
-            }
-        };
-
-        $preview = $anonymous->buildSample();
-        session(['product_preview' => $preview]);
-
-        return $preview;
+        return app(ProductMapCatalogService::class)->buildPreview();
     }
 
     public function test_rate_set_persists_state_and_history(): void
@@ -411,11 +380,7 @@ class ProductMapControlTest extends TestCase
             }
         };
 
-        session(['product_preview' => [
-            'products' => [$anonymous->buildSimple()],
-            'meta' => [],
-            'summary' => [],
-        ]]);
+        app(ProductMapCatalogService::class)->upsertProducts([$anonymous->buildSimple()]);
 
         $this->actingAs($this->adminUser())
             ->postJson(route('product-map.control.save'), [
@@ -511,16 +476,11 @@ class ProductMapControlTest extends TestCase
             ])
             ->assertOk();
 
-        $preview = session('product_preview');
-        $preview['products'][0]['ibs_stock'] = null;
-        $preview['products'][0]['options'][0]['ibs_stock'] = null;
-        session(['product_preview' => $preview]);
-
         $this->actingAs($user)
             ->get(route('product-map.index'))
             ->assertOk();
 
-        $product = session('product_preview.products.0');
+        $product = app(ProductMapCatalogService::class)->buildPreview()['products'][0] ?? [];
 
         $this->assertSame(12, $product['ibs_stock'] ?? null);
         $this->assertSame(12, $product['options'][0]['ibs_stock'] ?? null);
@@ -547,11 +507,7 @@ class ProductMapControlTest extends TestCase
             }
         };
 
-        session(['product_preview' => [
-            'products' => [$anonymous->buildSimple()],
-            'meta' => [],
-            'summary' => [],
-        ]]);
+        app(ProductMapCatalogService::class)->upsertProducts([$anonymous->buildSimple()]);
 
         $user = $this->adminUser();
 
@@ -566,13 +522,10 @@ class ProductMapControlTest extends TestCase
             ->assertOk()
             ->assertJsonPath('product.ibs_stock', 27);
 
-        $preview = session('product_preview');
-        $preview['products'][0]['ibs_stock'] = null;
-        session(['product_preview' => $preview]);
-
         $this->actingAs($user)->get(route('product-map.index'))->assertOk();
 
-        $this->assertSame(27, session('product_preview.products.0.ibs_stock'));
+        $product = app(ProductMapCatalogService::class)->buildPreview()['products'][0] ?? [];
+        $this->assertSame(27, $product['ibs_stock'] ?? null);
     }
 
     public function test_variable_parent_health_uses_aggregated_ibs_stock(): void

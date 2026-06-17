@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Connection;
 use App\Services\OpenCart\ConnectionService;
 use App\Services\OrderMap\OrderMapLoadLogService;
+use App\Services\ProductMap\ProductMapCatalogService;
 use App\Services\ProductMap\ProductMapLogsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -15,6 +16,7 @@ class LogsDiagnosticsService
         private readonly ConnectionService $connectionService,
         private readonly ProductMapLogsService $productMapLogsService,
         private readonly OrderMapLoadLogService $orderMapLoadLogService,
+        private readonly ProductMapCatalogService $productMapCatalogService,
     ) {}
 
     /**
@@ -225,23 +227,24 @@ class LogsDiagnosticsService
      */
     protected function productMapTab(): array
     {
-        $preview = session('product_preview');
-        $hasPreview = is_array($preview);
-        $meta = $hasPreview ? ($preview['meta'] ?? []) : [];
-        $summaryData = $hasPreview ? ($preview['summary'] ?? []) : [];
-        $diagnostics = $hasPreview ? ($preview['diagnostics'] ?? []) : [];
-        $activity = $hasPreview ? ($preview['activity'] ?? []) : [];
+        $hasPreview = $this->productMapCatalogService->hasProducts();
+        $preview = $hasPreview ? $this->productMapCatalogService->buildPreview() : null;
+        $meta = is_array($preview) ? ($preview['meta'] ?? []) : [];
+        $summaryData = is_array($preview) ? ($preview['summary'] ?? []) : [];
+        $syncContext = session(\App\Http\Controllers\ProductMapController::SYNC_CONTEXT_SESSION_KEY);
+        $diagnostics = is_array($syncContext['diagnostics'] ?? null) ? $syncContext['diagnostics'] : [];
+        $activity = is_array($preview) ? ($preview['activity'] ?? []) : [];
         $sessionLogs = $this->productMapLogsService->all();
 
         $loadedAt = $meta['loaded_at'] ?? ($sessionLogs['last_action_at'] ?? null);
         $healthOk = $summaryData['health_ok'] ?? null;
 
         $status = 'neutral';
-        $statusLabel = 'No preview loaded';
+        $statusLabel = 'No products in database';
 
         if ($hasPreview) {
             $status = $healthOk === false ? 'warning' : 'ok';
-            $statusLabel = $healthOk === false ? 'Preview loaded — review health flags' : 'Preview loaded';
+            $statusLabel = $healthOk === false ? 'Database catalog loaded — review health flags' : 'Database catalog loaded';
         } elseif ($this->productMapLogsService->hasClearableLogs()) {
             $status = 'neutral';
             $statusLabel = 'Diagnostic logs available';
@@ -258,13 +261,14 @@ class LogsDiagnosticsService
         }
 
         $summary = [
-            'Preview loaded' => $hasPreview ? 'Yes' : 'No',
+            'App version' => (string) config('dropflow.version', 'v0.6.2'),
+            'Catalog source' => $hasPreview ? 'DropFlow database' : '—',
             'Warehouse products' => $hasPreview ? (string) ($meta['warehouse_count'] ?? count($preview['products'] ?? [])) : '—',
-            'Pages fetched' => $hasPreview ? (string) ($meta['pages_fetched'] ?? '—') : '—',
+            'Pages fetched (last sync)' => $hasPreview ? (string) ($meta['pages_fetched'] ?? '—') : '—',
             'Unique IBS models' => $hasPreview ? (string) ($summaryData['unique_ibs_models'] ?? '—') : '—',
             'Health OK' => $hasPreview ? ($healthOk ? 'Yes' : 'Needs review') : '—',
             'Option images' => $hasPreview ? (string) ($summaryData['option_images_count'] ?? '—') : '—',
-            'Endpoint' => $hasPreview ? ($meta['endpoint'] ?? '—') : '—',
+            'Last sync endpoint' => $hasPreview ? ($meta['endpoint'] ?? '—') : '—',
         ];
 
         if (($sessionLogs['last_action'] ?? null) !== null) {
@@ -279,7 +283,7 @@ class LogsDiagnosticsService
                 'reserved' => 'SM Model',
                 'live_source' => 'LK (OpenCart via IBS connector)',
                 'scope' => 'Warehouse products only',
-                'mode' => 'Read-only preview — no import or database writes',
+                'mode' => 'Database-backed catalog — OpenCart sync on demand',
             ],
             'session_logs' => $sessionLogs !== [] ? $sessionLogs : null,
             'meta' => $meta,
@@ -320,6 +324,7 @@ class LogsDiagnosticsService
 
         $summary = [
             'Environment' => config('app.env'),
+            'App version' => (string) config('dropflow.version', 'v0.6.2'),
             'Debug mode' => config('app.debug') ? 'On' : 'Off',
             'PHP' => PHP_VERSION,
             'Laravel' => app()->version(),

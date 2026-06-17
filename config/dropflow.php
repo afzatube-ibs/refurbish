@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'version' => 'v0.6.5',
+    'version' => 'v0.6.6',
 
     'product_batch_size' => 50,
     'product_preview_target' => (int) env('DROPflow_PRODUCT_PREVIEW_TARGET', 42),

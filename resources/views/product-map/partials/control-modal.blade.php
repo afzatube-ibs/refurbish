@@ -1,15 +1,18 @@
 <div class="modal-overlay" id="productControlCenterModal" hidden aria-hidden="true">
     <div class="modal-panel modal-panel-product-control pcc-v202-panel" role="dialog" aria-labelledby="pccModalTitle" aria-modal="true">
         <div class="pcc-v202-header">
-            <h2 class="pcc-modal-title" id="pccModalTitle">Product Control</h2>
+            <div class="pcc-modal-heading">
+                <h2 class="pcc-modal-title" id="pccModalTitle">Edit supplier fields</h2>
+                <p class="pcc-modal-subtitle">IBS models, rates, stock, and category — saved in DropFlow only. LK snapshot fields are read-only.</p>
+            </div>
             <button type="button" class="modal-close" data-close-control-modal aria-label="Close">&times;</button>
         </div>
 
         <p class="pcc-modal-error" id="pccModalError" hidden role="alert"></p>
 
         <div class="pcc-tabs pcc-v202-tabs" role="tablist">
-            <button type="button" class="pcc-tab is-active" data-pcc-tab="details" role="tab" aria-selected="true">Product Details</button>
-            <button type="button" class="pcc-tab" data-pcc-tab="history" role="tab" aria-selected="false">Rate / Stock History</button>
+            <button type="button" class="pcc-tab is-active" data-pcc-tab="details" role="tab" aria-selected="true">Fields</button>
+            <button type="button" class="pcc-tab" data-pcc-tab="history" role="tab" aria-selected="false">Rate / stock history</button>
         </div>
 
         <form id="productControlCenterForm" class="pcc-v202-form">
@@ -18,13 +21,13 @@
             <div class="pcc-tab-panel is-active pcc-v202-tab-panel" data-pcc-panel="details">
                 <div class="pcc-v202-workspace" id="pccWorkspace">
                     <div class="pcc-v202-top-split">
-                        <section class="pcc-v202-snapshot" aria-label="Product information">
+                        <section class="pcc-v202-snapshot" aria-label="LK snapshot">
                             <div class="pcc-v202-snapshot-image" id="pccMainImageWrap">
                                 <div class="pcc-image-placeholder-card pcc-v202-img-placeholder" id="pccImagePlaceholder"><span>No image</span></div>
                                 <img src="" alt="" class="pcc-product-image pcc-v202-product-image" id="pccProductImage" hidden>
                             </div>
                             <div class="pcc-v202-snapshot-body">
-                                <h3 class="pcc-v202-section-title">Product Information</h3>
+                                <h3 class="pcc-v202-section-title">LK snapshot <span class="pcc-readonly-tag">read-only</span></h3>
                                 <dl class="pcc-v202-facts">
                                     <div class="pcc-v202-fact"><dt>LK Product ID</dt><dd id="pccProductIdDisplay">—</dd></div>
                                     <div class="pcc-v202-fact"><dt>LK Model</dt><dd id="pccMainModel">—</dd></div>
@@ -33,8 +36,8 @@
                             </div>
                         </section>
 
-                        <section class="pcc-v202-supplier" id="pccVendorMappingCard" aria-label="Supplier control fields">
-                            <h3 class="pcc-v202-section-title">Supplier Control</h3>
+                        <section class="pcc-v202-supplier" id="pccVendorMappingCard" aria-label="IBS local fields">
+                            <h3 class="pcc-v202-section-title">IBS local fields</h3>
                             <div class="pcc-v202-supplier-fields" id="pccSupplierFields">
                                 <div class="pcc-v202-field-row" data-supplier-field="ibs_model">
                                     <span class="pcc-v202-field-label">IBS Model</span>
@@ -64,7 +67,7 @@
                     <section class="pcc-v202-options" id="pccVariantSection" hidden>
                         <div class="pcc-v202-options-head">
                             <h3 class="pcc-v202-options-title">Option Rows</h3>
-                            <span class="pcc-v202-options-hint">Double-click cell to edit</span>
+                            <span class="pcc-v202-options-hint">Double-click a cell to edit · changes save with Save all</span>
                         </div>
                         <div class="pcc-v202-table-wrap">
                             <table class="data-table pcc-variant-lines-table pcc-v202-table pcc-dropflow-table" id="pccVariantLinesTable">
@@ -88,7 +91,7 @@
                     <section class="pcc-v202-options" id="pccSimpleTableSection" hidden>
                         <div class="pcc-v202-options-head">
                             <h3 class="pcc-v202-options-title">Product Row</h3>
-                            <span class="pcc-v202-options-hint">Double-click cell to edit</span>
+                            <span class="pcc-v202-options-hint">Double-click a cell to edit · changes save with Save all</span>
                         </div>
                         <div class="pcc-v202-table-wrap">
                             <table class="data-table pcc-variant-lines-table pcc-v202-table pcc-dropflow-table" id="pccSimpleLinesTable">
@@ -111,9 +114,9 @@
                 </div>
 
                 <div class="pcc-v202-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" id="pccCancelBtn" hidden>Cancel Changes</button>
-                    <button type="submit" class="btn btn-primary" id="pccSaveBtn" disabled>Save All Changes</button>
                     <button type="button" class="btn btn-secondary btn-sm" data-close-control-modal>Close</button>
+                    <button type="button" class="btn btn-secondary btn-sm" id="pccCancelBtn" hidden>Discard changes</button>
+                    <button type="submit" class="btn btn-primary" id="pccSaveBtn" disabled>Save all changes</button>
                 </div>
             </div>
 

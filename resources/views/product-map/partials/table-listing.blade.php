@@ -51,7 +51,7 @@
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">Product Type</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">Category</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">Health</th>
-                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">History</th>
+                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">Actions</th>
                 </tr>
             </thead>
         </table>
@@ -128,8 +128,9 @@
                                         class="product-control-edit-btn"
                                         data-control-open
                                         data-product-index="{{ $index }}"
-                                        data-product-id="{{ $productId }}">
-                                    Edit
+                                        data-product-id="{{ $productId }}"
+                                        title="Edit IBS rate, stock, models, and category">
+                                    Edit fields
                                 </button>
                             </td>
                         </tr>
@@ -191,13 +192,16 @@
         </div>
     @empty
         <div class="product-map-group">
-            <div class="text-center text-slate-500 py-16 px-4">
+            <div class="pm-empty-state">
+                <div class="pm-empty-state-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                </div>
                 @if ($previewLoaded)
-                    <p class="font-medium text-slate-700 mb-1">No products match the current filters</p>
-                    <p class="text-sm">Try adjusting search or filter options, or <a href="{{ route('product-map.index') }}" class="text-slate-700 underline">clear filters</a>.</p>
+                    <p class="pm-empty-state-title">No products match your filters</p>
+                    <p class="pm-empty-state-text">Try adjusting search or filter options, or <a href="{{ route('product-map.index') }}" class="text-slate-700 underline">clear filters</a>.</p>
                 @else
-                    <p class="font-medium text-slate-700 mb-1">No LK products saved yet.</p>
-                    <p class="text-sm">Click <strong>Sync LK Products</strong> to fetch and save a Lokkisona snapshot into DropFlow.</p>
+                    <p class="pm-empty-state-title">No LK products saved yet</p>
+                    <p class="pm-empty-state-text">Click <strong>Sync LK Products</strong> to fetch a Lokkisona snapshot and save it into DropFlow. Supplier fields are edited from each row after sync.</p>
                 @endif
             </div>
         </div>

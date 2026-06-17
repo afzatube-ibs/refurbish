@@ -38,20 +38,13 @@
                     @if ($modules['product_map'] ?? false)
                         <a href="{{ route('product-map.index') }}"
                            class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('product-map.*') ? 'sidebar-link-active' : '' }}">
-                            Product Map
-                            <span class="ml-1 text-[10px] uppercase text-sky-400">Step 2A</span>
-                        </a>
-                        <a href="{{ route('product-map.index') }}"
-                           class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('product-map.*') ? 'sidebar-link-active' : '' }}">
-                            Product Control
-                            <span class="ml-1 text-[10px] uppercase text-violet-400">Step 2B</span>
+                            <span class="block">Product Map</span>
+                            <span class="block text-[11px] text-slate-500 mt-0.5 font-normal">Catalog &amp; supplier fields</span>
                         </a>
                     @else
                         <span class="block rounded-md px-3 py-2 text-slate-500 cursor-not-allowed">
-                            Product Map <span class="ml-1 text-[10px] uppercase text-sky-400">Step 2A</span>
-                        </span>
-                        <span class="block rounded-md px-3 py-2 text-slate-500 cursor-not-allowed">
-                            Product Control <span class="ml-1 text-[10px] uppercase text-violet-400">Step 2B</span>
+                            <span class="block">Product Map</span>
+                            <span class="block text-[11px] mt-0.5">Catalog &amp; supplier fields</span>
                         </span>
                     @endif
 
@@ -97,7 +90,7 @@
 
             <div class="px-5 py-4 border-t border-slate-700 text-xs">
                 <p class="text-slate-400 truncate">{{ auth()->user()->name }}</p>
-                <p class="text-slate-500 mt-1">{{ config('dropflow.version', 'v0.6.5') }}</p>
+                <p class="text-slate-500 mt-1">{{ config('dropflow.version', 'v0.6.6') }}</p>
                 <form method="POST" action="{{ route('logout') }}" class="mt-2">
                     @csrf
                     <button type="submit" class="text-slate-400 hover:text-white">Sign out</button>

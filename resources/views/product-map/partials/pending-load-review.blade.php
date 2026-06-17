@@ -14,7 +14,7 @@
 <div class="pm-pending-review-card product-map-list-card">
     <div class="pm-pending-review-header">
         <div>
-            <h2 class="pm-pending-review-title">Review before adding</h2>
+            <h2 class="pm-pending-review-title">Review LK changes</h2>
             @if ($isFirstLoad)
                 <p class="pm-pending-review-subtitle">
                     {{ $pendingCount === 1 ? '1 product fetched' : $pendingCount.' products fetched' }} from Lokkisona.

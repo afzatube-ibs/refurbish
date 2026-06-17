@@ -10,7 +10,7 @@
 
 <div class="pm-filter-card">
     <div class="pm-filter-card-head">
-        <h2 class="pm-filter-title">Search &amp; Filter</h2>
+        <h2 class="pm-filter-title">Filter catalog</h2>
     </div>
     <form method="GET" action="{{ route('product-map.index') }}" class="pm-filter-form">
         <div class="pm-filter-row">

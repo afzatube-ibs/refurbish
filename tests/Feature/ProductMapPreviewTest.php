@@ -157,7 +157,7 @@ class ProductMapPreviewTest extends TestCase
             ->get(route('product-map.index'))
             ->assertOk()
             ->assertSee('Product Mapping Center')
-            ->assertSee('Sync OC Products')
+            ->assertSee('Sync LK Products')
             ->assertSee('No products loaded')
             ->assertDontSee('Parent View')
             ->assertDontSee('Variant View');
@@ -219,7 +219,7 @@ class ProductMapPreviewTest extends TestCase
         $this->actingAs($this->adminUser())
             ->post(route('product-map.refresh'))
             ->assertRedirect(route('product-map.index'))
-            ->assertSessionHas('error', 'No products in Product Map yet. Use Sync OC Products first.');
+            ->assertSessionHas('error', 'No products in Product Map yet. Use Sync LK Products first.');
 
         $this->assertSame(0, ProductMapProduct::query()->count());
     }
@@ -345,7 +345,7 @@ class ProductMapPreviewTest extends TestCase
         $this->actingAs($user)
             ->get(route('product-map.index'))
             ->assertOk()
-            ->assertSee('Sync OC Products')
+            ->assertSee('Sync LK Products')
             ->assertSee('Refresh Local List')
             ->assertSee('Product ID')
             ->assertSee('Main Image')
@@ -559,8 +559,8 @@ class ProductMapPreviewTest extends TestCase
             ->assertOk()
             ->assertSee('Review before adding')
             ->assertSee('42 products fetched')
-            ->assertSee('OC Product ID')
-            ->assertSee('OC Model')
+            ->assertSee('LK Product ID')
+            ->assertSee('LK Model')
             ->assertSee('Type')
             ->assertSee('Status')
             ->assertSee('New')

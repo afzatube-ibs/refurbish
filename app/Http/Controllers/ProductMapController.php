@@ -157,7 +157,7 @@ class ProductMapController extends Controller
             if ($changes === []) {
                 $message = $this->catalogService->hasProducts()
                     ? 'No new or changed products found.'
-                    : 'No products found in OpenCart.';
+                    : 'No products found in Lokkisona.';
 
                 return redirect()
                     ->route('product-map.index')
@@ -202,7 +202,7 @@ class ProductMapController extends Controller
         if (! is_array($pending) || empty($pending['products'])) {
             return redirect()
                 ->route('product-map.index')
-                ->with('error', 'No pending products to sync. Use Sync OC Products first.');
+                ->with('error', 'No pending products to sync. Use Sync LK Products first.');
         }
 
         try {
@@ -241,7 +241,7 @@ class ProductMapController extends Controller
 
         return redirect()
             ->route('product-map.index')
-            ->with('info', 'OpenCart sync cancelled.');
+            ->with('info', 'LK sync cancelled.');
     }
 
     public function refresh(): RedirectResponse
@@ -249,7 +249,7 @@ class ProductMapController extends Controller
         if (! $this->catalogService->hasProducts()) {
             return redirect()
                 ->route('product-map.index')
-                ->with('error', 'No products in Product Map yet. Use Sync OC Products first.');
+                ->with('error', 'No products in Product Map yet. Use Sync LK Products first.');
         }
 
         try {

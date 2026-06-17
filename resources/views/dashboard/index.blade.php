@@ -8,7 +8,7 @@
 <div class="max-w-3xl space-y-6">
     {{-- Connection status --}}
     <div class="bg-white rounded-lg border border-slate-200 p-6">
-        <h2 class="font-medium text-slate-900 mb-2">OpenCart Connection</h2>
+        <h2 class="font-medium text-slate-900 mb-2">LK Connector</h2>
         @if ($connectionSaved ?? false)
             <p class="text-sm text-emerald-700">Active connection saved for <span class="font-medium">{{ $connection->store_url }}</span></p>
             <p class="text-xs text-slate-500 mt-1">Supplier filter: {{ $connection->supplier_filter }}</p>
@@ -29,7 +29,7 @@
                         Connection
                         <span class="ml-2 text-xs font-normal text-emerald-700">Complete</span>
                     </p>
-                    <p class="text-sm text-slate-500 mt-1">Live read-only OpenCart connection. Test all checks, then save.</p>
+                    <p class="text-sm text-slate-500 mt-1">Live read-only LK connector. Test all checks, then save.</p>
                 </div>
             </li>
             <li class="flex gap-4">

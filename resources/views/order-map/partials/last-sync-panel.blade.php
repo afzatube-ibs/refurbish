@@ -14,7 +14,7 @@
                 <p class="order-map-sync-time">{{ \Carbon\Carbon::parse($lastSync['recorded_at'])->format('d M Y H:i') }}</p>
             @endif
             <dl class="order-map-sync-stats">
-                <div><dt>Fetched from OC</dt><dd>{{ (int) ($lastSync['fetched'] ?? 0) }}</dd></div>
+                <div><dt>Fetched from LK</dt><dd>{{ (int) ($lastSync['fetched'] ?? 0) }}</dd></div>
                 @if (($lastSync['mode'] ?? '') === 'import')
                     <div><dt>Imported</dt><dd>{{ (int) ($lastSync['imported'] ?? 0) }}</dd></div>
                     <div><dt>Duplicates skipped</dt><dd>{{ (int) ($lastSync['duplicates_skipped'] ?? 0) }}</dd></div>
@@ -51,7 +51,7 @@
                         <thead>
                             <tr>
                                 <th>Order No</th>
-                                <th>OC Status</th>
+                                <th>LK Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -75,7 +75,7 @@
                         <thead>
                             <tr>
                                 <th>Order No</th>
-                                <th>OC Status</th>
+                                <th>LK Status</th>
                                 <th>Reason</th>
                             </tr>
                         </thead>

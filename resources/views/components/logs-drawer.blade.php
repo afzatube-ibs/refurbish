@@ -130,7 +130,7 @@
 
                             @if ($key === 'product-map' && ($tab['reset_route'] ?? null))
                                 @php
-                                    $canResetProductMap = app(\App\Services\ProductMap\ProductMapCatalogService::class)->hasProducts()
+                                    $canResetProductMap = app(\App\Services\ProductMap\ProductMapCatalogService::class)->hasProductsSafely()
                                         || is_array(session('product_map_pending_load'));
                                 @endphp
                                 @if ($canResetProductMap)

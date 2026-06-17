@@ -5,7 +5,7 @@
 @section('page-subtitle', 'Product Mapping Center')
 
 @section('page-badge')
-    <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">{{ config('dropflow.version', 'v0.6.2') }}</span>
+    <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">{{ config('dropflow.version', 'v0.6.3') }}</span>
 @endsection
 
 @section('page-actions')
@@ -17,8 +17,8 @@
     <button type="submit"
             @disabled(! ($connectionReady ?? false))
             class="header-action-btn header-action-btn--primary"
-            title="{{ ($connectionReady ?? false) ? 'Fetch OpenCart product snapshot' : 'Save an active connection first' }}">
-        Sync OC Products
+            title="{{ ($connectionReady ?? false) ? 'Fetch LK product snapshot' : 'Save an active connection first' }}">
+        Sync LK Products
     </button>
 </form>
 

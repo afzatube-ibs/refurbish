@@ -18,7 +18,7 @@
                     @endif
                     <th class="text-left font-medium text-slate-600">Customer</th>
                     <th class="text-right font-medium text-slate-600">Sale Amount</th>
-                    <th class="text-left font-medium text-slate-600">OC Status</th>
+                    <th class="text-left font-medium text-slate-600">LK Status</th>
                     <th class="text-left font-medium text-slate-600">SFM Status</th>
                     <th class="text-left font-medium text-slate-600">Date</th>
                 </tr>

@@ -37,7 +37,7 @@
                 <tr>
                     <th>Order No</th>
                     <th>Customer</th>
-                    <th>OC Status</th>
+                    <th>LK Status</th>
                     <th>Product Card</th>
                     <th class="order-map-num">Total Qty</th>
                     <th class="order-map-num">Total Cost</th>

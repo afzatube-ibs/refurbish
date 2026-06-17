@@ -2,7 +2,7 @@
 
 @section('title', 'Connection — DropFlow SFM')
 @section('page-title', 'Connection')
-@section('page-subtitle', 'Live Store Bridge')
+@section('page-subtitle', 'LK Connector — Live Store Bridge')
 
 @section('page-badge')
 @php
@@ -66,15 +66,15 @@
                             <dd class="font-medium text-slate-900 tracking-widest">{{ $hasToken ? '••••••••••••' : '—' }}</dd>
                         </div>
                         <div>
-                            <dt class="text-slate-500 mb-1">Product API Endpoint</dt>
+                            <dt class="text-slate-500 mb-1">LK Product API Endpoint</dt>
                             <dd class="text-slate-800 break-all">{{ $display['product_api_endpoint'] ?: '—' }}</dd>
                         </div>
                         <div>
-                            <dt class="text-slate-500 mb-1">Order API Endpoint</dt>
+                            <dt class="text-slate-500 mb-1">LK Order API Endpoint</dt>
                             <dd class="text-slate-800 break-all">{{ $display['order_api_endpoint'] ?: '—' }}</dd>
                         </div>
                         <div>
-                            <dt class="text-slate-500 mb-1">Order Status API Endpoint</dt>
+                            <dt class="text-slate-500 mb-1">LK Order Status API Endpoint</dt>
                             <dd class="text-slate-800 break-all">{{ $display['order_status_api_endpoint'] ?: '—' }}</dd>
                         </div>
                         <div>
@@ -90,7 +90,7 @@
             @else
                 <form method="POST" action="{{ route('connection.update') }}" id="connection-form" class="p-6 space-y-5">
                     @csrf
-                    <input type="hidden" name="connection_test_passed" id="connection-test-passed" value="{{ $testPassed ? '1' : '0' }}">
+                    <input type="hidden" name="connection_test_passed" id="connection-test-passed" value="{{ $canSave ? '1' : '0' }}">
 
                     @if ($hasSavedConnection)
                         <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-100">
@@ -122,14 +122,14 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="product_api_endpoint" class="block text-sm font-medium text-slate-700 mb-1">Product API Endpoint</label>
+                            <label for="product_api_endpoint" class="block text-sm font-medium text-slate-700 mb-1">LK Product API Endpoint</label>
                             <input type="text" name="product_api_endpoint" id="product_api_endpoint"
                                    value="{{ $display['product_api_endpoint'] }}" required
                                    placeholder="{{ $ibsDefaults['product_api_endpoint'] }}"
                                    class="connection-field w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-slate-500 focus:ring-slate-500">
                         </div>
                         <div>
-                            <label for="order_api_endpoint" class="block text-sm font-medium text-slate-700 mb-1">Order API Endpoint</label>
+                            <label for="order_api_endpoint" class="block text-sm font-medium text-slate-700 mb-1">LK Order API Endpoint</label>
                             <input type="text" name="order_api_endpoint" id="order_api_endpoint"
                                    value="{{ $display['order_api_endpoint'] }}" required
                                    placeholder="{{ $ibsDefaults['order_api_endpoint'] }}"
@@ -139,7 +139,7 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="order_status_api_endpoint" class="block text-sm font-medium text-slate-700 mb-1">Order Status API Endpoint</label>
+                            <label for="order_status_api_endpoint" class="block text-sm font-medium text-slate-700 mb-1">LK Order Status API Endpoint</label>
                             <input type="text" name="order_status_api_endpoint" id="order_status_api_endpoint"
                                    value="{{ $display['order_status_api_endpoint'] }}" required
                                    placeholder="{{ $ibsDefaults['order_status_api_endpoint'] }}"

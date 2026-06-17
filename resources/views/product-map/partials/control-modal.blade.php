@@ -26,8 +26,8 @@
                             <div class="pcc-v202-snapshot-body">
                                 <h3 class="pcc-v202-section-title">Product Information</h3>
                                 <dl class="pcc-v202-facts">
-                                    <div class="pcc-v202-fact"><dt>OC Product ID</dt><dd id="pccProductIdDisplay">—</dd></div>
-                                    <div class="pcc-v202-fact"><dt>OC Model</dt><dd id="pccMainModel">—</dd></div>
+                                    <div class="pcc-v202-fact"><dt>LK Product ID</dt><dd id="pccProductIdDisplay">—</dd></div>
+                                    <div class="pcc-v202-fact"><dt>LK Model</dt><dd id="pccMainModel">—</dd></div>
                                     <div class="pcc-v202-fact"><dt>Type</dt><dd id="pccProductType">—</dd></div>
                                 </dl>
                             </div>
@@ -72,7 +72,7 @@
                                     <tr>
                                         <th class="pcc-vcol-option">Option</th>
                                         <th class="pcc-vcol-image">Image</th>
-                                        <th class="pcc-vcol-model">OC Model</th>
+                                        <th class="pcc-vcol-model">LK Model</th>
                                         <th class="pcc-vcol-vendor">IBS Model</th>
                                         <th class="pcc-vcol-sm">SM Model</th>
                                         <th class="pcc-vcol-cost">Rate</th>
@@ -95,7 +95,7 @@
                                 <thead>
                                     <tr>
                                         <th class="pcc-vcol-image">Image</th>
-                                        <th class="pcc-vcol-model">OC Model</th>
+                                        <th class="pcc-vcol-model">LK Model</th>
                                         <th class="pcc-vcol-vendor">IBS Model</th>
                                         <th class="pcc-vcol-sm">SM Model</th>
                                         <th class="pcc-vcol-category">Product Category</th>

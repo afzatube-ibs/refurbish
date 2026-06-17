@@ -441,7 +441,7 @@ class OrderMapLoadTest extends TestCase
 
         $message = app(\App\Services\OrderMap\OrderMapLoadLogService::class)->formatBannerMessage($result);
 
-        $this->assertStringContainsString('Fetched from OC:', $message);
+        $this->assertStringContainsString('Fetched from LK:', $message);
         $this->assertStringContainsString('Update-only skipped:', $message);
         $this->assertStringContainsString('Unmatched product lines:', $message);
         $this->assertStringContainsString('status_ids:', $message);

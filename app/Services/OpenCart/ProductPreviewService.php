@@ -61,7 +61,7 @@ class ProductPreviewService
                 'endpoint' => $endpoint,
                 'read_only' => true,
                 'loaded_at' => now()->toIso8601String(),
-                'source' => 'LK (OpenCart via IBS connector)',
+                'source' => 'LK (Lokkisona via IBS connector)',
                 'mapping' => [
                     'master' => 'IBS Model',
                     'active' => 'LK Model',

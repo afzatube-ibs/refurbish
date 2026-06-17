@@ -227,8 +227,16 @@ class LogsDiagnosticsService
      */
     protected function productMapTab(): array
     {
-        $hasPreview = $this->productMapCatalogService->hasProducts();
-        $preview = $hasPreview ? $this->productMapCatalogService->buildPreview() : null;
+        $hasPreview = false;
+        $preview = null;
+
+        try {
+            $hasPreview = $this->productMapCatalogService->hasProductsSafely();
+            $preview = $hasPreview ? $this->productMapCatalogService->buildPreview() : null;
+        } catch (\RuntimeException) {
+            // Supplier not configured yet — leave Product Map diagnostics empty.
+        }
+
         $meta = is_array($preview) ? ($preview['meta'] ?? []) : [];
         $summaryData = is_array($preview) ? ($preview['summary'] ?? []) : [];
         $syncContext = session(\App\Http\Controllers\ProductMapController::SYNC_CONTEXT_SESSION_KEY);
@@ -261,7 +269,7 @@ class LogsDiagnosticsService
         }
 
         $summary = [
-            'App version' => (string) config('dropflow.version', 'v0.6.2'),
+            'App version' => (string) config('dropflow.version', 'v0.6.3'),
             'Catalog source' => $hasPreview ? 'DropFlow database' : '—',
             'Warehouse products' => $hasPreview ? (string) ($meta['warehouse_count'] ?? count($preview['products'] ?? [])) : '—',
             'Pages fetched (last sync)' => $hasPreview ? (string) ($meta['pages_fetched'] ?? '—') : '—',
@@ -281,9 +289,10 @@ class LogsDiagnosticsService
                 'master' => 'IBS Model',
                 'active' => 'LK Model — current live source',
                 'reserved' => 'SM Model',
-                'live_source' => 'LK (OpenCart via IBS connector)',
+                'live_source' => 'LK / Lokkisona',
+                'technical_source' => 'OpenCart connector (IBS)',
                 'scope' => 'Warehouse products only',
-                'mode' => 'Database-backed catalog — OpenCart sync on demand',
+                'mode' => 'Database-backed catalog — LK sync on demand',
             ],
             'session_logs' => $sessionLogs !== [] ? $sessionLogs : null,
             'meta' => $meta,
@@ -324,12 +333,12 @@ class LogsDiagnosticsService
 
         $summary = [
             'Environment' => config('app.env'),
-            'App version' => (string) config('dropflow.version', 'v0.6.2'),
+            'App version' => (string) config('dropflow.version', 'v0.6.3'),
             'Debug mode' => config('app.debug') ? 'On' : 'Off',
             'PHP' => PHP_VERSION,
             'Laravel' => app()->version(),
             'Live read-only' => config('dropflow.live_read_only') ? 'Yes' : 'No',
-            'OpenCart mock' => config('dropflow.oc_mock') ? 'Yes' : 'No',
+            'LK connector mock' => config('dropflow.oc_mock') ? 'Yes' : 'No',
             'Modules' => collect($modules)
                 ->map(fn ($enabled, $key) => $key.': '.($enabled ? 'on' : 'off'))
                 ->implode(', '),

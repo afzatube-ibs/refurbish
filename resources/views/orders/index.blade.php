@@ -36,7 +36,7 @@
                     @endif
                     <th class="text-left font-medium text-slate-600">Customer</th>
                     <th class="text-left font-medium text-slate-600">Sale Amount</th>
-                    <th class="text-left font-medium text-slate-600">OC Status</th>
+                    <th class="text-left font-medium text-slate-600">LK Status</th>
                     <th class="text-left font-medium text-slate-600">SFM Status</th>
                     <th class="text-left font-medium text-slate-600">Created</th>
                     <th class="text-left font-medium text-slate-600"></th>
@@ -66,7 +66,7 @@
                         <td colspan="{{ auth()->user()->isAdmin() ? 8 : 7 }}" class="text-center text-slate-500 py-12">
                             No orders found.
                             @if (auth()->user()->isAdmin())
-                                Sync orders from OpenCart to import.
+                                Sync orders from Lokkisona to import.
                             @endif
                         </td>
                     </tr>

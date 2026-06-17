@@ -51,7 +51,7 @@ class OrderStatusMappingPageTest extends TestCase
             ->assertSee('Import Trigger')
             ->assertSee('Create IBS order once + deduct stock')
             ->assertSee('How sync roles work')
-            ->assertSee('Other OpenCart Statuses')
+            ->assertSee('Other LK Statuses')
             ->assertSee('Recommended current mapping')
             ->assertSee('25 From Warehouse')
             ->assertSee('Save Mapping');

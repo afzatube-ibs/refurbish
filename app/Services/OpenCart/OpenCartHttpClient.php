@@ -207,23 +207,23 @@ class OpenCartHttpClient
     protected function parseJsonResponse($response, string $method): array
     {
         if ($method !== 'GET') {
-            throw new RuntimeException('OpenCart connector is read-only. Only GET requests are permitted.');
+            throw new RuntimeException('LK connector is read-only. Only GET requests are permitted.');
         }
 
         if ($response->status() === 401) {
-            throw new RuntimeException('OpenCart API rejected the token (401).');
+            throw new RuntimeException('LK API rejected the token (401).');
         }
 
         if (! $response->successful()) {
             throw new RuntimeException(
-                sprintf('OpenCart API %s failed with HTTP %d.', $method, $response->status())
+                sprintf('LK API %s failed with HTTP %d.', $method, $response->status())
             );
         }
 
         $data = $response->json();
 
         if (! is_array($data)) {
-            throw new RuntimeException('OpenCart API returned invalid JSON.');
+            throw new RuntimeException('LK API returned invalid JSON.');
         }
 
         return $data;

@@ -60,7 +60,7 @@ class ProductController extends Controller
 
         return redirect()
             ->route('product-map.index')
-            ->with('success', "Refreshed {$result['refreshed']} product(s) from OpenCart.")
+            ->with('success', "Refreshed {$result['refreshed']} product(s) from Lokkisona.")
             ->with('product_has_more', $result['has_more']);
     }
 

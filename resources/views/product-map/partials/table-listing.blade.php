@@ -40,9 +40,9 @@
             @include('product-map.partials.table-colgroup')
             <thead class="bg-slate-50">
                 <tr>
-                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">OC Product ID</th>
+                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">LK Product ID</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">Main Image</th>
-                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">OC Model</th>
+                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">LK Model</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">IBS Model</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">SM Model</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap" title="IBS supplier cost (local)">Rate</th>
@@ -197,7 +197,7 @@
                     <p class="text-sm">Try adjusting search or filter options, or <a href="{{ route('product-map.index') }}" class="text-slate-700 underline">clear filters</a>.</p>
                 @else
                     <p class="font-medium text-slate-700 mb-1">No products loaded</p>
-                    <p class="text-sm">Use <strong>Sync OC Products</strong> to import warehouse inventory into DropFlow.</p>
+                    <p class="text-sm">Use <strong>Sync LK Products</strong> to import warehouse inventory into DropFlow.</p>
                 @endif
             </div>
         </div>

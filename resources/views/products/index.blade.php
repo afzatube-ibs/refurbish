@@ -2,7 +2,7 @@
 
 @section('title', 'Products — DropFlow SFM')
 @section('page-title', 'Products')
-@section('page-subtitle', 'Supplier product catalog synced from OpenCart')
+@section('page-subtitle', 'Supplier product catalog synced from Lokkisona')
 
 @section('content')
 <div class="mb-4 flex flex-wrap items-center gap-3">
@@ -28,7 +28,7 @@
                 Continue Sync (page {{ $syncPage ?? 1 }})
             </button>
         </form>
-        <span class="text-sm text-amber-700">More products available on OpenCart.</span>
+        <span class="text-sm text-amber-700">More products available on Lokkisona.</span>
     @endif
 </div>
 
@@ -39,7 +39,7 @@
                 <tr>
                     <th class="text-left font-medium text-slate-600">Product</th>
                     <th class="text-left font-medium text-slate-600">Model</th>
-                    <th class="text-left font-medium text-slate-600">OC Stock</th>
+                    <th class="text-left font-medium text-slate-600">LK Stock</th>
                     <th class="text-left font-medium text-slate-600">Supplier Cost</th>
                     <th class="text-left font-medium text-slate-600">Supplier Model</th>
                     <th class="text-left font-medium text-slate-600">Supplier Stock</th>
@@ -87,7 +87,7 @@
                 @empty
                     <tr>
                         <td colspan="9" class="text-center text-slate-500 py-12">
-                            No products synced yet. Run Sync New Products to import from OpenCart.
+                            No products synced yet. Run Sync New Products to import from Lokkisona.
                         </td>
                     </tr>
                 @endforelse

@@ -45,7 +45,7 @@ class OrderMapLoadLogService
     protected function formatImportBanner(array $result): string
     {
         $parts = [
-            sprintf('Fetched from OC: %d', (int) ($result['fetched'] ?? 0)),
+            sprintf('Fetched from LK: %d', (int) ($result['fetched'] ?? 0)),
             sprintf('Imported: %d', (int) ($result['imported'] ?? 0)),
             sprintf('Duplicates skipped: %d', (int) ($result['duplicates_skipped'] ?? 0)),
             sprintf('Update-only skipped: %d', (int) ($result['update_only_skipped'] ?? 0)),
@@ -66,7 +66,7 @@ class OrderMapLoadLogService
     protected function formatUpdateBanner(array $result): string
     {
         $parts = [
-            sprintf('Fetched from OC: %d', (int) ($result['fetched'] ?? 0)),
+            sprintf('Fetched from LK: %d', (int) ($result['fetched'] ?? 0)),
             sprintf('Updated: %d', (int) ($result['updated'] ?? 0)),
             sprintf('Not found skipped: %d', (int) ($result['not_found_skipped'] ?? 0)),
             sprintf('Locked skipped: %d', (int) ($result['locked_skipped'] ?? 0)),
@@ -123,7 +123,7 @@ class OrderMapLoadLogService
         $summary = [
             'Mode' => ($last['mode'] ?? '') === 'update' ? 'Sync Status Updates' : 'Load New Orders',
             'Recorded at' => $last['recorded_at'] ?? '—',
-            'Fetched from OC' => (string) ($last['fetched'] ?? 0),
+            'Fetched from LK' => (string) ($last['fetched'] ?? 0),
             'Requested status_ids' => isset($last['requested_status_ids']) && is_array($last['requested_status_ids'])
                 ? '['.implode(', ', array_map('intval', $last['requested_status_ids'])).']'
                 : '—',

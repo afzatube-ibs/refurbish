@@ -17,7 +17,7 @@
                     @endif
                     <th class="text-left font-medium text-slate-600">Product</th>
                     <th class="text-left font-medium text-slate-600">Model</th>
-                    <th class="text-right font-medium text-slate-600">OC Stock</th>
+                    <th class="text-right font-medium text-slate-600">LK Stock</th>
                     <th class="text-right font-medium text-slate-600">Supplier Stock</th>
                     <th class="text-right font-medium text-slate-600">Supplier Cost</th>
                     <th class="text-right font-medium text-slate-600">Low Warning</th>

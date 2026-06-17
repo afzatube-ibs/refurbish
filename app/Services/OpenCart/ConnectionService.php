@@ -652,7 +652,7 @@ class ConnectionService
     {
         if (config('dropflow.live_read_only') || ! config('dropflow.allow_opencart_sync')) {
             throw new RuntimeException(
-                'OpenCart sync is disabled during live read-only test phase. Connection test only — no import.'
+                'LK sync is disabled during live read-only test phase. Connection test only — no import.'
             );
         }
     }

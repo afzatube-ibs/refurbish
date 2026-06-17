@@ -43,7 +43,7 @@ class OrderStatusMappingController extends Controller
         return redirect()
             ->route('settings.order-status-mapping.index')
             ->with('success', sprintf(
-                'Loaded %d selected order status(es) from OpenCart (%d total).',
+                'Loaded %d selected order status(es) from Lokkisona (%d total).',
                 $result['selected'],
                 $result['total']
             ));

@@ -17,12 +17,12 @@
             <h2 class="pm-pending-review-title">Review before adding</h2>
             @if ($isFirstLoad)
                 <p class="pm-pending-review-subtitle">
-                    {{ $pendingCount === 1 ? '1 product fetched' : $pendingCount.' products fetched' }} from OpenCart.
+                    {{ $pendingCount === 1 ? '1 product fetched' : $pendingCount.' products fetched' }} from Lokkisona.
                     Confirm below to sync {{ $pendingCount === 1 ? 'it' : 'them' }} into your Product Map database.
                 </p>
             @else
                 <p class="pm-pending-review-subtitle">
-                    {{ $pendingCount === 1 ? '1 product' : $pendingCount.' products' }} to sync from OpenCart.
+                    {{ $pendingCount === 1 ? '1 product' : $pendingCount.' products' }} to sync from Lokkisona.
                     Review below before updating your Product Map. IBS local fields are never overwritten.
                 </p>
             @endif
@@ -51,9 +51,9 @@
         <table class="min-w-full text-sm table-compact product-map-table pm-pending-review-table">
             <thead class="bg-slate-50">
                 <tr>
-                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">OC Product ID</th>
+                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">LK Product ID</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">Image</th>
-                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">OC Model</th>
+                    <th class="col-center font-medium text-slate-600 whitespace-nowrap">LK Model</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">Type</th>
                     <th class="col-center font-medium text-slate-600 whitespace-nowrap">Status</th>
                 </tr>

@@ -78,7 +78,7 @@ class OrderMapQueueTest extends TestCase
         $response->assertOk()
             ->assertSee('Order No')
             ->assertSee('Customer')
-            ->assertSee('OC Status')
+            ->assertSee('LK Status')
             ->assertSee('Product Card')
             ->assertSee('Total Qty')
             ->assertSee('Total Cost')

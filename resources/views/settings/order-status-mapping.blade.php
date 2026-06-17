@@ -2,7 +2,7 @@
 
 @section('title', 'Order Status Mapping — DropFlow SFM')
 @section('page-title', 'Order Status Mapping')
-@section('page-subtitle', 'Map OpenCart queue statuses to IBS workflow and sync role')
+@section('page-subtitle', 'Map LK queue statuses to IBS workflow and sync role')
 
 @section('content')
 @php
@@ -15,7 +15,7 @@
     <div class="osm-main">
         <div class="osm-help-card">
             <h2 class="osm-help-title">How sync roles work</h2>
-            <p><strong>Import Trigger</strong> creates new IBS orders when OpenCart reaches that status.</p>
+            <p><strong>Import Trigger</strong> creates new IBS orders when Lokkisona reaches that status.</p>
             <p><strong>Update Existing Only</strong> never creates orders; it only updates orders already imported into IBS.</p>
             <p><strong>Ignore</strong> takes no action. Unselected queue statuses always stay Ignore.</p>
         </div>
@@ -23,7 +23,7 @@
         <div class="osm-toolbar">
             <form method="POST" action="{{ route('settings.order-status-mapping.sync') }}" class="inline">
                 @csrf
-                <button type="submit" class="btn btn-secondary btn-sm">Fetch statuses from OpenCart</button>
+                <button type="submit" class="btn btn-secondary btn-sm">Fetch statuses from Lokkisona</button>
             </form>
             <p class="osm-toolbar-note">Only <strong>Queue Selected</strong> statuses can affect IBS order sync.</p>
         </div>
@@ -43,7 +43,7 @@
                 <section class="osm-section osm-section-active" aria-labelledby="osmActiveHeading">
                     <div class="osm-section-head">
                         <h2 id="osmActiveHeading" class="osm-section-title">Active Queue Statuses</h2>
-                        <p class="osm-section-desc">OpenCart queue statuses marked <strong>Selected</strong>. Configure IBS Status and Sync Role for each.</p>
+                        <p class="osm-section-desc">LK queue statuses marked <strong>Selected</strong>. Configure IBS Status and Sync Role for each.</p>
                     </div>
 
                     <div class="osm-table-card">
@@ -51,8 +51,8 @@
                             <table class="data-table osm-table">
                                 <thead>
                                     <tr>
-                                        <th>OC ID</th>
-                                        <th>OpenCart Status</th>
+                                        <th>LK Status ID</th>
+                                        <th>LK Status</th>
                                         <th>Queue</th>
                                         <th>IBS Status</th>
                                         <th>Sync Role</th>
@@ -71,7 +71,7 @@
                                         ])
                                     @empty
                                         <tr>
-                                            <td colspan="6" class="osm-empty">No selected queue statuses yet. Fetch from OpenCart to begin.</td>
+                                            <td colspan="6" class="osm-empty">No selected queue statuses yet. Fetch from Lokkisona to begin.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -84,18 +84,18 @@
                     <section class="osm-section osm-section-reference" aria-labelledby="osmReferenceHeading">
                         <details class="osm-reference-details">
                             <summary class="osm-reference-summary" id="osmReferenceHeading">
-                                <span class="osm-section-title">Other OpenCart Statuses</span>
+                                <span class="osm-section-title">Other LK Statuses</span>
                                 <span class="osm-reference-count">{{ $referenceMappings->count() }} not selected — reference only</span>
                             </summary>
-                            <p class="osm-section-desc">These statuses are not in the OpenCart order queue. They cannot affect sync and remain mapped to Ignore.</p>
+                            <p class="osm-section-desc">These statuses are not in the LK order queue. They cannot affect sync and remain mapped to Ignore.</p>
 
                             <div class="osm-table-card osm-table-card-muted">
                                 <div class="osm-table-wrap">
                                     <table class="data-table osm-table osm-table-muted">
                                         <thead>
                                             <tr>
-                                                <th>OC ID</th>
-                                                <th>OpenCart Status</th>
+                                                <th>LK Status ID</th>
+                                                <th>LK Status</th>
                                                 <th>IBS Status</th>
                                             </tr>
                                         </thead>
@@ -124,7 +124,7 @@
             </form>
         @else
             <div class="osm-table-card">
-                <p class="osm-empty">No status mappings yet. Fetch statuses from OpenCart to begin.</p>
+                <p class="osm-empty">No status mappings yet. Fetch statuses from Lokkisona to begin.</p>
             </div>
         @endif
     </div>

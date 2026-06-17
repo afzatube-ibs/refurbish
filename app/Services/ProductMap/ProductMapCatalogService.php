@@ -77,6 +77,15 @@ class ProductMapCatalogService
             ->exists();
     }
 
+    public function hasProductsSafely(): bool
+    {
+        try {
+            return $this->hasProducts();
+        } catch (\RuntimeException) {
+            return false;
+        }
+    }
+
     public function productCount(?Supplier $supplier = null): int
     {
         $supplier ??= $this->supplierResolver->resolve();

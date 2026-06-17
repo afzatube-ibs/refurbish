@@ -71,7 +71,7 @@ class OrderMapPanelTest extends TestCase
             ->assertSee('Panel Lamp')
             ->assertSee('Products', false)
             ->assertSee('Fulfillment', false)
-            ->assertSee('Print', false);
+            ->assertSee('Print Invoice', false);
     }
 
     public function test_index_view_button_opens_panel_modal_markup(): void
@@ -83,7 +83,7 @@ class OrderMapPanelTest extends TestCase
             ->assertSee('orderMapPanelModal', false)
             ->assertSee('data-order-panel-open', false)
             ->assertSee('Supplier order queue and fulfillment workflow')
-            ->assertSee('v0.7.0', false)
+            ->assertSee('v0.7.1', false)
             ->assertSee(route('order-map.panel', $this->order), false);
     }
 

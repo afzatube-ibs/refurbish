@@ -65,7 +65,11 @@
             </div>
         @endif
     @elseif ($status === SfmOrderStatus::Dispatched)
-        <p class="text-sm text-slate-600">Order dispatched. Use Print for invoice copy.</p>
+        <a href="{{ route('order-map.print-invoice', $order) }}"
+           class="btn btn-primary btn-sm w-full"
+           target="_blank"
+           rel="noopener">Print Invoice</a>
+        <p class="text-sm text-slate-600">Order dispatched.</p>
     @elseif ($status === SfmOrderStatus::ReturnQueue)
         @if (in_array('return_received', $transitions, true))
             <form method="POST" action="{{ route('order-map.return-received', $order) }}" class="order-map-workflow-form"

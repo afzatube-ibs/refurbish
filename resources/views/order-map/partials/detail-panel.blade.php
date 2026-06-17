@@ -183,7 +183,7 @@
         @endif
 
         <div class="order-map-detail-footer-actions">
-            <a href="{{ route('order-map.print-invoice', $order) }}" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">Print</a>
+            <a href="{{ route('order-map.print-invoice', $order) }}" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">Print Invoice</a>
             @unless ($compactHeader ?? false)
                 <a href="{{ route('order-map.index') }}" class="btn btn-ghost btn-sm">Back to queue</a>
             @endunless

@@ -12,6 +12,7 @@ use App\Services\OrderMap\ManualOrderService;
 use App\Services\OrderMap\OrderConnectorAuditService;
 use App\Services\OrderMap\OrderMapLoadLogService;
 use App\Services\OrderMap\OrderQueuePresenter;
+use App\Services\OrderMap\PackingInvoicePresenter;
 use App\Services\OrderStatusEngine;
 use App\Services\OrderWorkflowService;
 use Illuminate\Http\RedirectResponse;
@@ -28,6 +29,7 @@ class OrderController extends Controller
         private readonly OrderMapLoadLogService $loadLogService,
         private readonly ManualOrderService $manualOrderService,
         private readonly OrderConnectorAuditService $connectorAuditService,
+        private readonly PackingInvoicePresenter $packingInvoicePresenter,
     ) {}
 
     public function index(Request $request): View
@@ -234,10 +236,8 @@ class OrderController extends Controller
     {
         $this->authorize('view', $order);
 
-        $order->load('items');
-
         return view('order-map.print-invoice', [
-            'order' => $order,
+            'invoice' => $this->packingInvoicePresenter->present($order),
         ]);
     }
 }

@@ -123,6 +123,75 @@ class ConnectionSaveRequiresTestTest extends TestCase
         $this->actingAs($admin)
             ->get(route('connection.edit', ['edit' => 1]))
             ->assertOk()
+            ->assertSee('id="connection-test-passed" value="1"', false)
+            ->assertDontSee('id="save-connection-btn" disabled', false);
+    }
+
+    public function test_save_enabled_for_saved_connection_with_blank_token(): void
+    {
+        $admin = $this->adminUser();
+
+        Connection::getInstance()->update([
+            'store_url' => 'https://www.staging.lokkisona.com',
+            'api_token' => 'saved-staging-token',
+            'product_api_endpoint' => 'index.php?route=api/ibs/products',
+            'order_api_endpoint' => 'index.php?route=api/ibs/orders',
+            'order_status_api_endpoint' => 'index.php?route=api/ibs/order_queue_statuses',
+            'supplier_filter' => 'ex-a',
+            'is_active' => true,
+        ]);
+
+        $testPayload = [
+            'store_url' => 'https://www.staging.lokkisona.com',
+            'api_token' => '',
+            'product_api_endpoint' => 'index.php?route=api/ibs/products',
+            'order_api_endpoint' => 'index.php?route=api/ibs/orders',
+            'order_status_api_endpoint' => 'index.php?route=api/ibs/order_queue_statuses',
+            'supplier_filter' => 'ex-a',
+            'is_active' => ['0', '1'],
+        ];
+
+        $this->actingAs($admin)->post(route('connection.test'), $testPayload);
+
+        $this->actingAs($admin)
+            ->get(route('connection.edit', ['edit' => 1]))
+            ->assertOk()
+            ->assertSee('id="connection-test-passed" value="1"', false)
+            ->assertDontSee('id="save-connection-btn" disabled', false);
+    }
+
+    public function test_save_enabled_after_refresh_when_connection_matches_verified_form(): void
+    {
+        $admin = $this->adminUser();
+
+        $payload = [
+            'store_url' => 'https://www.staging.lokkisona.com',
+            'api_token' => 'saved-staging-token',
+            'product_api_endpoint' => 'index.php?route=api/ibs/products',
+            'order_api_endpoint' => 'index.php?route=api/ibs/orders',
+            'order_status_api_endpoint' => 'index.php?route=api/ibs/order_queue_statuses',
+            'supplier_filter' => 'ex-a',
+            'is_active' => '1',
+        ];
+
+        Connection::getInstance()->update([
+            'store_url' => $payload['store_url'],
+            'api_token' => $payload['api_token'],
+            'product_api_endpoint' => $payload['product_api_endpoint'],
+            'order_api_endpoint' => $payload['order_api_endpoint'],
+            'order_status_api_endpoint' => $payload['order_status_api_endpoint'],
+            'supplier_filter' => $payload['supplier_filter'],
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)->post(route('connection.test'), array_merge($payload, ['api_token' => '']));
+
+        session()->forget('_old_input');
+
+        $this->actingAs($admin)
+            ->get(route('connection.edit', ['edit' => 1]))
+            ->assertOk()
+            ->assertSee('id="connection-test-passed" value="1"', false)
             ->assertDontSee('id="save-connection-btn" disabled', false);
     }
 

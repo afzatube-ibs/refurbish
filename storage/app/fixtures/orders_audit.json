@@ -1,0 +1,43 @@
+{
+    "success": true,
+    "read_only": true,
+    "connector_version": "1.1.1",
+    "connector_build": "v2-queue-status-only-audit2",
+    "orders_filter_mode": "queue_status_only",
+    "filter_applied": "queue_status_only",
+    "route": "api/ibs/orders_audit",
+    "requested_status_ids": [25],
+    "total_raw_orders": 2,
+    "total_after_filter": 2,
+    "total_returned_this_page": 2,
+    "raw_order_ids": [10045, 10052],
+    "filtered_order_ids": [10045, 10052],
+    "returned_order_ids": [10045, 10052],
+    "excluded_order_ids": [],
+    "pagination_excluded_order_ids": [],
+    "status_breakdown": {
+        "25": 2
+    },
+    "filters_received": {
+        "date_from": null,
+        "date_to": null
+    },
+    "diagnostics": {
+        "warehouse_bridge_not_applied": true,
+        "would_exclude_if_warehouse_bridge": {
+            "diagnostic_only": true,
+            "bridge_table": "oc_dispatch_location_product",
+            "count": 0,
+            "order_ids": [],
+            "note": "NOT applied to orders API."
+        },
+        "orders_without_line_items": {
+            "count": 0,
+            "order_ids": []
+        },
+        "product_join_not_used_in_order_query": true
+    },
+    "audit_note": "Mock audit fixture for tests.",
+    "page": 1,
+    "limit": 20
+}

@@ -301,6 +301,59 @@ class OpenCartHttpClient
     }
 
     /**
+     * Orders audit diagnostic — tries orders_audit then orders/audit fallback.
+     *
+     * @param  list<int>  $statusIds
+     * @return array<string, mixed>
+     */
+    public function runOrdersAudit(array $statusIds, int $page = 1, int $limit = 20): array
+    {
+        $this->assertReadOnlyMode();
+
+        $params = [
+            'status_ids' => array_values(array_unique(array_filter(
+                array_map('intval', $statusIds),
+                fn (int $id) => $id > 0
+            ))),
+            'page' => max(1, $page),
+            'limit' => max(1, min(20, $limit)),
+        ];
+
+        if ($params['status_ids'] === []) {
+            throw new RuntimeException('At least one order status id is required for orders audit.');
+        }
+
+        $endpoints = array_values(array_unique(array_filter([
+            config('dropflow.ibs_endpoints.orders_audit'),
+            config('dropflow.ibs_endpoints.orders_audit_fallback'),
+        ])));
+
+        $lastError = null;
+
+        foreach ($endpoints as $endpoint) {
+            try {
+                $data = $this->get($endpoint, $params);
+
+                if (($data['success'] ?? false) === true && array_key_exists('total_raw_orders', $data)) {
+                    $data['_audit_route'] = $endpoint;
+
+                    return $data;
+                }
+
+                $lastError = new RuntimeException('Orders audit response missing total_raw_orders.');
+            } catch (\Throwable $exception) {
+                $lastError = $exception;
+            }
+        }
+
+        throw new RuntimeException(
+            $lastError instanceof \Throwable
+                ? $lastError->getMessage()
+                : 'Orders audit endpoint unavailable. Deploy connector build v2-queue-status-only-audit2.'
+        );
+    }
+
+    /**
      * @param  array<string, mixed>  $data
      * @param  array<string, mixed>  $params
      * @return array<string, mixed>
@@ -459,6 +512,10 @@ class OpenCartHttpClient
 
         if (str_contains($needle, 'connection_test')) {
             return 'inline:connection_test';
+        }
+
+        if (str_contains($needle, 'orders_audit') || str_contains($needle, 'orders/audit')) {
+            return 'fixtures/orders_audit.json';
         }
 
         if (str_contains($needle, 'order_queue_status') || str_contains($needle, 'order_status') || str_contains($needle, 'status')) {

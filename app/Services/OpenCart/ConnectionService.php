@@ -139,6 +139,31 @@ class ConnectionService
         return filter_var($value, FILTER_VALIDATE_BOOLEAN);
     }
 
+    /**
+     * Canonical connection form payload for fingerprinting and flash input.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array<string, mixed>|null  $resolvedEndpoints
+     * @return array<string, mixed>
+     */
+    public function buildVerificationInput(array $data, ?array $resolvedEndpoints = null): array
+    {
+        $input = IbsRouteResolver::normalizeConnectionInput($data);
+
+        if ($resolvedEndpoints !== null) {
+            $input = array_merge($input, $resolvedEndpoints);
+        }
+
+        $input['store_url'] = rtrim((string) ($input['store_url'] ?? ''), '/');
+        $input['is_active'] = $this->normalizeBooleanInput($input['is_active'] ?? false);
+
+        if (blank($input['api_token'] ?? null)) {
+            unset($input['api_token']);
+        }
+
+        return $input;
+    }
+
     public function isVerifiedForSave(array $data, Connection $connection): bool
     {
         if (! session()->has('connection_verified_fingerprint')) {

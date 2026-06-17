@@ -16,6 +16,10 @@
             @csrf
             <button type="submit" class="header-action-btn header-action-btn--secondary">Sync Status Updates</button>
         </form>
+        <form method="POST" action="{{ route('order-map.audit-connector') }}" class="inline">
+            @csrf
+            <button type="submit" class="header-action-btn header-action-btn--secondary">Run Connector Audit</button>
+        </form>
     @endif
 @endsection
 
@@ -26,6 +30,12 @@
     @include('order-map.partials.last-sync-panel', [
         'lastSync' => $lastSync,
         'loadLogService' => $loadLogService,
+    ])
+@endif
+
+@if (! empty($lastConnectorAudit))
+    @include('order-map.partials.connector-audit-panel', [
+        'lastConnectorAudit' => $lastConnectorAudit,
     ])
 @endif
 

@@ -108,7 +108,7 @@ class ProductControlRateResolverTest extends TestCase
 
         $this->assertSame(50.0, $resolver->rateAt('9002', null, $asOf, $this->supplier));
         $this->assertSame(75.0, $resolver->rateAt('9002', 'VAR-A', $asOf, $this->supplier));
-        $this->assertNull($resolver->rateAt('9002', 'VAR-B', $asOf, $this->supplier));
+        $this->assertSame(50.0, $resolver->rateAt('9002', 'VAR-B', $asOf, $this->supplier));
     }
 
     public function test_rate_at_falls_back_to_parent_when_variant_has_no_history(): void

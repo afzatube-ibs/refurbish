@@ -9,6 +9,7 @@ use App\Models\ActivityLog;
 use App\Models\Order;
 use App\Services\OpenCart\OrderSyncService;
 use App\Services\OrderMap\ManualOrderService;
+use App\Services\OrderMap\OrderConnectorAuditService;
 use App\Services\OrderMap\OrderMapLoadLogService;
 use App\Services\OrderMap\OrderQueuePresenter;
 use App\Services\OrderStatusEngine;
@@ -26,6 +27,7 @@ class OrderController extends Controller
         private readonly OrderQueuePresenter $queuePresenter,
         private readonly OrderMapLoadLogService $loadLogService,
         private readonly ManualOrderService $manualOrderService,
+        private readonly OrderConnectorAuditService $connectorAuditService,
     ) {}
 
     public function index(Request $request): View
@@ -51,6 +53,7 @@ class OrderController extends Controller
             'queueRows' => $orders->getCollection()->map(fn (Order $order) => $this->queuePresenter->present($order)),
             'statusFilter' => $status,
             'lastSync' => $this->loadLogService->last(),
+            'lastConnectorAudit' => $this->connectorAuditService->last(),
             'loadLogService' => $this->loadLogService,
         ]);
     }
@@ -136,6 +139,21 @@ class OrderController extends Controller
         return redirect()
             ->route('order-map.index')
             ->with('success', $this->loadLogService->formatBannerMessage($result));
+    }
+
+    public function auditConnector(): RedirectResponse
+    {
+        try {
+            $audit = $this->connectorAuditService->runImportTriggerAudit(auth()->user());
+
+            return redirect()
+                ->route('order-map.index')
+                ->with('success', $this->connectorAuditService->formatBannerMessage($audit));
+        } catch (\Throwable $exception) {
+            return redirect()
+                ->route('order-map.index')
+                ->with('error', 'Connector audit failed: '.$exception->getMessage());
+        }
     }
 
     /** @deprecated Use load() */

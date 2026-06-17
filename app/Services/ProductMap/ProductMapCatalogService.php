@@ -2,6 +2,7 @@
 
 namespace App\Services\ProductMap;
 
+use App\Models\Connection;
 use App\Models\ProductMap\ProductMapProduct;
 use App\Models\Supplier;
 use App\Services\OpenCart\ProductPreviewService;
@@ -112,14 +113,17 @@ class ProductMapCatalogService
             ->all();
 
         $lastSynced = $rows->max('last_synced_at');
+        $connection = Connection::getInstance();
         $preview = [
             'products' => $products,
             'activity' => [],
             'meta' => [
                 'source' => 'DropFlow database',
+                'catalog_mode' => 'local_db_first',
                 'read_only' => true,
                 'warehouse_count' => count($products),
                 'loaded_at' => ($lastSynced instanceof Carbon ? $lastSynced : now())->toIso8601String(),
+                'last_product_sync_at' => $connection->last_product_sync_at?->toIso8601String(),
                 'has_local_edits' => false,
             ],
             'summary' => [],
@@ -130,7 +134,15 @@ class ProductMapCatalogService
         ];
 
         if (is_array($syncMeta) && $syncMeta !== []) {
-            $preview['meta'] = array_merge($preview['meta'], $syncMeta);
+            $preview['meta']['last_lk_fetch'] = [
+                'at' => $syncMeta['loaded_at'] ?? null,
+                'endpoint' => $syncMeta['endpoint'] ?? null,
+                'pages_fetched' => $syncMeta['pages_fetched'] ?? null,
+                'warehouse_count' => $syncMeta['warehouse_count'] ?? null,
+                'source' => $syncMeta['source'] ?? 'LK connector',
+                'image_base_url' => $syncMeta['image_base_url'] ?? null,
+                'image_resolve_base' => $syncMeta['image_resolve_base'] ?? null,
+            ];
         }
 
         if (is_array($syncDiagnostics) && $syncDiagnostics !== []) {
@@ -140,6 +152,23 @@ class ProductMapCatalogService
         $preview = $this->controlMergeService->mergeIntoPreview($preview);
 
         return $this->previewService->refreshPreviewState($preview);
+    }
+
+    /**
+     * Reload catalog from DB and recalculate health/summary counters (no connector).
+     *
+     * @return array<string, mixed>
+     */
+    public function refreshLocalPreview(?array $syncMeta = null, ?array $syncDiagnostics = null): array
+    {
+        return $this->buildPreview($syncMeta, $syncDiagnostics);
+    }
+
+    public function recordProductSyncTimestamp(?Carbon $syncedAt = null): void
+    {
+        Connection::getInstance()->update([
+            'last_product_sync_at' => $syncedAt ?? now(),
+        ]);
     }
 
     /**
@@ -224,6 +253,10 @@ class ProductMapCatalogService
             );
 
             $saved++;
+        }
+
+        if ($saved > 0) {
+            $this->recordProductSyncTimestamp($syncedAt);
         }
 
         return $saved;

@@ -269,14 +269,19 @@ class LogsDiagnosticsService
         }
 
         $summary = [
-            'App version' => (string) config('dropflow.version', 'v0.6.3'),
+            'App version' => (string) config('dropflow.version', 'v0.6.5'),
             'Catalog source' => $hasPreview ? 'DropFlow database' : '—',
             'Warehouse products' => $hasPreview ? (string) ($meta['warehouse_count'] ?? count($preview['products'] ?? [])) : '—',
-            'Pages fetched (last sync)' => $hasPreview ? (string) ($meta['pages_fetched'] ?? '—') : '—',
+            'Last product sync' => $hasPreview && filled($meta['last_product_sync_at'] ?? null)
+                ? $this->formatIsoTime((string) $meta['last_product_sync_at'])
+                : '—',
+            'Last LK fetch' => $hasPreview && filled($meta['last_lk_fetch']['at'] ?? null)
+                ? $this->formatIsoTime((string) $meta['last_lk_fetch']['at'])
+                : '—',
             'Unique IBS models' => $hasPreview ? (string) ($summaryData['unique_ibs_models'] ?? '—') : '—',
             'Health OK' => $hasPreview ? ($healthOk ? 'Yes' : 'Needs review') : '—',
             'Option images' => $hasPreview ? (string) ($summaryData['option_images_count'] ?? '—') : '—',
-            'Last sync endpoint' => $hasPreview ? ($meta['endpoint'] ?? '—') : '—',
+            'Incremental sync' => config('dropflow.product_sync_supports_changed_since') ? 'changed_since enabled' : 'full sync only',
         ];
 
         if (($sessionLogs['last_action'] ?? null) !== null) {
@@ -292,7 +297,7 @@ class LogsDiagnosticsService
                 'live_source' => 'LK / Lokkisona',
                 'technical_source' => 'OpenCart connector (IBS)',
                 'scope' => 'Warehouse products only',
-                'mode' => 'Database-backed catalog — LK sync on demand',
+                'mode' => 'Local DB-first catalog — LK sync on demand',
             ],
             'session_logs' => $sessionLogs !== [] ? $sessionLogs : null,
             'meta' => $meta,
@@ -333,7 +338,7 @@ class LogsDiagnosticsService
 
         $summary = [
             'Environment' => config('app.env'),
-            'App version' => (string) config('dropflow.version', 'v0.6.3'),
+            'App version' => (string) config('dropflow.version', 'v0.6.5'),
             'Debug mode' => config('app.debug') ? 'On' : 'Off',
             'PHP' => PHP_VERSION,
             'Laravel' => app()->version(),
@@ -452,12 +457,12 @@ class LogsDiagnosticsService
 
         if (str_starts_with($routeName, 'product-map.')) {
             $connection = $this->connectionService->getActive();
-            $preview = session('product_preview');
+            $hasCatalog = $this->productMapCatalogService->hasProductsSafely();
 
             return [
                 'connection_ready' => $connection->is_active && filled($connection->store_url) && filled($connection->api_token),
-                'preview_loaded' => is_array($preview),
-                'product_count' => is_array($preview) ? count($preview['products'] ?? []) : 0,
+                'preview_loaded' => $hasCatalog,
+                'product_count' => $hasCatalog ? $this->productMapCatalogService->productCount() : 0,
             ];
         }
 

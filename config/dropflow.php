@@ -1,12 +1,24 @@
 <?php
 
 return [
-    'version' => 'v0.6.3',
+    'version' => 'v0.6.5',
 
     'product_batch_size' => 50,
     'product_preview_target' => (int) env('DROPflow_PRODUCT_PREVIEW_TARGET', 42),
     'product_preview_page_size' => (int) env('DROPflow_PRODUCT_PREVIEW_PAGE_SIZE', 20),
     'product_preview_limit' => (int) env('DROPflow_PRODUCT_PREVIEW_LIMIT', 50),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Product sync — incremental foundation
+    |--------------------------------------------------------------------------
+    | When false, Sync LK Products performs full snapshot comparison.
+    | Set true once the LK connector supports changed_since filtering.
+    */
+    'product_sync_supports_changed_since' => filter_var(
+        env('DROPflow_PRODUCT_SYNC_CHANGED_SINCE', false),
+        FILTER_VALIDATE_BOOLEAN
+    ),
 
     /*
     |--------------------------------------------------------------------------

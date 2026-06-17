@@ -35,7 +35,8 @@ class ProductMapController extends Controller
     {
         $connection = $this->connectionService->getActive();
         $syncContext = $this->syncContext();
-        $preview = $this->catalogService->hasProducts()
+        $hasCatalog = $this->catalogService->hasProductsSafely();
+        $preview = $hasCatalog
             ? $this->catalogService->buildPreview(
                 is_array($syncContext['meta'] ?? null) ? $syncContext['meta'] : null,
                 is_array($syncContext['diagnostics'] ?? null) ? $syncContext['diagnostics'] : null,
@@ -87,7 +88,7 @@ class ProductMapController extends Controller
 
     public function saveControl(ProductMapControlSaveRequest $request): JsonResponse
     {
-        if (! $this->catalogService->hasProducts()) {
+        if (! $this->catalogService->hasProductsSafely()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Sync products before saving local control changes.',
@@ -246,20 +247,30 @@ class ProductMapController extends Controller
 
     public function refresh(): RedirectResponse
     {
-        if (! $this->catalogService->hasProducts()) {
+        if (! $this->catalogService->hasProductsSafely()) {
             return redirect()
                 ->route('product-map.index')
-                ->with('error', 'No products in Product Map yet. Use Sync LK Products first.');
+                ->with('error', 'No LK products saved yet. Click Sync LK Products.');
         }
 
         try {
+            $syncContext = $this->syncContext();
+            $preview = $this->catalogService->refreshLocalPreview(
+                is_array($syncContext['meta'] ?? null) ? $syncContext['meta'] : null,
+                is_array($syncContext['diagnostics'] ?? null) ? $syncContext['diagnostics'] : null,
+            );
+            $summary = is_array($preview['summary'] ?? null) ? $preview['summary'] : [];
+
             $this->productMapLogsService->recordLoadEvent('refresh_local', [
-                'product_count' => $this->catalogService->productCount(),
+                'product_count' => count($preview['products'] ?? []),
+                'health_ok' => $summary['health_ok'] ?? null,
+                'health_needs_work' => $summary['health_needs_work'] ?? null,
+                'variant_rows' => $summary['variant_rows'] ?? null,
             ]);
 
             return redirect()
                 ->route('product-map.index')
-                ->with('success', 'Local product list refreshed.');
+                ->with('success', 'Local product list refreshed from database.');
         } catch (\Throwable $exception) {
             $message = $exception->getMessage();
             $this->productMapLogsService->recordError($message);

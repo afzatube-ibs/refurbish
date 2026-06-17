@@ -196,8 +196,8 @@
                     <p class="font-medium text-slate-700 mb-1">No products match the current filters</p>
                     <p class="text-sm">Try adjusting search or filter options, or <a href="{{ route('product-map.index') }}" class="text-slate-700 underline">clear filters</a>.</p>
                 @else
-                    <p class="font-medium text-slate-700 mb-1">No products loaded</p>
-                    <p class="text-sm">Use <strong>Sync LK Products</strong> to import warehouse inventory into DropFlow.</p>
+                    <p class="font-medium text-slate-700 mb-1">No LK products saved yet.</p>
+                    <p class="text-sm">Click <strong>Sync LK Products</strong> to fetch and save a Lokkisona snapshot into DropFlow.</p>
                 @endif
             </div>
         </div>

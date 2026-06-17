@@ -26,7 +26,7 @@ class ProductMapPersistenceTest extends TestCase
 
         config([
             'dropflow.modules.product_map' => true,
-            'dropflow.version' => 'v0.6.3',
+            'dropflow.version' => 'v0.6.5',
             'dropflow.oc_mock' => true,
             'dropflow.live_read_only' => false,
             'dropflow.product_preview_target' => 42,
@@ -67,7 +67,7 @@ class ProductMapPersistenceTest extends TestCase
             ->assertOk()
             ->assertSee('PARENT-9509')
             ->assertSee('Refresh Local List')
-            ->assertSee('v0.6.3');
+            ->assertSee('v0.6.5');
     }
 
     public function test_refresh_local_list_does_not_call_opencart(): void
@@ -83,7 +83,7 @@ class ProductMapPersistenceTest extends TestCase
         $this->actingAs($user)
             ->post(route('product-map.refresh'))
             ->assertRedirect(route('product-map.index'))
-            ->assertSessionHas('success', 'Local product list refreshed.');
+            ->assertSessionHas('success', 'Local product list refreshed from database.');
 
         $this->assertSame(1, ProductMapProduct::query()->count());
     }
@@ -161,17 +161,17 @@ class ProductMapPersistenceTest extends TestCase
             ->assertOk()
             ->assertSee('PARENT-9509')
             ->assertSee('Total Products')
-            ->assertDontSee('No products loaded');
+            ->assertDontSee('No LK products saved yet');
     }
 
     public function test_version_appears_in_ui_and_config(): void
     {
-        $this->assertSame('v0.6.3', config('dropflow.version'));
+        $this->assertSame('v0.6.5', config('dropflow.version'));
 
         $this->actingAs($this->adminUser())
             ->get(route('product-map.index'))
             ->assertOk()
-            ->assertSee('v0.6.3');
+            ->assertSee('v0.6.5');
     }
 
     public function test_confirm_sync_persists_products_to_database(): void
@@ -185,5 +185,48 @@ class ProductMapPersistenceTest extends TestCase
 
         $this->assertSame(42, ProductMapProduct::query()->count());
         $this->assertDatabaseHas('product_map_products', ['source_product_id' => '100']);
+    }
+
+    public function test_confirm_sync_updates_last_product_sync_at(): void
+    {
+        $user = $this->adminUser();
+        $connection = Connection::getInstance();
+        $this->assertNull($connection->last_product_sync_at);
+
+        $this->actingAs($user)->post(route('product-map.load'));
+        $this->actingAs($user)->post(route('product-map.load.confirm'));
+
+        $this->assertNotNull($connection->fresh()->last_product_sync_at);
+    }
+
+    public function test_refresh_rebuilds_dashboard_counters_from_database(): void
+    {
+        $this->seedProductMapCatalog();
+        $user = $this->adminUser();
+
+        $this->actingAs($user)
+            ->postJson(route('product-map.control.save'), [
+                'product_index' => 0,
+                'changes' => [
+                    ['scope' => 'parent', 'field' => 'rate', 'mode' => 'set', 'value' => 12.5],
+                ],
+            ])
+            ->assertOk();
+
+        $mockClient = $this->mock(OpenCartHttpClient::class, function ($mock) {
+            $mock->shouldNotReceive('get');
+        });
+        $this->app->instance(OpenCartHttpClient::class, $mockClient);
+
+        $this->actingAs($user)
+            ->post(route('product-map.refresh'))
+            ->assertRedirect(route('product-map.index'))
+            ->assertSessionHas('success', 'Local product list refreshed from database.');
+
+        $this->actingAs($user)
+            ->get(route('product-map.index'))
+            ->assertOk()
+            ->assertSee('Total Products')
+            ->assertSee('Ready');
     }
 }

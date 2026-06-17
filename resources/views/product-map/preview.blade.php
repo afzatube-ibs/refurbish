@@ -2,10 +2,10 @@
 
 @section('title', 'Product Map — DropFlow SFM')
 @section('page-title', 'Product Map')
-@section('page-subtitle', 'Product Mapping Center')
+@section('page-subtitle', 'Local catalog — LK snapshot on demand')
 
 @section('page-badge')
-    <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">{{ config('dropflow.version', 'v0.6.3') }}</span>
+    <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">{{ config('dropflow.version', 'v0.6.5') }}</span>
 @endsection
 
 @section('page-actions')
@@ -27,10 +27,13 @@
     <button type="submit"
             @disabled(! $hasPreview)
             class="header-action-btn header-action-btn--secondary"
-            title="{{ $hasPreview ? 'Reload products from DropFlow database' : 'Sync products first' }}">
+            title="{{ $hasPreview ? 'Reload from DropFlow database — no LK connector call' : 'Sync LK products first' }}">
         Refresh Local List
     </button>
 </form>
+@if (! config('dropflow.product_sync_supports_changed_since', false))
+    <p class="text-xs text-slate-500 max-w-md">Incremental LK sync will use full sync until connector supports <code class="text-slate-600">changed_since</code>.</p>
+@endif
 @push('scripts')
 <script>
 (function () {

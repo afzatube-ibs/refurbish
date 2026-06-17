@@ -156,9 +156,9 @@ class ProductMapPreviewTest extends TestCase
         $this->actingAs($this->adminUser())
             ->get(route('product-map.index'))
             ->assertOk()
-            ->assertSee('Product Mapping Center')
+            ->assertSee('Local catalog — LK snapshot on demand')
             ->assertSee('Sync LK Products')
-            ->assertSee('No products loaded')
+            ->assertSee('No LK products saved yet')
             ->assertDontSee('Parent View')
             ->assertDontSee('Variant View');
     }
@@ -219,7 +219,7 @@ class ProductMapPreviewTest extends TestCase
         $this->actingAs($this->adminUser())
             ->post(route('product-map.refresh'))
             ->assertRedirect(route('product-map.index'))
-            ->assertSessionHas('error', 'No products in Product Map yet. Use Sync LK Products first.');
+            ->assertSessionHas('error', 'No LK products saved yet. Click Sync LK Products.');
 
         $this->assertSame(0, ProductMapProduct::query()->count());
     }
@@ -523,9 +523,11 @@ class ProductMapPreviewTest extends TestCase
         );
         $first = $preview['products'][0] ?? [];
         $meta = $preview['meta'] ?? [];
+        $lastFetch = is_array($meta['last_lk_fetch'] ?? null) ? $meta['last_lk_fetch'] : [];
 
-        $this->assertSame('https://www.staging.lokkisona.com', $meta['image_resolve_base'] ?? '');
-        $this->assertNotSame('https://store.example.com', $meta['image_resolve_base'] ?? '');
+        $this->assertSame('DropFlow database', $meta['source'] ?? '');
+        $this->assertSame('https://www.staging.lokkisona.com', $lastFetch['image_resolve_base'] ?? '');
+        $this->assertNotSame('https://store.example.com', $lastFetch['image_resolve_base'] ?? '');
         $this->assertStringStartsWith('https://www.staging.lokkisona.com/image/catalog/Products/toys/', $first['image'] ?? '');
         $this->assertStringStartsWith('https://www.staging.lokkisona.com/image/catalog/Products/toys/', $first['options'][0]['image'] ?? '');
     }
@@ -568,7 +570,7 @@ class ProductMapPreviewTest extends TestCase
             ->assertSee('Variable (5)')
             ->assertSee('Confirm Sync')
             ->assertSee('Cancel')
-            ->assertDontSee('No products loaded');
+            ->assertDontSee('No LK products saved yet');
     }
 
     public function test_pending_load_incremental_review_shows_only_new_count_message(): void
@@ -587,7 +589,7 @@ class ProductMapPreviewTest extends TestCase
             ->assertOk()
             ->assertSee('Review before adding')
             ->assertSee('Confirm Sync')
-            ->assertDontSee('No products loaded');
+            ->assertDontSee('No LK products saved yet');
     }
 
     public function test_load_blocked_without_active_connection(): void

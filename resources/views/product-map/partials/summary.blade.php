@@ -13,7 +13,7 @@
         <div class="pm-stat-body">
             <p class="pm-stat-label">Total Products</p>
             <p class="pm-stat-value">{{ number_format($totalProducts) }}</p>
-            <p class="pm-stat-sub">Loaded preview rows</p>
+            <p class="pm-stat-sub">Saved in DropFlow DB</p>
         </div>
     </div>
 
@@ -35,7 +35,7 @@
         <div class="pm-stat-body">
             <p class="pm-stat-label">Variants</p>
             <p class="pm-stat-value">{{ number_format($variantRows) }}</p>
-            <p class="pm-stat-sub">Option rows loaded</p>
+            <p class="pm-stat-sub">Variant rows in DB</p>
         </div>
     </div>
 

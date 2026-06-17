@@ -173,6 +173,8 @@ class OrderMapPackingInvoiceTest extends TestCase
         $user = $this->adminUser('packing-invoice-manual');
 
         $order = app(ManualOrderService::class)->create([
+            'source_store' => 'lokkisona',
+            'source_type' => 'phone',
             'customer_name' => 'Manual Invoice Customer',
             'customer_phone' => '+8801700000222',
             'customer_address' => 'Manual packing address',

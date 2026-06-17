@@ -8,6 +8,7 @@ use App\Http\Requests\StoreManualOrderRequest;
 use App\Models\ActivityLog;
 use App\Models\Order;
 use App\Services\OpenCart\OrderSyncService;
+use App\Services\OrderMap\ManualOrderProductSearchService;
 use App\Services\OrderMap\ManualOrderService;
 use App\Services\OrderMap\OrderConnectorAuditService;
 use App\Services\OrderMap\OrderMapLoadLogService;
@@ -15,6 +16,7 @@ use App\Services\OrderMap\OrderQueuePresenter;
 use App\Services\OrderMap\PackingInvoicePresenter;
 use App\Services\OrderStatusEngine;
 use App\Services\OrderWorkflowService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -28,6 +30,7 @@ class OrderController extends Controller
         private readonly OrderQueuePresenter $queuePresenter,
         private readonly OrderMapLoadLogService $loadLogService,
         private readonly ManualOrderService $manualOrderService,
+        private readonly ManualOrderProductSearchService $manualOrderProductSearchService,
         private readonly OrderConnectorAuditService $connectorAuditService,
         private readonly PackingInvoicePresenter $packingInvoicePresenter,
     ) {}
@@ -117,7 +120,28 @@ class OrderController extends Controller
     {
         $this->authorize('viewAny', Order::class);
 
-        return view('order-map.create');
+        return view('order-map.create', [
+            'sourceStores' => [
+                'lokkisona' => 'Lokkisona',
+            ],
+            'sourceTypes' => [
+                'inbox' => 'Inbox',
+                'phone' => 'Phone',
+                'offline' => 'Offline',
+                'other' => 'Other',
+            ],
+        ]);
+    }
+
+    public function searchManualProducts(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', Order::class);
+
+        $query = trim((string) $request->query('q', ''));
+
+        return response()->json([
+            'results' => $this->manualOrderProductSearchService->search($query),
+        ]);
     }
 
     public function store(StoreManualOrderRequest $request): RedirectResponse
@@ -125,8 +149,8 @@ class OrderController extends Controller
         $order = $this->manualOrderService->create($request->validated(), $request->user());
 
         return redirect()
-            ->route('order-map.show', $order)
-            ->with('success', 'Manual order '.$order->source_order_id.' created.');
+            ->route('order-map.index')
+            ->with('success', 'Order '.$order->source_order_id.' created.');
     }
 
     public function load(): RedirectResponse

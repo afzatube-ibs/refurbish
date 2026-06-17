@@ -47,6 +47,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::middleware(['admin'])->group(function () {
             Route::get('/create', [OrderController::class, 'create'])->name('create');
+            Route::get('/create/products/search', [OrderController::class, 'searchManualProducts'])->name('create.products.search');
             Route::post('/create', [OrderController::class, 'store'])->name('store');
             Route::post('/load', [OrderController::class, 'load'])->name('load');
             Route::post('/sync-updates', [OrderController::class, 'syncStatusUpdates'])->name('sync-updates');

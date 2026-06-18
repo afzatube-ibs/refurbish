@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Enums\ReturnStatus;
 use App\Enums\SfmOrderStatus;
 use App\Models\Connection;
-use App\Models\DispatchReport;
 use App\Models\Order;
 use App\Models\ProductMap\ProductControlState;
 use App\Models\ProductMap\StockAdjustmentHistory;
@@ -63,44 +62,6 @@ class ReportController extends Controller
 
         return view('reports.orders', [
             'rows' => $query->get(),
-            'suppliers' => $this->suppliersForFilter($request),
-            'from' => $from ?? null,
-            'to' => $to ?? null,
-        ]);
-    }
-
-    public function dispatch(Request $request): View
-    {
-        $query = DispatchReport::with(['order', 'supplier', 'items'])
-            ->orderByDesc('dispatch_date')
-            ->orderByDesc('id');
-
-        if ($request->user()->isSupplier()) {
-            $query->where('supplier_id', $request->user()->supplier_id);
-        } elseif ($supplierId = $request->query('supplier_id')) {
-            $query->where('supplier_id', $supplierId);
-        }
-
-        if ($from = $request->query('from')) {
-            $query->whereDate('dispatch_date', '>=', $from);
-        }
-
-        if ($to = $request->query('to')) {
-            $query->whereDate('dispatch_date', '<=', $to);
-        }
-
-        $rows = $query->get()->each(function (DispatchReport $row): void {
-            $row->total_cost = $row->items->sum(
-                fn ($item) => $item->quantity * $item->supplier_cost_snapshot
-            );
-        });
-
-        return view('reports.dispatch', [
-            'rows' => $rows,
-            'totals' => [
-                'dispatch_cost' => $rows->sum('total_cost'),
-                'count' => $rows->count(),
-            ],
             'suppliers' => $this->suppliersForFilter($request),
             'from' => $from ?? null,
             'to' => $to ?? null,

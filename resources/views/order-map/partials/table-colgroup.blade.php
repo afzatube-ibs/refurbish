@@ -1,4 +1,7 @@
 <colgroup>
+    @if (auth()->user()->isSupplier())
+        <col class="order-map-col-select">
+    @endif
     <col class="order-map-col-order">
     <col class="order-map-col-customer">
     <col class="order-map-col-oc-status">

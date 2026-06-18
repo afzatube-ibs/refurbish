@@ -2,6 +2,8 @@
 
 namespace App\Services\OrderMap;
 
+use App\Enums\SfmOrderStatus;
+use App\Models\DispatchBatchOrder;
 use App\Models\Order;
 use Illuminate\Support\Collection;
 
@@ -21,12 +23,16 @@ class OrderQueuePresenter
             return $unit !== null ? ((float) $unit * (int) $item->quantity) : 0;
         });
         $hasUnmatched = $order->items->contains(fn ($item) => $item->is_unmatched);
+        $alreadyBatched = DispatchBatchOrder::query()->where('order_id', $order->id)->exists();
+        $isBatchable = $order->sfm_status === SfmOrderStatus::Packed && ! $alreadyBatched;
 
         return [
             'order' => $order,
             'total_qty' => $totalQty,
             'total_cost' => $totalCost,
             'has_unmatched' => $hasUnmatched,
+            'already_batched' => $alreadyBatched,
+            'is_batchable' => $isBatchable,
             'oc_status_label' => $this->ocStatusLabel($order),
             'product_cards' => $this->productCards($order->items),
         ];

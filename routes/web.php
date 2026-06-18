@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DispatchBatchController;
 use App\Http\Controllers\LogsController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductMapController;
@@ -75,7 +76,12 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::prefix('reports')->name('reports.')->group(function () {
-        Route::get('/dispatch', [ReportController::class, 'dispatch'])->name('dispatch');
+        Route::get('/dispatch', [DispatchBatchController::class, 'index'])->name('dispatch');
+        Route::post('/dispatch/create-batch', [DispatchBatchController::class, 'storeCreateBatch'])
+            ->middleware('supplier')
+            ->name('dispatch.create-batch');
+        Route::get('/dispatch/{batch}/print', [DispatchBatchController::class, 'print'])->name('dispatch.print');
+        Route::get('/dispatch/{batch}', [DispatchBatchController::class, 'show'])->name('dispatch.show');
         Route::get('/returns', [ReportController::class, 'returns'])->name('returns');
 
         Route::middleware(['admin'])->group(function () {

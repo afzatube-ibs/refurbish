@@ -41,12 +41,26 @@
     ])
 @endif
 
+@if (auth()->user()->isSupplier())
+    <div class="order-map-batch-bar" id="orderMapBatchBar" hidden>
+        <span class="order-map-batch-bar-count" data-batch-count-label>0 selected</span>
+        <button type="button" class="header-action-btn header-action-btn--primary" data-open-dispatch-batch-modal>
+            Create Dispatch Batch
+        </button>
+    </div>
+@endif
+
 <div class="order-map-list-card">
     <div class="order-map-table-wrap">
         <table class="data-table order-map-table">
             @include('order-map.partials.table-colgroup')
             <thead>
                 <tr>
+                    @if (auth()->user()->isSupplier())
+                        <th class="order-map-select-col">
+                            <input type="checkbox" id="orderMapSelectAllBatchable" aria-label="Select all batchable orders on this page">
+                        </th>
+                    @endif
                     <th>Order No</th>
                     <th>Customer</th>
                     <th>LK Status</th>
@@ -62,6 +76,19 @@
                 @forelse ($orders as $index => $order)
                     @php $row = $queueRows[$index] ?? null; @endphp
                     <tr>
+                        @if (auth()->user()->isSupplier())
+                            <td class="order-map-select-col">
+                                @if ($row['is_batchable'] ?? false)
+                                    <input type="checkbox"
+                                           class="order-map-batch-checkbox"
+                                           value="{{ $order->id }}"
+                                           data-order-id="{{ $order->id }}"
+                                           data-order-no="{{ $order->source_order_id }}"
+                                           data-customer="{{ $order->customer_name }}"
+                                           aria-label="Select order {{ $order->source_order_id }}">
+                                @endif
+                            </td>
+                        @endif
                         <td class="order-map-order-no">#{{ $order->source_order_id }}</td>
                         <td class="order-map-customer">
                             <div class="order-map-customer-name">{{ $order->customer_name }}</div>
@@ -84,7 +111,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="order-map-empty">
+                        <td colspan="{{ auth()->user()->isSupplier() ? 10 : 9 }}" class="order-map-empty">
                             No orders in queue yet.@if (auth()->user()->isAdmin()) Click Load Orders after mapping import statuses.@endif
                         </td>
                     </tr>
@@ -96,6 +123,44 @@
 
 @if ($orders->hasPages())
     <div class="order-map-pagination">{{ $orders->links() }}</div>
+@endif
+
+@if (auth()->user()->isSupplier())
+    <div class="modal-overlay" id="dispatchBatchModal" hidden aria-hidden="true">
+        <div class="modal-panel order-map-panel-modal" role="dialog" aria-labelledby="dispatchBatchModalTitle" aria-modal="true">
+            <div class="order-map-panel-modal-header">
+                <h2 class="order-map-panel-modal-title" id="dispatchBatchModalTitle">Create Dispatch Batch</h2>
+                <button type="button" class="modal-close" data-close-dispatch-batch aria-label="Close">&times;</button>
+            </div>
+            <div class="order-map-panel-modal-body">
+                <form method="POST" action="{{ route('reports.dispatch.create-batch') }}" id="dispatchBatchForm">
+                    @csrf
+                    <div class="mb-4">
+                        <label for="dispatch_batch_date" class="block text-sm font-medium text-slate-700 mb-1">Dispatch Date</label>
+                        <input type="date" name="dispatch_date" id="dispatch_batch_date" value="{{ now()->toDateString() }}" required
+                               class="rounded-md border-slate-300 text-sm shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                    </div>
+                    <div class="overflow-x-auto mb-4">
+                        <table class="min-w-full text-sm border border-slate-200">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="text-left p-2">Order</th>
+                                    <th class="text-left p-2">Customer</th>
+                                    <th class="text-left p-2">Consignment ID</th>
+                                    <th class="text-left p-2">Courier</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dispatchBatchOrderRows"></tbody>
+                        </table>
+                    </div>
+                    <div id="dispatchBatchHiddenInputs"></div>
+                    <button type="submit" class="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+                        Create Dispatch Batch
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 @endif
 
 <div class="modal-overlay" id="orderMapPanelModal" hidden aria-hidden="true">
@@ -223,6 +288,118 @@
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && !modal.hidden) {
             closePanel();
+        }
+    });
+
+    var batchBar = document.getElementById('orderMapBatchBar');
+    var batchModal = document.getElementById('dispatchBatchModal');
+    var batchForm = document.getElementById('dispatchBatchForm');
+    var batchRows = document.getElementById('dispatchBatchOrderRows');
+    var batchHidden = document.getElementById('dispatchBatchHiddenInputs');
+    var selectAll = document.getElementById('orderMapSelectAllBatchable');
+    var selectedOrders = new Map();
+
+    function batchCheckboxes() {
+        return Array.prototype.slice.call(document.querySelectorAll('.order-map-batch-checkbox'));
+    }
+
+    function syncBatchBar() {
+        if (!batchBar) return;
+        var count = selectedOrders.size;
+        batchBar.hidden = count === 0;
+        var label = batchBar.querySelector('[data-batch-count-label]');
+        if (label) label.textContent = count + ' selected';
+    }
+
+    function updateSelectAllState() {
+        if (!selectAll) return;
+        var boxes = batchCheckboxes();
+        var checked = boxes.filter(function (b) { return b.checked; });
+        selectAll.checked = boxes.length > 0 && checked.length === boxes.length;
+        selectAll.indeterminate = checked.length > 0 && checked.length < boxes.length;
+    }
+
+    batchCheckboxes().forEach(function (box) {
+        box.addEventListener('change', function () {
+            var id = box.getAttribute('data-order-id');
+            if (box.checked) {
+                selectedOrders.set(id, {
+                    id: id,
+                    orderNo: box.getAttribute('data-order-no') || '',
+                    customer: box.getAttribute('data-customer') || '',
+                });
+            } else {
+                selectedOrders.delete(id);
+            }
+            syncBatchBar();
+            updateSelectAllState();
+        });
+    });
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function () {
+            batchCheckboxes().forEach(function (box) {
+                box.checked = selectAll.checked;
+                var id = box.getAttribute('data-order-id');
+                if (selectAll.checked) {
+                    selectedOrders.set(id, {
+                        id: id,
+                        orderNo: box.getAttribute('data-order-no') || '',
+                        customer: box.getAttribute('data-customer') || '',
+                    });
+                } else {
+                    selectedOrders.delete(id);
+                }
+            });
+            syncBatchBar();
+            updateSelectAllState();
+        });
+    }
+
+    function openBatchModal() {
+        if (!batchModal || !batchRows || !batchHidden) return;
+        batchRows.innerHTML = '';
+        batchHidden.innerHTML = '';
+        selectedOrders.forEach(function (order) {
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td class="p-2 font-medium">#' + order.orderNo + '<input type="hidden" name="order_ids[]" value="' + order.id + '"></td>' +
+                '<td class="p-2">' + order.customer + '</td>' +
+                '<td class="p-2"><input type="text" name="orders[' + order.id + '][consignment_id]" required class="w-full rounded border-slate-300 text-sm"></td>' +
+                '<td class="p-2"><input type="text" name="orders[' + order.id + '][courier]" class="w-full rounded border-slate-300 text-sm"></td>';
+            batchRows.appendChild(tr);
+        });
+        batchModal.hidden = false;
+        batchModal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('modal-open');
+    }
+
+    function closeBatchModal() {
+        if (!batchModal) return;
+        batchModal.hidden = true;
+        batchModal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('modal-open');
+    }
+
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('[data-open-dispatch-batch-modal]')) {
+            e.preventDefault();
+            openBatchModal();
+            return;
+        }
+        if (e.target.closest('[data-close-dispatch-batch]')) {
+            e.preventDefault();
+            closeBatchModal();
+            return;
+        }
+        if (batchModal && e.target === batchModal) {
+            closeBatchModal();
+        }
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && batchModal && !batchModal.hidden) {
+            closeBatchModal();
         }
     });
 })();

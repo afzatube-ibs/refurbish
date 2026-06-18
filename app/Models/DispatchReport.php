@@ -15,6 +15,7 @@ class DispatchReport extends Model
         'courier',
         'consignment_id',
         'created_by',
+        'dispatch_batch_id',
     ];
 
     protected function casts(): array
@@ -42,5 +43,10 @@ class DispatchReport extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function batch(): BelongsTo
+    {
+        return $this->belongsTo(DispatchBatch::class, 'dispatch_batch_id');
     }
 }

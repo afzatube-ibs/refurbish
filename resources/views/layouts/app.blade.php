@@ -60,6 +60,7 @@
                         </span>
                     @endif
 
+                    <div class="pt-4 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Finance Draft</div>
                     <a href="{{ route('payables.index') }}"
                        class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('payables.*') ? 'sidebar-link-active' : '' }}">
                         Payables

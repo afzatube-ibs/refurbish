@@ -3169,3 +3169,50 @@ body {
         position: static;
     }
 }
+
+/* Dispatch batch report (operational, not finance) */
+.dispatch-report-summary .dispatch-report-card {
+    background: #fff;
+    border: 1px solid rgb(226 232 240);
+    border-radius: 0.5rem;
+    padding: 1rem 1.25rem;
+    border-top: 3px solid rgb(14 116 144);
+}
+
+.dispatch-report-card-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgb(100 116 139);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.dispatch-report-card-value {
+    margin-top: 0.35rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: rgb(15 23 42);
+}
+
+.order-map-batch-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: rgb(240 249 255);
+    border: 1px solid rgb(186 230 253);
+    border-radius: 0.5rem;
+}
+
+.order-map-batch-bar-count {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgb(12 74 110);
+}
+
+.order-map-select-col {
+    width: 2.5rem;
+    text-align: center;
+}

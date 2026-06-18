@@ -33,8 +33,9 @@
                         <td class="text-right text-slate-900 tabular-nums">{{ number_format($row['delivered_cost'], 2) }}</td>
                         <td class="text-right text-orange-600 tabular-nums">{{ number_format($row['returned_cost'], 2) }}</td>
                         <td class="text-right text-slate-700 tabular-nums">{{ number_format($row['paid_amount'], 2) }}</td>
-                        <td class="text-right font-semibold tabular-nums payables-balance-col {{ $balance < 0 ? 'text-orange-600' : 'text-emerald-700' }}">
-                            {{ number_format($balance, 2) }}
+                        <td class="text-right payables-balance-col">
+                            <p class="font-semibold tabular-nums {{ $row['balance_tone_class'] ?? '' }}">{{ number_format($balance, 2) }}</p>
+                            <p class="text-xs text-slate-500 mt-0.5">{{ $row['balance_meaning'] ?? '' }}</p>
                         </td>
                     </tr>
                 @empty

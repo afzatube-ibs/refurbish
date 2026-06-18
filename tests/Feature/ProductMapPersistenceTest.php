@@ -26,7 +26,7 @@ class ProductMapPersistenceTest extends TestCase
 
         config([
             'dropflow.modules.product_map' => true,
-            'dropflow.version' => 'v0.8.2',
+            'dropflow.version' => 'v0.8.3',
             'dropflow.oc_mock' => true,
             'dropflow.live_read_only' => false,
             'dropflow.product_preview_target' => 42,
@@ -68,7 +68,7 @@ class ProductMapPersistenceTest extends TestCase
             ->assertSee('PARENT-9509')
             ->assertSee('Refresh')
             ->assertSee('Load Products')
-            ->assertSee('v0.8.2');
+            ->assertSee('v0.8.3');
     }
 
     public function test_refresh_local_list_does_not_call_opencart(): void
@@ -167,12 +167,12 @@ class ProductMapPersistenceTest extends TestCase
 
     public function test_version_appears_in_ui_and_config(): void
     {
-        $this->assertSame('v0.8.2', config('dropflow.version'));
+        $this->assertSame('v0.8.3', config('dropflow.version'));
 
         $this->actingAs($this->adminUser())
             ->get(route('product-map.index'))
             ->assertOk()
-            ->assertSee('v0.8.2');
+            ->assertSee('v0.8.3');
     }
 
     public function test_confirm_sync_persists_products_to_database(): void

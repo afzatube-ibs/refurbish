@@ -183,6 +183,7 @@ class ReportController extends Controller
         return view('reports.ledger', [
             'rows' => $statement,
             'summary' => $summary,
+            'balancePresentation' => $this->payableService->balancePresentation((float) ($summary['net_payable'] ?? 0)),
             'suppliers' => $this->suppliersForFilter($request),
             'stores' => $request->user()->isAdmin()
                 ? Connection::query()->orderBy('store_url')->get()

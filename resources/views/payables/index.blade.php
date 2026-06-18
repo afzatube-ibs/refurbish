@@ -37,10 +37,15 @@
     </div>
     <div class="bg-white rounded-lg border border-slate-200 p-5 ring-2 ring-emerald-100">
         <p class="text-sm font-medium text-slate-500">Current Balance</p>
-        @php $balance = (float) ($summary['net_payable'] ?? 0); @endphp
-        <p class="mt-2 text-2xl font-semibold tabular-nums {{ $balance < 0 ? 'text-orange-600' : 'text-emerald-700' }}">
-            {{ number_format($balance, 2) }}
-        </p>
+        <p class="text-xs text-slate-400 mt-0.5">Dispatched cost − return cost − paid to store owner − received from supplier ± adjustment</p>
+        <div class="mt-2">
+            @include('partials.balance-display', [
+                'amount' => $balancePresentation['amount'] ?? ($summary['net_payable'] ?? 0),
+                'meaning' => $balancePresentation['meaning'] ?? null,
+                'toneClass' => $balancePresentation['tone_class'] ?? null,
+                'amountClass' => 'text-2xl font-semibold',
+            ])
+        </div>
     </div>
 </div>
 
@@ -101,6 +106,14 @@
                                 <option value="{{ $type->value }}">{{ $type->label() }}</option>
                             @endforeach
                         </select>
+                        <ul class="mt-2 space-y-1 text-xs text-slate-500">
+                            @foreach ($settlementTypes ?? [] as $type)
+                                <li>
+                                    <span class="font-medium text-slate-600">{{ $type->label() }}:</span>
+                                    {{ $type->helpText() }}
+                                </li>
+                            @endforeach
+                        </ul>
                     </div>
 
                     <div>

@@ -40,6 +40,7 @@ class PayableController extends Controller
 
         return view('payables.index', [
             'summary' => $summary,
+            'balancePresentation' => $this->payableService->balancePresentation((float) $summary['net_payable']),
             'settlements' => $settlements,
             'suppliers' => $user->isAdmin() ? Supplier::orderBy('name')->get() : collect(),
             'selectedSupplierId' => $supplierId,

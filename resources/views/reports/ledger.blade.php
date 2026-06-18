@@ -45,8 +45,15 @@
     <div class="bg-white rounded-lg border border-slate-200 p-4">
 
         <p class="text-xs font-medium text-slate-500">Current Balance</p>
-        @php $ledgerBalance = (float) ($summary['net_payable'] ?? 0); @endphp
-        <p class="mt-1 text-xl font-semibold tabular-nums {{ $ledgerBalance < 0 ? 'text-orange-600' : 'text-emerald-700' }}">{{ number_format($ledgerBalance, 2) }}</p>
+
+        <div class="mt-1">
+            @include('partials.balance-display', [
+                'amount' => $balancePresentation['amount'] ?? ($summary['net_payable'] ?? 0),
+                'meaning' => $balancePresentation['meaning'] ?? null,
+                'toneClass' => $balancePresentation['tone_class'] ?? null,
+                'amountClass' => 'text-xl font-semibold',
+            ])
+        </div>
 
     </div>
 

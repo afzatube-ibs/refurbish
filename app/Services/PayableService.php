@@ -126,12 +126,68 @@ class PayableService
         );
     }
 
+    public function balanceMeaning(float $balance): string
+    {
+        $balance = round($balance, 2);
+
+        if ($balance > 0) {
+            return 'Payable to supplier';
+        }
+
+        if ($balance < 0) {
+            return 'Receivable from supplier / advance paid';
+        }
+
+        return 'Settled';
+    }
+
+    public function balanceTone(float $balance): string
+    {
+        $balance = round($balance, 2);
+
+        if ($balance < 0) {
+            return 'negative';
+        }
+
+        if ($balance == 0.0) {
+            return 'zero';
+        }
+
+        return 'positive';
+    }
+
+    public function balanceToneClass(float $balance): string
+    {
+        return match ($this->balanceTone($balance)) {
+            'negative' => 'text-orange-600',
+            default => 'text-emerald-700',
+        };
+    }
+
+    /**
+     * @return array{amount: float, meaning: string, tone: string, tone_class: string}
+     */
+    public function balancePresentation(float $balance): array
+    {
+        $amount = round($balance, 2);
+
+        return [
+            'amount' => $amount,
+            'meaning' => $this->balanceMeaning($amount),
+            'tone' => $this->balanceTone($amount),
+            'tone_class' => $this->balanceToneClass($amount),
+        ];
+    }
+
     /**
      * @param  array<string, float>  $summary
      * @return array<string, mixed>
      */
     public function buildReportRow(string $supplierName, string $storeName, array $summary): array
     {
+        $balance = $this->closingBalance($summary);
+        $presentation = $this->balancePresentation($balance);
+
         return [
             'supplier_name' => $supplierName,
             'store_name' => $storeName,
@@ -141,7 +197,10 @@ class PayableService
             'paid_to_store_owner' => (float) $summary['paid_to_store_owner'],
             'received_from_supplier' => (float) $summary['received_from_supplier'],
             'adjustment_total' => (float) $summary['adjustment_total'],
-            'net_payable' => $this->closingBalance($summary),
+            'net_payable' => $balance,
+            'balance_meaning' => $presentation['meaning'],
+            'balance_tone' => $presentation['tone'],
+            'balance_tone_class' => $presentation['tone_class'],
         ];
     }
 

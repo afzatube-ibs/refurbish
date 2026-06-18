@@ -25,4 +25,13 @@ enum SettlementEntryType: string
             self::Adjustment => LedgerEntryType::Adjustment,
         };
     }
+
+    public function helpText(): string
+    {
+        return match ($this) {
+            self::PaidToStoreOwner => 'Money received by store owner from supplier or COD collection.',
+            self::ReceivedFromSupplier => 'Supplier paid or returned money to store owner.',
+            self::Adjustment => 'Manual correction — amount may be positive or negative.',
+        };
+    }
 }

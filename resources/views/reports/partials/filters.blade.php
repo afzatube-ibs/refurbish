@@ -10,6 +10,18 @@
                 @endforeach
             </select>
         </div>
+        @if (isset($stores))
+            <div>
+                <label for="connection_id" class="block text-xs font-medium text-slate-600 mb-1">Store</label>
+                <select name="connection_id" id="connection_id"
+                        class="rounded-md border-slate-300 text-sm shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                    <option value="">All stores</option>
+                    @foreach ($stores as $store)
+                        <option value="{{ $store->id }}" @selected(request('connection_id') == $store->id)>{{ $store->store_url ?: 'Store #'.$store->id }}</option>
+                    @endforeach
+                </select>
+            </div>
+        @endif
     @endif
     <div>
         <label for="from" class="block text-xs font-medium text-slate-600 mb-1">From</label>

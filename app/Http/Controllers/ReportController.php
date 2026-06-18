@@ -4,13 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Enums\ReturnStatus;
 use App\Enums\SfmOrderStatus;
+use App\Models\Connection;
 use App\Models\DispatchReport;
 use App\Models\Order;
 use App\Models\ProductMap\ProductControlState;
 use App\Models\ProductMap\StockAdjustmentHistory;
 use App\Models\ReturnModel;
 use App\Models\Supplier;
-use App\Models\SupplierLedgerEntry;
 use App\Models\SupplierProduct;
 use App\Services\PayableService;
 use Illuminate\Http\Request;
@@ -157,38 +157,40 @@ class ReportController extends Controller
 
     public function ledger(Request $request): View
     {
-        $query = SupplierLedgerEntry::with('supplier')
-            ->orderByDesc('entry_date')
-            ->orderByDesc('id');
+        $supplierId = $request->user()->isSupplier()
+            ? $request->user()->supplier_id
+            : ($request->query('supplier_id') ? (int) $request->query('supplier_id') : null);
 
-        if ($supplierId = $request->query('supplier_id')) {
-            $query->where('supplier_id', $supplierId);
-        }
+        $connectionId = $request->query('connection_id') ? (int) $request->query('connection_id') : null;
 
-        if ($from = $request->query('from')) {
-            $query->whereDate('entry_date', '>=', $from);
-        }
+        $dateRange = array_filter([
+            'from' => $request->query('from'),
+            'to' => $request->query('to'),
+        ]);
 
-        if ($to = $request->query('to')) {
-            $query->whereDate('entry_date', '<=', $to);
-        }
+        $statement = $this->payableService->accountStatement(
+            $supplierId,
+            $dateRange ?: null,
+            $connectionId,
+        );
 
-        if ($type = $request->query('type')) {
-            $query->where('type', $type);
-        }
-
-        $rows = $query->get();
+        $summary = $this->payableService->summary(
+            $supplierId,
+            $dateRange ?: null,
+            $connectionId,
+        );
 
         return view('reports.ledger', [
-            'rows' => $rows,
-            'totals' => [
-                'count' => $rows->count(),
-                'amount' => $rows->sum('amount'),
-            ],
+            'rows' => $statement,
+            'summary' => $summary,
             'suppliers' => $this->suppliersForFilter($request),
-            'types' => SupplierLedgerEntry::query()->distinct()->orderBy('type')->pluck('type'),
-            'from' => $from ?? null,
-            'to' => $to ?? null,
+            'stores' => $request->user()->isAdmin()
+                ? Connection::query()->orderBy('store_url')->get()
+                : collect(),
+            'types' => collect(\App\Enums\LedgerEntryType::cases())->map->value,
+            'from' => $request->query('from'),
+            'to' => $request->query('to'),
+            'selectedConnectionId' => $connectionId,
         ]);
     }
 
@@ -199,6 +201,8 @@ class ReportController extends Controller
             ? $user->supplier_id
             : ($request->query('supplier_id') ?: null);
 
+        $connectionId = $request->query('connection_id') ? (int) $request->query('connection_id') : null;
+
         $dateRange = array_filter([
             'from' => $request->query('from'),
             'to' => $request->query('to'),
@@ -207,6 +211,7 @@ class ReportController extends Controller
         $summary = $this->payableService->summary(
             $supplierId ? (int) $supplierId : null,
             $dateRange ?: null,
+            $connectionId,
         );
 
         $rows = collect();
@@ -216,14 +221,14 @@ class ReportController extends Controller
                 ->where('is_active', true)
                 ->orderBy('name')
                 ->get()
-                ->map(function (Supplier $supplier) use ($dateRange) {
-                    $supplierSummary = $this->payableService->summary($supplier->id, $dateRange ?: null);
+                ->map(function (Supplier $supplier) use ($dateRange, $connectionId) {
+                    $supplierSummary = $this->payableService->summary($supplier->id, $dateRange ?: null, $connectionId);
 
                     return [
                         'supplier_name' => $supplier->name,
                         'delivered_cost' => $supplierSummary['delivered_cost'],
                         'returned_cost' => $supplierSummary['returned_cost'],
-                        'received_amount' => $supplierSummary['received_from_supplier'],
+                        'received_amount' => $supplierSummary['total_paid'],
                         'net_payable' => $supplierSummary['net_payable'],
                     ];
                 });
@@ -233,13 +238,18 @@ class ReportController extends Controller
             'summary' => [
                 'delivered_cost' => $summary['delivered_cost'],
                 'returned_cost' => $summary['returned_cost'],
-                'received_amount' => $summary['received_from_supplier'],
+                'received_amount' => $summary['total_paid'],
+                'paid_to_store_owner' => $summary['paid_to_store_owner'],
                 'net_payable' => $summary['net_payable'],
             ],
             'rows' => $rows,
             'suppliers' => $this->suppliersForFilter($request),
+            'stores' => $user->isAdmin()
+                ? Connection::query()->orderBy('store_url')->get()
+                : collect(),
             'from' => $request->query('from'),
             'to' => $request->query('to'),
+            'selectedConnectionId' => $connectionId,
         ]);
     }
 

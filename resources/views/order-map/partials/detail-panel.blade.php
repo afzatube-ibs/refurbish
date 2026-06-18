@@ -182,6 +182,8 @@
             </section>
         @endif
 
+        @include('order-map.partials.settlement-history', ['settlementHistory' => $settlementHistory ?? []])
+
         <div class="order-map-detail-footer-actions">
             <a href="{{ route('order-map.print-invoice', $order) }}" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">Print Invoice</a>
             @unless ($compactHeader ?? false)

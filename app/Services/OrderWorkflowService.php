@@ -15,6 +15,7 @@ class OrderWorkflowService
     public function __construct(
         protected OrderStatusEngine $statusEngine,
         protected DispatchService $dispatchService,
+        protected ReturnService $returnService,
         protected OrderMapStockService $stockService,
         protected ActivityLogService $activityLog
     ) {}
@@ -99,7 +100,11 @@ class OrderWorkflowService
 
     public function moveToReturnQueue(Order $order): Order
     {
-        return $this->transition($order, SfmOrderStatus::ReturnQueue, 'order.return_queue');
+        return DB::transaction(function () use ($order) {
+            $this->returnService->markPendingFromOc($order);
+
+            return $order->fresh();
+        });
     }
 
     public function markReturnReceived(Order $order, ?User $user = null): Order
@@ -118,6 +123,18 @@ class OrderWorkflowService
             if ($user instanceof User) {
                 $this->stockService->restoreForReturnReceived($order, $user);
             }
+
+            if (! $user instanceof User) {
+                throw new InvalidArgumentException('A user is required to confirm a return.');
+            }
+
+            $return = $order->returns()->first();
+
+            if (! $return) {
+                $return = $this->returnService->markPendingFromOc($order);
+            }
+
+            $this->returnService->confirmReceived($return, $user);
 
             $order->update(['sfm_status' => SfmOrderStatus::ReturnReceived]);
 

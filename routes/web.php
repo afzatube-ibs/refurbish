@@ -4,6 +4,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LogsController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductMapController;
+use App\Http\Controllers\PayableController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\Settings\ConnectionController;
 use App\Http\Controllers\Settings\OrderStatusMappingController;
@@ -84,6 +85,12 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/stock', [ReportController::class, 'stock'])->name('stock');
             Route::get('/orders', [ReportController::class, 'orders'])->name('orders');
         });
+    });
+
+    Route::middleware(['admin'])->prefix('payables')->name('payables.')->group(function () {
+        Route::get('/', [PayableController::class, 'index'])->name('index');
+        Route::post('/settlements', [PayableController::class, 'storeSettlement'])->name('settlements.store');
+        Route::post('/payments', [PayableController::class, 'storePayment'])->name('payments.store');
     });
 });
 

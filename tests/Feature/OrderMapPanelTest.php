@@ -83,7 +83,7 @@ class OrderMapPanelTest extends TestCase
             ->assertSee('orderMapPanelModal', false)
             ->assertSee('data-order-panel-open', false)
             ->assertSee('Supplier order queue and fulfillment workflow')
-            ->assertSee('v0.7.2', false)
+            ->assertSee('v0.8.0', false)
             ->assertSee(route('order-map.panel', $this->order), false);
     }
 

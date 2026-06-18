@@ -17,7 +17,7 @@
         <p class="mt-1 text-xl font-semibold text-orange-600">{{ number_format($summary['returned_cost'] ?? 0, 2) }}</p>
     </div>
     <div class="bg-white rounded-lg border border-slate-200 p-4">
-        <p class="text-xs font-medium text-slate-500">Received</p>
+        <p class="text-xs font-medium text-slate-500">Total Paid</p>
         <p class="mt-1 text-xl font-semibold text-slate-700">{{ number_format($summary['received_amount'] ?? 0, 2) }}</p>
     </div>
     <div class="bg-white rounded-lg border border-slate-200 p-4">

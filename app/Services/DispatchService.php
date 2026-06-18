@@ -11,6 +11,10 @@ use InvalidArgumentException;
 
 class DispatchService
 {
+    public function __construct(
+        protected SupplierLedgerService $ledgerService,
+    ) {}
+
     public function create(
         Order $order,
         string $courier,
@@ -63,6 +67,8 @@ class DispatchService
                 'courier_name' => $courier,
                 'consignment_id' => $consignmentId,
             ]);
+
+            $this->ledgerService->postDispatch($report->fresh('items'));
 
             return $report->load('items');
         });

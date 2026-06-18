@@ -59,4 +59,9 @@ class Order extends Model
     {
         return $this->hasMany(ReturnModel::class);
     }
+
+    public function ledgerEntries(): HasMany
+    {
+        return $this->hasMany(SupplierLedgerEntry::class);
+    }
 }

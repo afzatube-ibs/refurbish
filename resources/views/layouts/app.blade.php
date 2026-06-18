@@ -71,10 +71,10 @@
                     </a>
                     <a href="{{ route('reports.ledger') }}"
                        class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.ledger') ? 'sidebar-link-active' : '' }}">
-                        Supplier Ledger
+                        Account Statement
                     </a>
-                    <a href="{{ route('reports.payables') }}"
-                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.payables') ? 'sidebar-link-active' : '' }}">
+                    <a href="{{ route('payables.index') }}"
+                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('payables.*') || request()->routeIs('reports.payables') ? 'sidebar-link-active' : '' }}">
                         Payables
                     </a>
                     <a href="{{ route('reports.product-movement') }}"

@@ -15,7 +15,8 @@ use InvalidArgumentException;
 class ReturnService
 {
     public function __construct(
-        protected ActivityLogService $activityLog
+        protected ActivityLogService $activityLog,
+        protected SupplierLedgerService $ledgerService,
     ) {}
 
     public function markPendingFromOc(Order $order): ReturnModel
@@ -106,6 +107,8 @@ class ReturnService
                     ? $receivedDate->format('Y-m-d')
                     : (string) $receivedDate,
             ]);
+
+            $this->ledgerService->postReturnReversal($return->fresh(['returnItems']));
 
             return $return->fresh(['returnItems.orderItem']);
         });

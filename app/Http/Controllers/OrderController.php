@@ -16,6 +16,7 @@ use App\Services\OrderMap\OrderQueuePresenter;
 use App\Services\OrderMap\PackingInvoicePresenter;
 use App\Services\OrderStatusEngine;
 use App\Services\OrderWorkflowService;
+use App\Services\SupplierLedgerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,6 +34,7 @@ class OrderController extends Controller
         private readonly ManualOrderProductSearchService $manualOrderProductSearchService,
         private readonly OrderConnectorAuditService $connectorAuditService,
         private readonly PackingInvoicePresenter $packingInvoicePresenter,
+        private readonly SupplierLedgerService $ledgerService,
     ) {}
 
     public function index(Request $request): View
@@ -89,6 +91,7 @@ class OrderController extends Controller
                 $order->sfm_status ?? \App\Enums\SfmOrderStatus::New
             ),
             'canEdit' => $this->statusEngine->canEditOrder($order),
+            'settlementHistory' => $this->ledgerService->orderHistory($order->id),
         ]);
     }
 
@@ -106,6 +109,7 @@ class OrderController extends Controller
             ),
             'canEdit' => $this->statusEngine->canEditOrder($order),
             'compactHeader' => true,
+            'settlementHistory' => $this->ledgerService->orderHistory($order->id),
         ]);
     }
 

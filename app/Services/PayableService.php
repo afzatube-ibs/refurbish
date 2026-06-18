@@ -35,10 +35,14 @@ class PayableService
      *     net_payable: float
      * }
      */
-    public function summary(?int $supplierId, ?array $dateRange = null, ?int $connectionId = null): array
-    {
+    public function summary(
+        ?int $supplierId,
+        ?array $dateRange = null,
+        ?int $connectionId = null,
+        bool $activeCycleOnly = false,
+    ): array {
         if ($this->hasLedgerData($supplierId, $connectionId)) {
-            return $this->summaryFromLedger($supplierId, $dateRange, $connectionId);
+            return $this->summaryFromLedger($supplierId, $dateRange, $connectionId, $activeCycleOnly);
         }
 
         return $this->summaryFromOperational($supplierId, $dateRange);
@@ -72,7 +76,7 @@ class PayableService
         ?int $connectionId = null,
     ): array {
         $query = SupplierLedgerEntry::query()
-            ->with(['supplier', 'connection', 'order'])
+            ->with(['supplier', 'connection', 'order', 'settlementBatch'])
             ->orderBy('entry_date')
             ->orderBy('id');
 
@@ -103,6 +107,8 @@ class PayableService
                 'entry' => $entry,
                 'type_label' => $type?->label() ?? (string) $entry->type,
                 'running_balance' => round($running, 2),
+                'batch_no' => $entry->settlementBatch?->batch_no,
+                'batch_id' => $entry->settlement_batch_id,
             ];
         }
 
@@ -117,10 +123,10 @@ class PayableService
     public function closingBalance(array $summary): float
     {
         return round(
-            (float) ($summary['delivered_cost'] ?? 0)
-            - (float) ($summary['returned_cost'] ?? 0)
+            (float) ($summary['received_from_supplier'] ?? 0)
             - (float) ($summary['paid_to_store_owner'] ?? 0)
-            - (float) ($summary['received_from_supplier'] ?? 0)
+            - (float) ($summary['delivered_cost'] ?? 0)
+            + (float) ($summary['returned_cost'] ?? 0)
             + (float) ($summary['adjustment_total'] ?? 0),
             2
         );
@@ -130,12 +136,12 @@ class PayableService
     {
         $balance = round($balance, 2);
 
-        if ($balance > 0) {
-            return 'Payable to supplier';
+        if ($balance < 0) {
+            return 'Lokkisona needs to pay supplier';
         }
 
-        if ($balance < 0) {
-            return 'Receivable from supplier / advance paid';
+        if ($balance > 0) {
+            return 'Supplier needs to pay Lokkisona';
         }
 
         return 'Settled';
@@ -240,8 +246,12 @@ class PayableService
      * @param  array{from?: string, to?: string}|null  $dateRange
      * @return array<string, float>
      */
-    protected function summaryFromLedger(?int $supplierId, ?array $dateRange, ?int $connectionId): array
-    {
+    protected function summaryFromLedger(
+        ?int $supplierId,
+        ?array $dateRange,
+        ?int $connectionId,
+        bool $activeCycleOnly = false,
+    ): array {
         $query = SupplierLedgerEntry::query();
 
         if ($supplierId) {
@@ -250,6 +260,10 @@ class PayableService
 
         if ($connectionId) {
             $query->where('connection_id', $connectionId);
+        }
+
+        if ($activeCycleOnly) {
+            $query->whereNull('settlement_batch_id');
         }
 
         if ($dateRange['from'] ?? null) {

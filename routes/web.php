@@ -6,6 +6,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductMapController;
 use App\Http\Controllers\PayableController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SettlementBatchController;
 use App\Http\Controllers\Settings\ConnectionController;
 use App\Http\Controllers\Settings\OrderStatusMappingController;
 use App\Models\ReturnModel;
@@ -90,7 +91,13 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['admin'])->prefix('payables')->name('payables.')->group(function () {
         Route::get('/', [PayableController::class, 'index'])->name('index');
         Route::post('/settlements', [PayableController::class, 'storeSettlement'])->name('settlements.store');
+        Route::post('/close-settlement', [PayableController::class, 'closeSettlement'])->name('close-settlement');
         Route::post('/payments', [PayableController::class, 'storePayment'])->name('payments.store');
+    });
+
+    Route::middleware(['admin'])->prefix('settlements')->name('settlements.')->group(function () {
+        Route::get('/', [SettlementBatchController::class, 'index'])->name('index');
+        Route::get('/{settlement}', [SettlementBatchController::class, 'show'])->name('show');
     });
 });
 

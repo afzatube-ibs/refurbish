@@ -178,6 +178,7 @@ class ReportController extends Controller
             $supplierId,
             $dateRange ?: null,
             $connectionId,
+            activeCycleOnly: true,
         );
 
         return view('reports.ledger', [
@@ -230,7 +231,7 @@ class ReportController extends Controller
 
         foreach ($suppliers as $supplier) {
             if ($stores->isEmpty()) {
-                $summary = $this->payableService->summary($supplier->id, $dateRange ?: null, null);
+                $summary = $this->payableService->summary($supplier->id, $dateRange ?: null, null, activeCycleOnly: true);
                 $rows->push($this->payableService->buildReportRow($supplier->name, '—', $summary));
 
                 continue;
@@ -241,6 +242,7 @@ class ReportController extends Controller
                     $supplier->id,
                     $dateRange ?: null,
                     $store->id,
+                    activeCycleOnly: true,
                 );
 
                 $rows->push($this->payableService->buildReportRow(

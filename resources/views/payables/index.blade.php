@@ -16,10 +16,37 @@
                 @endforeach
             </select>
         </div>
+        @if (($stores ?? collect())->isNotEmpty())
+            <div>
+                <label for="connection_id" class="block text-xs font-medium text-slate-600 mb-1">Store</label>
+                <select name="connection_id" id="connection_id"
+                        class="rounded-md border-slate-300 text-sm shadow-sm focus:border-slate-500 focus:ring-slate-500">
+                    <option value="">All stores</option>
+                    @foreach ($stores as $store)
+                        <option value="{{ $store->id }}" @selected(($selectedConnectionId ?? null) == $store->id)>
+                            {{ parse_url($store->store_url, PHP_URL_HOST) ?: $store->store_url }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        @endif
         <button type="submit" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
             Apply
         </button>
     </form>
+    @if ($canCloseSettlement ?? false)
+        <form method="POST" action="{{ route('payables.close-settlement') }}" class="mb-6 inline-flex"
+              onsubmit="return confirm('Close the current settlement cycle? Open entries will be archived to a batch.');">
+            @csrf
+            <input type="hidden" name="supplier_id" value="{{ $selectedSupplierId }}">
+            @if ($selectedConnectionId ?? null)
+                <input type="hidden" name="connection_id" value="{{ $selectedConnectionId }}">
+            @endif
+            <button type="submit" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800">
+                Close Current Settlement
+            </button>
+        </form>
+    @endif
 @endif
 
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -37,7 +64,7 @@
     </div>
     <div class="bg-white rounded-lg border border-slate-200 p-5 ring-2 ring-emerald-100">
         <p class="text-sm font-medium text-slate-500">Current Balance</p>
-        <p class="text-xs text-slate-400 mt-0.5">Dispatched cost − return cost − paid to store owner − received from supplier ± adjustment</p>
+        <p class="text-xs text-slate-400 mt-0.5">Received by supplier − paid to Lokkisona − dispatched cost + return cost ± adjustment</p>
         <div class="mt-2">
             @include('partials.balance-display', [
                 'amount' => $balancePresentation['amount'] ?? ($summary['net_payable'] ?? 0),
@@ -53,7 +80,8 @@
     <div class="lg:col-span-2">
         <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-200">
-                <h2 class="font-medium text-slate-900">Settlement History</h2>
+                <h2 class="font-medium text-slate-900">Current Cycle Entries</h2>
+                <p class="text-xs text-slate-500 mt-1">Open entries for the active settlement cycle. <a href="{{ route('settlements.index') }}" class="text-slate-700 underline">View closed batches</a></p>
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-slate-200 text-sm table-compact">
@@ -97,6 +125,9 @@
                 <form method="POST" action="{{ route('payables.settlements.store') }}" class="space-y-4">
                     @csrf
                     <input type="hidden" name="supplier_id" value="{{ $selectedSupplierId ?? ($suppliers->first()?->id ?? '') }}">
+                    @if ($selectedConnectionId ?? null)
+                        <input type="hidden" name="connection_id" value="{{ $selectedConnectionId }}">
+                    @endif
 
                     <div>
                         <label for="entry_type" class="block text-sm font-medium text-slate-700 mb-1">Type</label>

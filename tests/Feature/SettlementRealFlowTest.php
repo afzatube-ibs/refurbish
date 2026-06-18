@@ -99,7 +99,7 @@ class SettlementRealFlowTest extends TestCase
         $this->assertDatabaseHas('supplier_ledger_entries', [
             'order_id' => $this->order->id,
             'type' => LedgerEntryType::DispatchCost->value,
-            'amount' => $dispatchTotal,
+            'amount' => -$dispatchTotal,
         ]);
 
         $this->actingAs($this->supplierUser)->post(route('order-map.return-queue', $this->order))->assertRedirect();
@@ -108,7 +108,7 @@ class SettlementRealFlowTest extends TestCase
         $this->assertDatabaseHas('supplier_ledger_entries', [
             'order_id' => $this->order->id,
             'type' => LedgerEntryType::ReturnReversal->value,
-            'amount' => -$dispatchTotal,
+            'amount' => $dispatchTotal,
         ]);
 
         app(SettlementService::class)->record(

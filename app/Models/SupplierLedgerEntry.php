@@ -13,6 +13,7 @@ class SupplierLedgerEntry extends Model
         'order_id',
         'connection_id',
         'settlement_entry_id',
+        'settlement_batch_id',
         'source_type',
         'source_id',
         'entry_date',
@@ -49,5 +50,10 @@ class SupplierLedgerEntry extends Model
     public function settlementEntry(): BelongsTo
     {
         return $this->belongsTo(SettlementEntry::class);
+    }
+
+    public function settlementBatch(): BelongsTo
+    {
+        return $this->belongsTo(SettlementBatch::class);
     }
 }

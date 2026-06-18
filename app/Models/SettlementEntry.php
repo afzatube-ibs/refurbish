@@ -19,6 +19,7 @@ class SettlementEntry extends Model
         'reference',
         'notes',
         'recorded_by',
+        'settlement_batch_id',
     ];
 
     protected function casts(): array
@@ -53,5 +54,10 @@ class SettlementEntry extends Model
     public function ledgerEntry(): HasOne
     {
         return $this->hasOne(SupplierLedgerEntry::class);
+    }
+
+    public function settlementBatch(): BelongsTo
+    {
+        return $this->belongsTo(SettlementBatch::class);
     }
 }

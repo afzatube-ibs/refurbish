@@ -18,10 +18,10 @@ class SupplierLedgerService
         $amount = round($amount, 2);
 
         return match ($type) {
-            LedgerEntryType::DispatchCost => abs($amount),
+            LedgerEntryType::DispatchCost,
+            LedgerEntryType::PaidToStoreOwner => -abs($amount),
             LedgerEntryType::ReturnReversal,
-            LedgerEntryType::PaidToStoreOwner,
-            LedgerEntryType::ReceivedFromSupplier => -abs($amount),
+            LedgerEntryType::ReceivedFromSupplier => abs($amount),
             LedgerEntryType::Adjustment => $amount,
         };
     }

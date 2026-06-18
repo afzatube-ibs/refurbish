@@ -119,7 +119,13 @@
 
                         <td class="text-right font-semibold text-emerald-700">{{ number_format($row['running_balance'], 2) }}</td>
 
-                        <td class="text-slate-600 font-mono text-xs">{{ $entry->reference ?? '—' }}</td>
+                        <td class="text-slate-600 font-mono text-xs">
+                            @if (!empty($row['batch_no']))
+                                <a href="{{ route('settlements.show', $row['batch_id']) }}" class="text-slate-700 hover:text-slate-900 underline">{{ $row['batch_no'] }}</a>
+                            @else
+                                {{ $entry->reference ?? '—' }}
+                            @endif
+                        </td>
 
                         <td class="text-slate-500 text-xs">{{ $entry->notes ?? '—' }}</td>
 

@@ -60,7 +60,7 @@ class SupplierSettlementLedgerTest extends TestCase
         $this->assertDatabaseCount('supplier_ledger_entries', 1);
         $entry = SupplierLedgerEntry::query()->first();
         $this->assertSame(LedgerEntryType::DispatchCost, $entry->type);
-        $this->assertSame(200.0, (float) $entry->amount);
+        $this->assertSame(-200.0, (float) $entry->amount);
         $this->assertSame($order->id, $entry->order_id);
 
         $report = DispatchReport::query()->firstOrFail();
@@ -93,7 +93,7 @@ class SupplierSettlementLedgerTest extends TestCase
 
         $entry = SupplierLedgerEntry::query()->first();
         $this->assertSame(LedgerEntryType::ReturnReversal, $entry->type);
-        $this->assertSame(-50.0, (float) $entry->amount);
+        $this->assertSame(50.0, (float) $entry->amount);
 
         app(SupplierLedgerService::class)->postReturnReversal($return->fresh(['returnItems']));
         $this->assertDatabaseCount('supplier_ledger_entries', 1);
@@ -155,11 +155,11 @@ class SupplierSettlementLedgerTest extends TestCase
 
         $ledger = SupplierLedgerEntry::query()->first();
         $this->assertSame(LedgerEntryType::ReceivedFromSupplier, $ledger->type);
-        $this->assertSame(-75.0, (float) $ledger->amount);
+        $this->assertSame(75.0, (float) $ledger->amount);
 
         $summary = app(PayableService::class)->summary($this->supplier->id);
         $this->assertSame(75.0, $summary['total_paid']);
-        $this->assertSame(-75.0, $summary['net_payable']);
+        $this->assertSame(75.0, $summary['net_payable']);
     }
 
     public function test_payables_page_and_account_statement_render(): void

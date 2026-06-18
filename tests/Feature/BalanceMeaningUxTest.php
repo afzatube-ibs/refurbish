@@ -43,37 +43,12 @@ class BalanceMeaningUxTest extends TestCase
         ]);
     }
 
-    public function test_positive_balance_shows_payable_meaning_on_all_pages(): void
-    {
-        $this->postDispatchLedger(200);
-
-        $query = ['supplier_id' => $this->supplier->id];
-
-        $this->actingAs($this->admin)
-            ->get(route('payables.index', $query))
-            ->assertOk()
-            ->assertSee('Payable to supplier', false)
-            ->assertSee('Record Settlement', false);
-
-        $this->actingAs($this->admin)
-            ->get(route('reports.payables', $query))
-            ->assertOk()
-            ->assertSee('Payable to supplier', false)
-            ->assertDontSee('Record Settlement', false);
-
-        $this->actingAs($this->admin)
-            ->get(route('reports.ledger', $query))
-            ->assertOk()
-            ->assertSee('Payable to supplier', false)
-            ->assertSee('Account Statement', false);
-    }
-
-    public function test_negative_balance_shows_receivable_meaning_on_all_pages(): void
+    public function test_positive_balance_shows_supplier_owes_lokkisona_on_all_pages(): void
     {
         app(SettlementService::class)->record(
             $this->supplier->id,
             SettlementEntryType::ReceivedFromSupplier,
-            75,
+            200,
             new \DateTimeImmutable('2026-06-01'),
             $this->admin,
         );
@@ -83,30 +58,48 @@ class BalanceMeaningUxTest extends TestCase
         $this->actingAs($this->admin)
             ->get(route('payables.index', $query))
             ->assertOk()
-            ->assertSee('Receivable from supplier / advance paid', false);
+            ->assertSee('Supplier needs to pay Lokkisona', false)
+            ->assertSee('Record Settlement', false);
 
         $this->actingAs($this->admin)
             ->get(route('reports.payables', $query))
             ->assertOk()
-            ->assertSee('Receivable from supplier / advance paid', false);
+            ->assertSee('Supplier needs to pay Lokkisona', false)
+            ->assertDontSee('Record Settlement', false);
 
         $this->actingAs($this->admin)
             ->get(route('reports.ledger', $query))
             ->assertOk()
-            ->assertSee('Receivable from supplier / advance paid', false);
+            ->assertSee('Supplier needs to pay Lokkisona', false)
+            ->assertSee('Account Statement', false);
+    }
+
+    public function test_negative_balance_shows_lokkisona_owes_supplier_on_all_pages(): void
+    {
+        $this->postDispatchLedger(-200);
+
+        $query = ['supplier_id' => $this->supplier->id];
+
+        $this->actingAs($this->admin)
+            ->get(route('payables.index', $query))
+            ->assertOk()
+            ->assertSee('Lokkisona needs to pay supplier', false);
+
+        $this->actingAs($this->admin)
+            ->get(route('reports.payables', $query))
+            ->assertOk()
+            ->assertSee('Lokkisona needs to pay supplier', false);
+
+        $this->actingAs($this->admin)
+            ->get(route('reports.ledger', $query))
+            ->assertOk()
+            ->assertSee('Lokkisona needs to pay supplier', false);
     }
 
     public function test_zero_balance_shows_settled_meaning_on_all_pages(): void
     {
-        $this->postDispatchLedger(100);
-
-        app(SettlementService::class)->record(
-            $this->supplier->id,
-            SettlementEntryType::PaidToStoreOwner,
-            100,
-            new \DateTimeImmutable('2026-06-02'),
-            $this->admin,
-        );
+        $this->postDispatchLedger(-100);
+        $this->postReturnLedger(100);
 
         $query = ['supplier_id' => $this->supplier->id];
 
@@ -169,6 +162,21 @@ class BalanceMeaningUxTest extends TestCase
             'entry_date' => now(),
             'reference' => 'TEST-DISPATCH',
             'notes' => 'Balance meaning test dispatch',
+        ]);
+    }
+
+    private function postReturnLedger(float $amount): void
+    {
+        $connection = Connection::getInstance();
+
+        SupplierLedgerEntry::query()->create([
+            'supplier_id' => $this->supplier->id,
+            'connection_id' => $connection->id,
+            'type' => LedgerEntryType::ReturnReversal,
+            'amount' => $amount,
+            'entry_date' => now(),
+            'reference' => 'TEST-RETURN',
+            'notes' => 'Balance meaning test return',
         ]);
     }
 }

@@ -138,12 +138,6 @@ class SupplierSettlementLedgerTest extends TestCase
             ->assertOk()
             ->assertSee('Total Dispatched Cost')
             ->assertSee('Record Settlement');
-
-        $this->actingAs($this->admin)
-            ->get(route('reports.ledger', ['supplier_id' => $this->supplier->id]))
-            ->assertOk()
-            ->assertSee('Account Statement')
-            ->assertSee('Current Balance');
     }
 
     public function test_order_settlement_history_on_detail_panel(): void

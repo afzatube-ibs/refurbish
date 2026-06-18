@@ -60,6 +60,11 @@
                         </span>
                     @endif
 
+                    <a href="{{ route('payables.index') }}"
+                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('payables.*') ? 'sidebar-link-active' : '' }}">
+                        Payables
+                    </a>
+
                     <div class="pt-4 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Reports</div>
                     <a href="{{ route('reports.dispatch') }}"
                        class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.dispatch') ? 'sidebar-link-active' : '' }}">
@@ -73,9 +78,9 @@
                        class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.ledger') ? 'sidebar-link-active' : '' }}">
                         Account Statement
                     </a>
-                    <a href="{{ route('payables.index') }}"
-                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('payables.*') || request()->routeIs('reports.payables') ? 'sidebar-link-active' : '' }}">
-                        Payables
+                    <a href="{{ route('reports.payables') }}"
+                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.payables') ? 'sidebar-link-active' : '' }}">
+                        Payables Report
                     </a>
                     <a href="{{ route('reports.product-movement') }}"
                        class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.product-movement') ? 'sidebar-link-active' : '' }}">

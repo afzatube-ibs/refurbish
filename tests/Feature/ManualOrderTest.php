@@ -52,7 +52,7 @@ class ManualOrderTest extends TestCase
             ->assertSee('Totals', false)
             ->assertSee('Product search', false)
             ->assertSee('Lokkisona', false)
-            ->assertSee('v0.8.0', false);
+            ->assertSee('v0.8.1', false);
     }
 
     public function test_manual_order_can_be_created_with_free_text_item(): void

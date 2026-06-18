@@ -199,7 +199,7 @@ class ReportController extends Controller
         $user = $request->user();
         $supplierId = $user->isSupplier()
             ? $user->supplier_id
-            : ($request->query('supplier_id') ?: null);
+            : ($request->query('supplier_id') ? (int) $request->query('supplier_id') : null);
 
         $connectionId = $request->query('connection_id') ? (int) $request->query('connection_id') : null;
 
@@ -208,40 +208,49 @@ class ReportController extends Controller
             'to' => $request->query('to'),
         ]);
 
-        $summary = $this->payableService->summary(
-            $supplierId ? (int) $supplierId : null,
-            $dateRange ?: null,
-            $connectionId,
-        );
+        $suppliersQuery = Supplier::query()
+            ->where('is_active', true)
+            ->orderBy('name');
 
+        if ($supplierId) {
+            $suppliersQuery->where('id', $supplierId);
+        }
+
+        $suppliers = $suppliersQuery->get();
+
+        $storesQuery = Connection::query()->orderBy('store_url');
+
+        if ($connectionId) {
+            $storesQuery->where('id', $connectionId);
+        }
+
+        $stores = $storesQuery->get();
         $rows = collect();
 
-        if ($user->isAdmin() && ! $supplierId) {
-            $rows = Supplier::query()
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get()
-                ->map(function (Supplier $supplier) use ($dateRange, $connectionId) {
-                    $supplierSummary = $this->payableService->summary($supplier->id, $dateRange ?: null, $connectionId);
+        foreach ($suppliers as $supplier) {
+            if ($stores->isEmpty()) {
+                $summary = $this->payableService->summary($supplier->id, $dateRange ?: null, null);
+                $rows->push($this->payableReportRow($supplier->name, '—', $summary));
 
-                    return [
-                        'supplier_name' => $supplier->name,
-                        'delivered_cost' => $supplierSummary['delivered_cost'],
-                        'returned_cost' => $supplierSummary['returned_cost'],
-                        'received_amount' => $supplierSummary['total_paid'],
-                        'net_payable' => $supplierSummary['net_payable'],
-                    ];
-                });
+                continue;
+            }
+
+            foreach ($stores as $store) {
+                $summary = $this->payableService->summary(
+                    $supplier->id,
+                    $dateRange ?: null,
+                    $store->id,
+                );
+
+                $rows->push($this->payableReportRow(
+                    $supplier->name,
+                    $this->storeLabel($store),
+                    $summary,
+                ));
+            }
         }
 
         return view('reports.payables', [
-            'summary' => [
-                'delivered_cost' => $summary['delivered_cost'],
-                'returned_cost' => $summary['returned_cost'],
-                'received_amount' => $summary['total_paid'],
-                'paid_to_store_owner' => $summary['paid_to_store_owner'],
-                'net_payable' => $summary['net_payable'],
-            ],
             'rows' => $rows,
             'suppliers' => $this->suppliersForFilter($request),
             'stores' => $user->isAdmin()
@@ -251,6 +260,33 @@ class ReportController extends Controller
             'to' => $request->query('to'),
             'selectedConnectionId' => $connectionId,
         ]);
+    }
+
+    /**
+     * @param  array<string, float>  $summary
+     * @return array<string, mixed>
+     */
+    private function payableReportRow(string $supplierName, string $storeName, array $summary): array
+    {
+        return [
+            'supplier_name' => $supplierName,
+            'store_name' => $storeName,
+            'delivered_cost' => $summary['delivered_cost'],
+            'returned_cost' => $summary['returned_cost'],
+            'paid_amount' => $summary['total_paid'],
+            'net_payable' => $summary['net_payable'],
+        ];
+    }
+
+    private function storeLabel(Connection $connection): string
+    {
+        if (! filled($connection->store_url)) {
+            return 'Store #'.$connection->id;
+        }
+
+        $host = parse_url($connection->store_url, PHP_URL_HOST);
+
+        return $host ?: $connection->store_url;
     }
 
     public function productMovement(Request $request): View

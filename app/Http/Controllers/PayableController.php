@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Enums\SettlementEntryType;
 use App\Http\Requests\StoreSettlementEntryRequest;
 use App\Http\Requests\StoreSupplierPaymentRequest;
-use App\Models\Connection;
 use App\Models\SettlementEntry;
 use App\Models\Supplier;
 use App\Services\PayableService;
@@ -24,23 +23,16 @@ class PayableController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
-        $supplierId = $user->isSupplier() ? $user->supplier_id : $request->query('supplier_id');
-        $connectionId = $request->query('connection_id') ? (int) $request->query('connection_id') : null;
-
-        $dateRange = array_filter([
-            'from' => $request->query('from'),
-            'to' => $request->query('to'),
-        ]);
+        $supplierId = $user->isSupplier()
+            ? $user->supplier_id
+            : ($request->query('supplier_id') ?: Supplier::query()->orderBy('name')->value('id'));
 
         $summary = $this->payableService->summary(
             $supplierId ? (int) $supplierId : null,
-            $dateRange ?: null,
-            $connectionId,
         );
 
-        $settlements = SettlementEntry::with(['supplier', 'recordedBy', 'connection'])
+        $settlements = SettlementEntry::with(['recordedBy'])
             ->when($supplierId, fn ($q) => $q->where('supplier_id', $supplierId))
-            ->when($connectionId, fn ($q) => $q->where('connection_id', $connectionId))
             ->orderByDesc('entry_date')
             ->orderByDesc('id')
             ->limit(25)
@@ -50,12 +42,8 @@ class PayableController extends Controller
             'summary' => $summary,
             'settlements' => $settlements,
             'suppliers' => $user->isAdmin() ? Supplier::orderBy('name')->get() : collect(),
-            'stores' => $user->isAdmin() ? Connection::query()->orderBy('store_url')->get() : collect(),
             'selectedSupplierId' => $supplierId,
-            'selectedConnectionId' => $connectionId,
             'settlementTypes' => SettlementEntryType::cases(),
-            'from' => $request->query('from'),
-            'to' => $request->query('to'),
         ]);
     }
 
@@ -76,10 +64,7 @@ class PayableController extends Controller
         );
 
         return redirect()
-            ->route('payables.index', array_filter([
-                'supplier_id' => $validated['supplier_id'],
-                'connection_id' => $validated['connection_id'] ?? null,
-            ]))
+            ->route('payables.index', ['supplier_id' => $validated['supplier_id']])
             ->with('success', 'Settlement entry recorded.');
     }
 

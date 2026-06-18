@@ -1,28 +1,24 @@
-<form method="GET" action="{{ route('reports.dispatch') }}" class="mb-4 flex flex-wrap items-end gap-3">
+<form method="GET" action="{{ route('reports.dispatch') }}" class="df-filter-row">
     @include('reports.partials.scope-filters')
-    <div>
-        <label for="from" class="block text-xs font-medium text-slate-600 mb-1">From</label>
-        <input type="date" name="from" id="from" value="{{ request('from', $from ?? '') }}"
-               class="rounded-md border-slate-300 text-sm shadow-sm focus:border-slate-500 focus:ring-slate-500">
+    <div class="df-filter-group">
+        <label for="from" class="df-filter-label">From</label>
+        <input type="date" name="from" id="from" value="{{ request('from', $from ?? '') }}" class="df-date">
     </div>
-    <div>
-        <label for="to" class="block text-xs font-medium text-slate-600 mb-1">To</label>
-        <input type="date" name="to" id="to" value="{{ request('to', $to ?? '') }}"
-               class="rounded-md border-slate-300 text-sm shadow-sm focus:border-slate-500 focus:ring-slate-500">
+    <div class="df-filter-group">
+        <label for="to" class="df-filter-label">To</label>
+        <input type="date" name="to" id="to" value="{{ request('to', $to ?? '') }}" class="df-date">
     </div>
-    <div>
-        <label for="courier" class="block text-xs font-medium text-slate-600 mb-1">Courier</label>
+    <div class="df-filter-group">
+        <label for="courier" class="df-filter-label">Courier</label>
         <input type="text" name="courier" id="courier" value="{{ request('courier', $courier ?? '') }}"
-               placeholder="Courier name"
-               class="rounded-md border-slate-300 text-sm shadow-sm focus:border-slate-500 focus:ring-slate-500">
+               placeholder="Courier name" class="df-input">
     </div>
-    <div>
-        <label for="search" class="block text-xs font-medium text-slate-600 mb-1">Search</label>
+    <div class="df-filter-group df-filter-group--wide">
+        <label for="search" class="df-filter-label">Search</label>
         <input type="text" name="search" id="search" value="{{ request('search', $search ?? '') }}"
-               placeholder="Order no or phone"
-               class="rounded-md border-slate-300 text-sm shadow-sm focus:border-slate-500 focus:ring-slate-500">
+               placeholder="Order no or phone" class="df-input">
     </div>
-    <button type="submit" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-        Filter
-    </button>
+    <div class="df-filter-actions">
+        <button type="submit" class="df-btn df-btn--secondary">Filter</button>
+    </div>
 </form>

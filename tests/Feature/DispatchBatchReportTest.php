@@ -67,7 +67,7 @@ class DispatchBatchReportTest extends TestCase
             ->assertOk()
             ->assertSee('Dispatch Report', false)
             ->assertSee('Dispatched Orders', false)
-            ->assertSee('Dispatch Cost', false)
+            ->assertSee('Dispatch cost', false)
             ->assertSee('LIST-1', false)
             ->assertSee('Test Product', false)
             ->assertDontSee('Dispatch Batches', false);

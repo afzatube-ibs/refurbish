@@ -36,7 +36,7 @@
         <div class="manual-order-section-body">
             <div>
                 <label for="reference_note" class="manual-order-label">Reference note <span class="manual-order-optional">optional</span></label>
-                <input type="text" name="reference_note" id="reference_note" value="{{ old('reference_note') }}" class="form-input w-full" placeholder="Inbox thread, call ref, etc.">
+                <input type="text" name="reference_note" id="reference_note" value="{{ old('reference_note') }}" class="df-input w-full" placeholder="Inbox thread, call ref, etc.">
             </div>
         </div>
     </section>
@@ -49,14 +49,14 @@
             <div class="manual-order-grid-2">
                 <div>
                     <label for="customer_name" class="manual-order-label">Customer name</label>
-                    <input type="text" name="customer_name" id="customer_name" value="{{ old('customer_name') }}" class="form-input w-full" required>
+                    <input type="text" name="customer_name" id="customer_name" value="{{ old('customer_name') }}" class="df-input w-full" required>
                     @error('customer_name')
                         <p class="manual-order-error">{{ $message }}</p>
                     @enderror
                 </div>
                 <div>
                     <label for="customer_phone" class="manual-order-label">Phone</label>
-                    <input type="text" name="customer_phone" id="customer_phone" value="{{ old('customer_phone') }}" class="form-input w-full" required>
+                    <input type="text" name="customer_phone" id="customer_phone" value="{{ old('customer_phone') }}" class="df-input w-full" required>
                     @error('customer_phone')
                         <p class="manual-order-error">{{ $message }}</p>
                     @enderror
@@ -64,7 +64,7 @@
             </div>
             <div>
                 <label for="customer_address" class="manual-order-label">Address</label>
-                <textarea name="customer_address" id="customer_address" rows="3" class="form-input w-full" required>{{ old('customer_address') }}</textarea>
+                <textarea name="customer_address" id="customer_address" rows="3" class="df-textarea w-full" required>{{ old('customer_address') }}</textarea>
                 @error('customer_address')
                     <p class="manual-order-error">{{ $message }}</p>
                 @enderror
@@ -72,11 +72,11 @@
             <div class="manual-order-grid-2">
                 <div>
                     <label for="city_zone" class="manual-order-label">City / zone <span class="manual-order-optional">optional</span></label>
-                    <input type="text" name="city_zone" id="city_zone" value="{{ old('city_zone') }}" class="form-input w-full">
+                    <input type="text" name="city_zone" id="city_zone" value="{{ old('city_zone') }}" class="df-input w-full">
                 </div>
                 <div>
                     <label for="delivery_note" class="manual-order-label">Delivery note <span class="manual-order-optional">optional</span></label>
-                    <input type="text" name="delivery_note" id="delivery_note" value="{{ old('delivery_note') }}" class="form-input w-full" placeholder="Gate code, landmark, etc.">
+                    <input type="text" name="delivery_note" id="delivery_note" value="{{ old('delivery_note') }}" class="df-input w-full" placeholder="Gate code, landmark, etc.">
                 </div>
             </div>
         </div>
@@ -117,7 +117,7 @@
 
     <div class="manual-order-actions">
         <a href="{{ route('order-map.index') }}" class="btn btn-ghost">Cancel</a>
-        <button type="submit" class="btn btn-primary">Create Order</button>
+        <button type="submit" class="df-btn df-btn--primary">Create Order</button>
     </div>
 </form>
 

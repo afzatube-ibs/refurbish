@@ -52,7 +52,7 @@ class ManualOrderTest extends TestCase
             ->assertSee('Lokkisona Manual', false)
             ->assertDontSee('Order Source', false)
             ->assertDontSee('Source type', false)
-            ->assertSee('v0.9.2', false);
+            ->assertSee('v0.9.3', false);
     }
 
     public function test_manual_order_can_be_created_without_source_fields(): void

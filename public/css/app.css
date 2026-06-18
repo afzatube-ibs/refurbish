@@ -27,6 +27,218 @@ body {
     border: 0;
 }
 
+/* DropFlow — global form, filter, summary, report utilities */
+.df-input,
+.df-select,
+.df-date {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    height: 2rem;
+    padding: 0 0.5rem;
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    color: rgb(15 23 42);
+    background: rgb(255 255 255);
+    border: 1px solid rgb(203 213 225);
+    border-radius: 0.375rem;
+    box-sizing: border-box;
+}
+
+.df-select {
+    padding-right: 1.75rem;
+    appearance: auto;
+}
+
+.df-date {
+    padding: 0 0.4rem;
+}
+
+.df-textarea {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: 4.5rem;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: rgb(15 23 42);
+    background: rgb(255 255 255);
+    border: 1px solid rgb(203 213 225);
+    border-radius: 0.375rem;
+    box-sizing: border-box;
+    resize: vertical;
+}
+
+.df-input:focus,
+.df-select:focus,
+.df-date:focus,
+.df-textarea:focus {
+    outline: none;
+    border-color: rgb(148 163 184);
+    box-shadow: 0 0 0 2px rgb(226 232 240);
+}
+
+.df-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2rem;
+    padding: 0 0.85rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1;
+    border-radius: 0.375rem;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.df-btn--primary {
+    color: rgb(255 255 255);
+    background: rgb(15 23 42);
+    border-color: rgb(15 23 42);
+}
+
+.df-btn--primary:hover {
+    background: rgb(30 41 59);
+    border-color: rgb(30 41 59);
+}
+
+.df-btn--secondary {
+    color: rgb(51 65 85);
+    background: rgb(255 255 255);
+    border-color: rgb(203 213 225);
+}
+
+.df-btn--secondary:hover {
+    background: rgb(248 250 252);
+}
+
+.df-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.55rem 0.65rem;
+    margin-bottom: 1rem;
+}
+
+.df-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    flex: 0 1 auto;
+    min-width: 7.5rem;
+}
+
+.df-filter-group--wide {
+    flex: 1 1 10rem;
+    min-width: 9rem;
+}
+
+.df-filter-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: rgb(100 116 139);
+    line-height: 1.2;
+}
+
+.df-filter-actions {
+    display: flex;
+    align-items: flex-end;
+    flex: 0 0 auto;
+}
+
+.df-summary-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.65rem;
+    margin-bottom: 1rem;
+    padding: 0.55rem 1rem;
+    font-size: 0.8125rem;
+    color: rgb(51 65 85);
+    background: rgb(255 255 255);
+    border: 1px solid rgb(226 232 240);
+    border-radius: 0.5rem;
+}
+
+.df-summary-item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    white-space: nowrap;
+}
+
+.df-summary-item + .df-summary-item::before {
+    content: "|";
+    margin-right: 0.65rem;
+    color: rgb(203 213 225);
+    font-weight: 400;
+}
+
+.df-summary-item__label {
+    color: rgb(100 116 139);
+}
+
+.df-summary-item__value {
+    font-weight: 600;
+    color: rgb(15 23 42);
+    font-variant-numeric: tabular-nums;
+}
+
+.df-summary-item--accent .df-summary-item__value {
+    color: rgb(234 88 12);
+}
+
+.df-summary-item--muted .df-summary-item__value {
+    color: rgb(71 85 105);
+}
+
+.df-summary-note {
+    margin: -0.5rem 0 1rem;
+    font-size: 0.75rem;
+    color: rgb(100 116 139);
+    line-height: 1.4;
+}
+
+.df-report-table-wrap {
+    background: rgb(255 255 255);
+    border: 1px solid rgb(226 232 240);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.df-report-table-wrap .df-report-table-header {
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid rgb(226 232 240);
+    background: rgb(248 250 252);
+}
+
+.df-report-table-wrap .df-report-table-header h2 {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: rgb(15 23 42);
+}
+
+.df-report-table-wrap .df-report-table-header p {
+    margin: 0.2rem 0 0;
+    font-size: 0.75rem;
+    color: rgb(100 116 139);
+}
+
+.df-report-table-wrap .df-report-table-scroll {
+    overflow-x: auto;
+}
+
+.df-report-table {
+    width: 100%;
+    min-width: 100%;
+}
+
 .sidebar-link-active {
     background-color: rgb(30 41 59);
     color: rgb(248 250 252);
@@ -584,13 +796,15 @@ body {
 .pm-filter-input {
     width: 100%;
     min-width: 0;
-    padding: 0.35rem 0.5rem;
+    height: 2rem;
+    padding: 0 0.5rem;
     font-size: 0.8125rem;
     line-height: 1.25;
     color: rgb(15 23 42);
     background: rgb(255 255 255);
     border: 1px solid rgb(203 213 225);
     border-radius: 0.375rem;
+    box-sizing: border-box;
 }
 
 .pm-filter-input:focus {

@@ -8,18 +8,32 @@
 @section('content')
 @include('reports.partials.filters')
 
-<div class="mb-4 rounded-lg bg-slate-50 border border-slate-200 px-5 py-3 text-sm text-slate-700">
-    <strong>Current Payable</strong> =
-    Dispatch Cost − Return Cost − Received by Supplier − Payment to Dropshipper ± Adjustment
-    <span class="text-slate-500 ml-2">(positive = need to pay supplier)</span>
-</div>
+@php
+    $summaryDispatch = (float) collect($rows)->sum('dispatch_cost');
+    $summaryReturn = (float) collect($rows)->sum('return_cost');
+    $summaryReceived = (float) collect($rows)->sum('received_by_supplier');
+    $summaryPayment = (float) collect($rows)->sum('payment_to_dropshipper');
+    $summaryPayable = (float) collect($rows)->sum('current_payable');
+@endphp
+@include('partials.df-summary-bar', ['items' => [
+    ['label' => 'Dispatch Cost', 'value' => number_format($summaryDispatch, 2)],
+    ['label' => 'Return Cost', 'value' => number_format($summaryReturn, 2), 'tone' => 'accent'],
+    ['label' => 'Received by Supplier', 'value' => number_format($summaryReceived, 2)],
+    ['label' => 'Payment to Dropshipper', 'value' => number_format($summaryPayment, 2)],
+    ['label' => 'Current Payable', 'value' => number_format($summaryPayable, 2)],
+]])
 
-<div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
-    <div class="px-6 py-4 border-b border-slate-200">
-        <h2 class="font-medium text-slate-900">Supplier Payable Summary</h2>
+<p class="df-summary-note">
+    <strong>Current Payable</strong> = Dispatch Cost − Return Cost − Received by Supplier − Payment to Dropshipper ± Adjustment
+    <span class="text-slate-400">(positive = need to pay supplier)</span>
+</p>
+
+<div class="df-report-table-wrap">
+    <div class="df-report-table-header">
+        <h2>Supplier Payable Summary</h2>
     </div>
-    <div class="payables-report-wrap overflow-x-auto">
-        <table class="payables-report-table min-w-full divide-y divide-slate-200 text-sm table-compact">
+    <div class="payables-report-wrap df-report-table-scroll">
+        <table class="payables-report-table df-report-table min-w-full divide-y divide-slate-200 text-sm table-compact">
             <thead class="bg-slate-50">
                 <tr>
                     <th class="text-left font-medium text-slate-600">Supplier</th>

@@ -7,24 +7,15 @@
 @section('content')
 @include('reports.partials.filters')
 
-<div class="mb-4 rounded-lg bg-white border border-slate-200 px-5 py-3 text-sm flex flex-wrap gap-x-6 gap-y-2">
-    <span>
-        <span class="text-slate-500">Returned orders:</span>
-        <span class="ml-1 font-semibold text-slate-900">{{ number_format($totals['orders'] ?? 0) }}</span>
-    </span>
-    <span>
-        <span class="text-slate-500">Returned qty:</span>
-        <span class="ml-1 font-semibold text-slate-900">{{ number_format($totals['qty'] ?? 0) }}</span>
-    </span>
-    <span>
-        <span class="text-slate-500">Return cost:</span>
-        <span class="ml-1 font-semibold text-orange-600">{{ number_format($totals['return_cost'] ?? 0, 2) }}</span>
-    </span>
-</div>
+@include('partials.df-summary-bar', ['items' => [
+    ['label' => 'Returned orders', 'value' => number_format($totals['orders'] ?? 0)],
+    ['label' => 'Returned qty', 'value' => number_format($totals['qty'] ?? 0)],
+    ['label' => 'Return cost', 'value' => number_format($totals['return_cost'] ?? 0, 2), 'tone' => 'accent'],
+]])
 
-<div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200 text-sm table-compact">
+<div class="df-report-table-wrap">
+    <div class="df-report-table-scroll">
+        <table class="df-report-table min-w-full divide-y divide-slate-200 text-sm table-compact">
             <thead class="bg-slate-50">
                 <tr>
                     <th class="text-left font-medium text-slate-600">Date</th>

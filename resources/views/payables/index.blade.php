@@ -37,7 +37,10 @@
     </div>
     <div class="bg-white rounded-lg border border-slate-200 p-5 ring-2 ring-emerald-100">
         <p class="text-sm font-medium text-slate-500">Current Balance</p>
-        <p class="mt-2 text-2xl font-semibold text-emerald-700">{{ number_format($summary['net_payable'] ?? 0, 2) }}</p>
+        @php $balance = (float) ($summary['net_payable'] ?? 0); @endphp
+        <p class="mt-2 text-2xl font-semibold tabular-nums {{ $balance < 0 ? 'text-orange-600' : 'text-emerald-700' }}">
+            {{ number_format($balance, 2) }}
+        </p>
     </div>
 </div>
 

@@ -94,6 +94,46 @@ class SupplierSettlementLedgerTest extends TestCase
         $entry = SupplierLedgerEntry::query()->first();
         $this->assertSame(LedgerEntryType::ReturnReversal, $entry->type);
         $this->assertSame(-50.0, (float) $entry->amount);
+
+        app(SupplierLedgerService::class)->postReturnReversal($return->fresh(['returnItems']));
+        $this->assertDatabaseCount('supplier_ledger_entries', 1);
+    }
+
+    public function test_settlement_ledger_posting_is_not_duplicated(): void
+    {
+        $entry = app(SettlementService::class)->record(
+            $this->supplier->id,
+            SettlementEntryType::PaidToStoreOwner,
+            30,
+            new \DateTimeImmutable('2026-06-03'),
+            $this->admin,
+            'PAY-DUP',
+        );
+
+        app(SupplierLedgerService::class)->postSettlement($entry);
+        $this->assertDatabaseCount('supplier_ledger_entries', 1);
+
+        app(SupplierLedgerService::class)->postSettlement($entry->fresh());
+        $this->assertDatabaseCount('supplier_ledger_entries', 1);
+    }
+
+    public function test_closing_balance_matches_account_statement(): void
+    {
+        app(SettlementService::class)->record(
+            $this->supplier->id,
+            SettlementEntryType::ReceivedFromSupplier,
+            40,
+            new \DateTimeImmutable('2026-06-04'),
+            $this->admin,
+        );
+
+        $payableService = app(PayableService::class);
+        $summary = $payableService->summary($this->supplier->id);
+        $closingRow = $payableService->statementClosingRow($this->supplier->id);
+
+        $this->assertNotNull($closingRow);
+        $this->assertSame($payableService->closingBalance($summary), $closingRow['running_balance']);
+        $this->assertSame($summary['net_payable'], $closingRow['running_balance']);
     }
 
     public function test_settlement_entry_posts_to_ledger_and_updates_payables(): void

@@ -71,6 +71,7 @@ class PayablesOperationalReportSeparationTest extends TestCase
             ->assertSee('Dispatch Cost', false)
             ->assertSee('Return Cost', false)
             ->assertSee('Current Balance', false)
+            ->assertSee('payables-balance-col', false)
             ->assertSee('Store', false)
             ->assertDontSee('Record Settlement', false)
             ->assertDontSee('Record settlement', false);

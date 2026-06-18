@@ -32,7 +32,6 @@ class PayableService
      *     received_from_supplier: float,
      *     total_paid: float,
      *     adjustment_total: float,
-     *     received_from_supplier: float,
      *     net_payable: float
      * }
      */
@@ -110,6 +109,59 @@ class PayableService
         return array_reverse($rows);
     }
 
+    /**
+     * Current balance from summary components (single source of truth for UI).
+     *
+     * @param  array<string, float>  $summary
+     */
+    public function closingBalance(array $summary): float
+    {
+        return round(
+            (float) ($summary['delivered_cost'] ?? 0)
+            - (float) ($summary['returned_cost'] ?? 0)
+            - (float) ($summary['paid_to_store_owner'] ?? 0)
+            - (float) ($summary['received_from_supplier'] ?? 0)
+            + (float) ($summary['adjustment_total'] ?? 0),
+            2
+        );
+    }
+
+    /**
+     * @param  array<string, float>  $summary
+     * @return array<string, mixed>
+     */
+    public function buildReportRow(string $supplierName, string $storeName, array $summary): array
+    {
+        return [
+            'supplier_name' => $supplierName,
+            'store_name' => $storeName,
+            'delivered_cost' => (float) $summary['delivered_cost'],
+            'returned_cost' => (float) $summary['returned_cost'],
+            'paid_amount' => (float) $summary['total_paid'],
+            'paid_to_store_owner' => (float) $summary['paid_to_store_owner'],
+            'received_from_supplier' => (float) $summary['received_from_supplier'],
+            'adjustment_total' => (float) $summary['adjustment_total'],
+            'net_payable' => $this->closingBalance($summary),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function statementClosingRow(
+        ?int $supplierId,
+        ?array $dateRange = null,
+        ?int $connectionId = null,
+    ): ?array {
+        $rows = $this->accountStatement($supplierId, $dateRange, $connectionId);
+
+        if ($rows === []) {
+            return null;
+        }
+
+        return $rows[0];
+    }
+
     protected function hasLedgerData(?int $supplierId, ?int $connectionId): bool
     {
         $query = SupplierLedgerEntry::query();
@@ -171,17 +223,18 @@ class PayableService
             ->filter(fn ($entry) => $this->entryTypeValue($entry) === LedgerEntryType::Adjustment->value)
             ->sum(fn ($entry) => (float) $entry->amount);
 
-        $netPayable = round((float) $entries->sum('amount'), 2);
-
-        return [
+        $components = [
             'delivered_cost' => round($delivered, 2),
             'returned_cost' => round($returned, 2),
             'paid_to_store_owner' => round($paidToStore, 2),
             'received_from_supplier' => round($received, 2),
             'total_paid' => round($paidToStore + $received, 2),
             'adjustment_total' => round($adjustment, 2),
-            'net_payable' => $netPayable,
         ];
+
+        $components['net_payable'] = $this->closingBalance($components);
+
+        return $components;
     }
 
     /**
@@ -245,17 +298,19 @@ class PayableService
         }
 
         $receivedFromSupplier = (float) $paymentsQuery->sum('amount');
-        $netPayable = $deliveredCost - $returnedCost - $receivedFromSupplier;
 
-        return [
+        $components = [
             'delivered_cost' => round($deliveredCost, 2),
             'returned_cost' => round($returnedCost, 2),
             'paid_to_store_owner' => 0.0,
             'received_from_supplier' => round($receivedFromSupplier, 2),
             'total_paid' => round($receivedFromSupplier, 2),
             'adjustment_total' => 0.0,
-            'net_payable' => round($netPayable, 2),
         ];
+
+        $components['net_payable'] = $this->closingBalance($components);
+
+        return $components;
     }
 
     protected function entryTypeValue(SupplierLedgerEntry $entry): string

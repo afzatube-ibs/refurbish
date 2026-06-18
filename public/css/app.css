@@ -37,6 +37,29 @@ body {
     padding: 0.5rem 0.75rem;
 }
 
+.payables-report-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.payables-report-table {
+    min-width: 52rem;
+    width: 100%;
+}
+
+.payables-report-table th,
+.payables-report-table td {
+    white-space: nowrap;
+}
+
+.payables-report-table .payables-balance-col {
+    min-width: 7.5rem;
+}
+
+.tabular-nums {
+    font-variant-numeric: tabular-nums;
+}
+
 .product-map-table.table-compact th,
 .product-map-table.table-compact td {
     padding: 0.42rem 0.55rem;

@@ -230,7 +230,7 @@ class ReportController extends Controller
         foreach ($suppliers as $supplier) {
             if ($stores->isEmpty()) {
                 $summary = $this->payableService->summary($supplier->id, $dateRange ?: null, null);
-                $rows->push($this->payableReportRow($supplier->name, '—', $summary));
+                $rows->push($this->payableService->buildReportRow($supplier->name, '—', $summary));
 
                 continue;
             }
@@ -242,7 +242,7 @@ class ReportController extends Controller
                     $store->id,
                 );
 
-                $rows->push($this->payableReportRow(
+                $rows->push($this->payableService->buildReportRow(
                     $supplier->name,
                     $this->storeLabel($store),
                     $summary,
@@ -260,22 +260,6 @@ class ReportController extends Controller
             'to' => $request->query('to'),
             'selectedConnectionId' => $connectionId,
         ]);
-    }
-
-    /**
-     * @param  array<string, float>  $summary
-     * @return array<string, mixed>
-     */
-    private function payableReportRow(string $supplierName, string $storeName, array $summary): array
-    {
-        return [
-            'supplier_name' => $supplierName,
-            'store_name' => $storeName,
-            'delivered_cost' => $summary['delivered_cost'],
-            'returned_cost' => $summary['returned_cost'],
-            'paid_amount' => $summary['total_paid'],
-            'net_payable' => $summary['net_payable'],
-        ];
     }
 
     private function storeLabel(Connection $connection): string

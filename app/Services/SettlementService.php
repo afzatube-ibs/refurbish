@@ -25,6 +25,7 @@ class SettlementService
         ?string $notes = null,
         ?int $orderId = null,
         ?int $connectionId = null,
+        ?string $collectionSource = null,
     ): SettlementEntry {
         return DB::transaction(function () use (
             $supplierId,
@@ -36,12 +37,14 @@ class SettlementService
             $notes,
             $orderId,
             $connectionId,
+            $collectionSource,
         ) {
             $entry = SettlementEntry::query()->create([
                 'supplier_id' => $supplierId,
                 'connection_id' => $connectionId ?? $this->activeConnectionId(),
                 'order_id' => $orderId,
                 'entry_type' => $entryType,
+                'collection_source' => $collectionSource,
                 'amount' => round($amount, 2),
                 'entry_date' => $entryDate,
                 'reference' => $reference,

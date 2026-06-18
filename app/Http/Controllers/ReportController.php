@@ -11,6 +11,8 @@ use App\Models\ProductMap\StockAdjustmentHistory;
 use App\Models\ReturnModel;
 use App\Models\Supplier;
 use App\Models\SupplierProduct;
+use App\Services\DispatchReportService;
+use App\Services\OperationalFinanceService;
 use App\Services\PayableService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,7 +21,28 @@ class ReportController extends Controller
 {
     public function __construct(
         private readonly PayableService $payableService,
+        private readonly OperationalFinanceService $operationalFinance,
+        private readonly DispatchReportService $dispatchReport,
     ) {}
+
+    public function dispatch(Request $request): View
+    {
+        $filters = $this->reportFilters($request);
+        $lines = $this->dispatchReport->lines($filters);
+
+        return view('reports.dispatch.index', [
+            'lines' => $lines,
+            'totals' => $this->dispatchReport->totals($lines),
+            'suppliers' => $this->suppliersForFilter($request),
+            'stores' => $request->user()->isAdmin()
+                ? Connection::query()->orderBy('store_url')->get()
+                : collect(),
+            'from' => $request->query('from'),
+            'to' => $request->query('to'),
+            'courier' => $request->query('courier'),
+            'search' => $request->query('search'),
+        ]);
+    }
 
     public function stock(Request $request): View
     {
@@ -70,7 +93,7 @@ class ReportController extends Controller
 
     public function returns(Request $request): View
     {
-        $query = ReturnModel::with(['order', 'supplier', 'returnItems', 'confirmedBy'])
+        $query = ReturnModel::with(['order', 'supplier', 'returnItems.orderItem', 'confirmedBy'])
             ->orderByDesc('created_at');
 
         if ($request->user()->isSupplier()) {
@@ -82,35 +105,53 @@ class ReportController extends Controller
         if ($status = $request->query('status')) {
             $query->where('return_status', $status);
         } else {
-            $query->whereIn('return_status', [ReturnStatus::Pending, ReturnStatus::Confirmed]);
+            $query->where('return_status', ReturnStatus::Confirmed);
         }
 
         if ($from = $request->query('from')) {
-            $query->whereDate('created_at', '>=', $from);
+            $query->whereDate('received_date', '>=', $from);
         }
 
         if ($to = $request->query('to')) {
-            $query->whereDate('created_at', '<=', $to);
+            $query->whereDate('received_date', '<=', $to);
         }
 
-        $rows = $query->get()->each(function (ReturnModel $row): void {
-            $row->return_cost = $row->returnItems->sum(
+        $rows = $query->get()->map(function (ReturnModel $row) {
+            $itemsSummary = $row->returnItems->map(function ($item) {
+                $name = $item->orderItem?->product_name ?? 'Item';
+
+                return $name.' ×'.$item->quantity;
+            })->implode(', ');
+
+            $qty = (int) $row->returnItems->sum('quantity');
+            $returnCost = (float) $row->returnItems->sum(
                 fn ($item) => $item->quantity * $item->supplier_cost_snapshot
             );
+
+            return [
+                'model' => $row,
+                'date' => $row->received_date ?? $row->created_at,
+                'order_no' => $row->order?->source_order_id ?? '—',
+                'customer' => $row->order?->customer_name ?? '—',
+                'supplier' => $row->supplier?->name ?? '—',
+                'items_summary' => $itemsSummary ?: '—',
+                'qty' => $qty,
+                'return_cost' => $returnCost,
+                'status' => $row->return_status,
+            ];
         });
+
+        $filters = $this->reportFilters($request);
 
         return view('reports.returns', [
             'rows' => $rows,
             'totals' => [
-                'confirmed_cost' => $rows
-                    ->filter(fn (ReturnModel $row) => $row->return_status === ReturnStatus::Confirmed)
-                    ->sum('return_cost'),
-                'pending_count' => $rows
-                    ->filter(fn (ReturnModel $row) => $row->return_status === ReturnStatus::Pending)
-                    ->count(),
+                'orders' => $rows->count(),
+                'qty' => (int) $rows->sum('qty'),
+                'return_cost' => $this->operationalFinance->returnCost($filters),
             ],
             'suppliers' => $this->suppliersForFilter($request),
-            'statusFilter' => $status ?? '',
+            'statusFilter' => $status ?? 'confirmed',
             'from' => $from ?? null,
             'to' => $to ?? null,
         ]);
@@ -159,82 +200,38 @@ class ReportController extends Controller
 
     public function payables(Request $request): View
     {
-        $user = $request->user();
-        $supplierId = $user->isSupplier()
-            ? $user->supplier_id
-            : ($request->query('supplier_id') ? (int) $request->query('supplier_id') : null);
-
-        $connectionId = $request->query('connection_id') ? (int) $request->query('connection_id') : null;
-
-        $dateRange = array_filter([
-            'from' => $request->query('from'),
-            'to' => $request->query('to'),
-        ]);
-
-        $suppliersQuery = Supplier::query()
-            ->where('is_active', true)
-            ->orderBy('name');
-
-        if ($supplierId) {
-            $suppliersQuery->where('id', $supplierId);
-        }
-
-        $suppliers = $suppliersQuery->get();
-
-        $storesQuery = Connection::query()->orderBy('store_url');
-
-        if ($connectionId) {
-            $storesQuery->where('id', $connectionId);
-        }
-
-        $stores = $storesQuery->get();
-        $rows = collect();
-
-        foreach ($suppliers as $supplier) {
-            if ($stores->isEmpty()) {
-                $summary = $this->payableService->summary($supplier->id, $dateRange ?: null, null, activeCycleOnly: true);
-                $rows->push($this->payableService->buildReportRow($supplier->name, '—', $summary));
-
-                continue;
-            }
-
-            foreach ($stores as $store) {
-                $summary = $this->payableService->summary(
-                    $supplier->id,
-                    $dateRange ?: null,
-                    $store->id,
-                    activeCycleOnly: true,
-                );
-
-                $rows->push($this->payableService->buildReportRow(
-                    $supplier->name,
-                    $this->storeLabel($store),
-                    $summary,
-                ));
-            }
-        }
+        $filters = $this->reportFilters($request);
 
         return view('reports.payables', [
-            'rows' => $rows,
+            'rows' => $this->operationalFinance->buildPayableReportRows($filters),
             'suppliers' => $this->suppliersForFilter($request),
-            'stores' => $user->isAdmin()
+            'stores' => $request->user()->isAdmin()
                 ? Connection::query()->orderBy('store_url')->get()
                 : collect(),
             'from' => $request->query('from'),
             'to' => $request->query('to'),
-            'selectedConnectionId' => $connectionId,
+            'selectedConnectionId' => $filters['connection_id'] ?? null,
         ]);
     }
 
-    private function storeLabel(Connection $connection): string
+    /**
+     * @return array{supplier_id?: int|null, connection_id?: int|null, from?: string|null, to?: string|null, courier?: string|null, search?: string|null, user_supplier_id?: int|null}
+     */
+    private function reportFilters(Request $request): array
     {
-        if (! filled($connection->store_url)) {
-            return 'Store #'.$connection->id;
-        }
+        $user = $request->user();
 
-        $host = parse_url($connection->store_url, PHP_URL_HOST);
-
-        return $host ?: $connection->store_url;
+        return array_filter([
+            'supplier_id' => $user->isSupplier()
+                ? $user->supplier_id
+                : ($request->query('supplier_id') ? (int) $request->query('supplier_id') : null),
+            'connection_id' => $request->query('connection_id') ? (int) $request->query('connection_id') : null,
+            'from' => $request->query('from'),
+            'to' => $request->query('to'),
+            'courier' => $request->query('courier'),
+            'search' => $request->query('search'),
+            'user_supplier_id' => $user->isSupplier() ? $user->supplier_id : null,
+        ], fn ($value) => $value !== null && $value !== '');
     }
 
     public function productMovement(Request $request): View

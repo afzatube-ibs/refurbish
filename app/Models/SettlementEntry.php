@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CollectionSource;
 use App\Enums\SettlementEntryType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,12 +21,14 @@ class SettlementEntry extends Model
         'notes',
         'recorded_by',
         'settlement_batch_id',
+        'collection_source',
     ];
 
     protected function casts(): array
     {
         return [
             'entry_type' => SettlementEntryType::class,
+            'collection_source' => CollectionSource::class,
             'amount' => 'decimal:2',
             'entry_date' => 'date',
         ];

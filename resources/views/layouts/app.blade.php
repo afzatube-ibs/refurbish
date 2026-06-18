@@ -50,51 +50,74 @@
 
                     @if ($modules['order_map'] ?? false)
                         <a href="{{ route('order-map.index') }}"
-                           class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('order-map.*') ? 'sidebar-link-active' : '' }}">
-                            Order Map
-                            <span class="ml-1 text-[10px] uppercase text-amber-400">Step 3</span>
+                           class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('order-map.index', 'order-map.show', 'order-map.panel', 'order-map.update', 'order-map.*dispatch*', 'order-map.*pack*', 'order-map.*accept*') ? 'sidebar-link-active' : '' }}">
+                            Order Queue
+                        </a>
+                        <a href="{{ route('order-map.create') }}"
+                           class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('order-map.create', 'order-map.store') ? 'sidebar-link-active' : '' }}">
+                            Manual Order
                         </a>
                     @else
-                        <span class="block rounded-md px-3 py-2 text-slate-500 cursor-not-allowed" title="Order Map — Step 3 (in progress)">
-                            Order Map <span class="ml-1 text-[10px] uppercase text-amber-400">Step 3</span>
+                        <span class="block rounded-md px-3 py-2 text-slate-500 cursor-not-allowed" title="Order Queue (in progress)">
+                            Order Queue
+                        </span>
+                        <span class="block rounded-md px-3 py-2 text-slate-500 cursor-not-allowed">
+                            Manual Order
                         </span>
                     @endif
 
-                    <div class="pt-4 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Finance Draft</div>
-                    <a href="{{ route('payables.index') }}"
-                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('payables.*') ? 'sidebar-link-active' : '' }}">
-                        Payables
-                    </a>
-                    <a href="{{ route('settlements.index') }}"
-                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('settlements.*') ? 'sidebar-link-active' : '' }}">
-                        Settlement History
-                    </a>
-
                     <div class="pt-4 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Reports</div>
                     <a href="{{ route('reports.dispatch') }}"
-                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.dispatch') ? 'sidebar-link-active' : '' }}">
+                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.dispatch') && ! request()->routeIs('reports.dispatch.show', 'reports.dispatch.print') ? 'sidebar-link-active' : '' }}">
                         Dispatch Report
                     </a>
                     <a href="{{ route('reports.returns') }}"
                        class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.returns') ? 'sidebar-link-active' : '' }}">
                         Returns Report
                     </a>
-                    <a href="{{ route('reports.ledger') }}"
-                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.ledger') ? 'sidebar-link-active' : '' }}">
-                        Account Statement
+                    <a href="{{ route('reports.collections') }}"
+                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.collections') ? 'sidebar-link-active' : '' }}">
+                        Collections Report
                     </a>
                     <a href="{{ route('reports.payables') }}"
                        class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.payables') ? 'sidebar-link-active' : '' }}">
                         Payables Report
                     </a>
-                    <a href="{{ route('reports.product-movement') }}"
-                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.product-movement') ? 'sidebar-link-active' : '' }}">
-                        Product Movement
+
+                    <div class="pt-4 pb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Settings</div>
+                    <a href="{{ route('settings.order-status-mapping.index') }}"
+                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('settings.order-status-mapping.*') ? 'sidebar-link-active' : '' }}">
+                        Order Status Mapping
                     </a>
-                    <a href="{{ route('reports.profit-cost') }}"
-                       class="block rounded-md px-3 py-2 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.profit-cost') ? 'sidebar-link-active' : '' }}">
-                        Profit &amp; Cost
-                    </a>
+
+                    <details class="pt-4 group">
+                        <summary class="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500 cursor-pointer list-none flex items-center justify-between">
+                            <span>Legacy / Draft</span>
+                            <span class="text-slate-600 group-open:rotate-180 transition-transform">▾</span>
+                        </summary>
+                        <div class="mt-1 space-y-1">
+                            <a href="{{ route('reports.ledger') }}"
+                               class="block rounded-md px-3 py-2 text-slate-400 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.ledger') ? 'sidebar-link-active' : '' }}">
+                                Account Statement
+                            </a>
+                            <a href="{{ route('settlements.index') }}"
+                               class="block rounded-md px-3 py-2 text-slate-400 hover:bg-slate-800 hover:text-white {{ request()->routeIs('settlements.*') ? 'sidebar-link-active' : '' }}">
+                                Settlement History
+                            </a>
+                            <a href="{{ route('payables.index') }}"
+                               class="block rounded-md px-3 py-2 text-slate-400 hover:bg-slate-800 hover:text-white {{ request()->routeIs('payables.*') ? 'sidebar-link-active' : '' }}">
+                                Payables
+                            </a>
+                            <a href="{{ route('reports.product-movement') }}"
+                               class="block rounded-md px-3 py-2 text-slate-400 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.product-movement') ? 'sidebar-link-active' : '' }}">
+                                Product Movement
+                            </a>
+                            <a href="{{ route('reports.profit-cost') }}"
+                               class="block rounded-md px-3 py-2 text-slate-400 hover:bg-slate-800 hover:text-white {{ request()->routeIs('reports.profit-cost') ? 'sidebar-link-active' : '' }}">
+                                Profit &amp; Cost
+                            </a>
+                        </div>
+                    </details>
                 @endif
             </nav>
 

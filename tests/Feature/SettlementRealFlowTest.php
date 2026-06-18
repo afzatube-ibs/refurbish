@@ -146,11 +146,15 @@ class SettlementRealFlowTest extends TestCase
             ->assertSee(number_format($expectedBalance, 2), false)
             ->assertSee('Record Settlement', false);
 
+        $operational = app(\App\Services\OperationalFinanceService::class);
+        $opsFilters = ['supplier_id' => $this->supplier->id, 'connection_id' => Connection::getInstance()->id];
+        $expectedOperationalPayable = $operational->currentPayable($opsFilters);
+
         $this->actingAs($this->admin)
             ->get(route('reports.payables', ['supplier_id' => $this->supplier->id]))
             ->assertOk()
-            ->assertSee('Current Balance', false)
-            ->assertSee(number_format($expectedBalance, 2), false)
+            ->assertSee('Current Payable', false)
+            ->assertSee(number_format($expectedOperationalPayable, 2), false)
             ->assertDontSee('Record Settlement', false);
 
         $this->actingAs($this->admin)

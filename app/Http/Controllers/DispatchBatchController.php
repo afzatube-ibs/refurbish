@@ -18,66 +18,6 @@ class DispatchBatchController extends Controller
         private readonly DispatchBatchService $batchService,
     ) {}
 
-    public function index(Request $request): View
-    {
-        $query = DispatchBatch::query()
-            ->with(['supplier', 'connection'])
-            ->orderByDesc('dispatch_date')
-            ->orderByDesc('id');
-
-        if ($request->user()->isSupplier()) {
-            $query->where('supplier_id', $request->user()->supplier_id);
-        } elseif ($supplierId = $request->query('supplier_id')) {
-            $query->where('supplier_id', (int) $supplierId);
-        }
-
-        if ($connectionId = $request->query('connection_id')) {
-            $query->where('connection_id', (int) $connectionId);
-        }
-
-        if ($from = $request->query('from')) {
-            $query->whereDate('dispatch_date', '>=', $from);
-        }
-
-        if ($to = $request->query('to')) {
-            $query->whereDate('dispatch_date', '<=', $to);
-        }
-
-        if ($courier = trim((string) $request->query('courier'))) {
-            $query->whereHas('batchOrders', fn ($q) => $q->where('courier', 'like', '%'.$courier.'%'));
-        }
-
-        if ($search = trim((string) $request->query('search'))) {
-            $query->where(function ($q) use ($search) {
-                $q->where('batch_no', 'like', '%'.$search.'%')
-                    ->orWhereHas('batchOrders', function ($orderQuery) use ($search) {
-                        $orderQuery->where('order_no', 'like', '%'.$search.'%')
-                            ->orWhere('phone', 'like', '%'.$search.'%');
-                    });
-            });
-        }
-
-        $batches = $query->get();
-
-        return view('reports.dispatch.index', [
-            'batches' => $batches,
-            'totals' => [
-                'batches' => $batches->count(),
-                'orders' => (int) $batches->sum('total_orders'),
-                'qty' => (int) $batches->sum('total_qty'),
-                'supplier_cost' => (float) $batches->sum('total_supplier_cost'),
-            ],
-            'suppliers' => $this->suppliersForFilter($request),
-            'stores' => $request->user()->isAdmin()
-                ? Connection::query()->orderBy('store_url')->get()
-                : collect(),
-            'from' => $request->query('from'),
-            'to' => $request->query('to'),
-            'courier' => $request->query('courier'),
-            'search' => $request->query('search'),
-        ]);
-    }
-
     public function show(Request $request, DispatchBatch $batch): View
     {
         $this->authorizeBatch($request, $batch);

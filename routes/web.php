@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CollectionsReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DispatchBatchController;
 use App\Http\Controllers\LogsController;
@@ -76,7 +77,7 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::prefix('reports')->name('reports.')->group(function () {
-        Route::get('/dispatch', [DispatchBatchController::class, 'index'])->name('dispatch');
+        Route::get('/dispatch', [ReportController::class, 'dispatch'])->name('dispatch');
         Route::post('/dispatch/create-batch', [DispatchBatchController::class, 'storeCreateBatch'])
             ->middleware('supplier')
             ->name('dispatch.create-batch');
@@ -85,6 +86,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/returns', [ReportController::class, 'returns'])->name('returns');
 
         Route::middleware(['admin'])->group(function () {
+            Route::get('/collections', [CollectionsReportController::class, 'index'])->name('collections');
+            Route::post('/collections', [CollectionsReportController::class, 'store'])->name('collections.store');
             Route::get('/ledger', [ReportController::class, 'ledger'])->name('ledger');
             Route::get('/payables', [ReportController::class, 'payables'])->name('payables');
             Route::get('/product-movement', [ReportController::class, 'productMovement'])->name('product-movement');

@@ -52,15 +52,25 @@ class DispatchBatchReportTest extends TestCase
 
     public function test_dispatch_report_list_loads(): void
     {
-        $this->createPackedOrder('LIST-1', 100, 2);
+        $order = $this->createPackedOrder('LIST-1', 100, 2);
+
+        app(DispatchBatchService::class)->createFromPackedOrders([
+            'order_ids' => [$order->id],
+            'dispatch_date' => '2026-06-19',
+            'orders' => [
+                $order->id => ['consignment_id' => 'CN-LIST', 'courier' => 'CourierX'],
+            ],
+        ], $this->supplierUser);
 
         $this->actingAs($this->admin)
             ->get(route('reports.dispatch'))
             ->assertOk()
             ->assertSee('Dispatch Report', false)
-            ->assertSee('Dispatch Batches', false)
-            ->assertSee('Total Batches', false)
-            ->assertSee('Dispatched Orders', false);
+            ->assertSee('Dispatched Orders', false)
+            ->assertSee('Dispatch Cost', false)
+            ->assertSee('LIST-1', false)
+            ->assertSee('Test Product', false)
+            ->assertDontSee('Dispatch Batches', false);
     }
 
     public function test_packed_orders_can_create_dispatch_batch(): void
@@ -242,17 +252,17 @@ class DispatchBatchReportTest extends TestCase
                 'search' => 'SRCH-99',
             ]))
             ->assertOk()
-            ->assertSee($batch->batch_no, false);
+            ->assertSee('SRCH-99', false);
 
         $this->actingAs($this->admin)
             ->get(route('reports.dispatch', ['courier' => 'BlueDart']))
             ->assertOk()
-            ->assertSee($batch->batch_no, false);
+            ->assertSee('SRCH-99', false);
 
         $this->actingAs($this->admin)
             ->get(route('reports.dispatch', ['search' => 'NO-MATCH']))
             ->assertOk()
-            ->assertDontSee($batch->batch_no, false);
+            ->assertDontSee('SRCH-99', false);
     }
 
     public function test_print_route_loads(): void

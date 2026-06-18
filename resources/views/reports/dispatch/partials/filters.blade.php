@@ -44,7 +44,7 @@
     <div>
         <label for="search" class="block text-xs font-medium text-slate-600 mb-1">Search</label>
         <input type="text" name="search" id="search" value="{{ request('search', $search ?? '') }}"
-               placeholder="Batch no, order no, phone"
+               placeholder="Order no or phone"
                class="rounded-md border-slate-300 text-sm shadow-sm focus:border-slate-500 focus:ring-slate-500">
     </div>
     <button type="submit" class="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">

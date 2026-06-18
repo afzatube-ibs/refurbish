@@ -3,6 +3,7 @@
         <col class="order-map-col-select">
     @endif
     <col class="order-map-col-order">
+    <col class="order-map-col-source">
     <col class="order-map-col-customer">
     <col class="order-map-col-oc-status">
     <col class="order-map-col-products">

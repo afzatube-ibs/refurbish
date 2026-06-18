@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\OperationalDefaultsService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -12,11 +13,21 @@ class StoreManualOrderRequest extends FormRequest
         return $this->user()?->isAdmin() ?? false;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $defaults = app(OperationalDefaultsService::class)->manualOrderDefaults();
+
+        $this->merge([
+            'source_store' => $this->input('source_store', $defaults['source_store']),
+            'source_type' => $this->input('source_type', $defaults['source_type']),
+        ]);
+    }
+
     public function rules(): array
     {
         return [
-            'source_store' => ['required', 'string', Rule::in(['lokkisona'])],
-            'source_type' => ['required', 'string', Rule::in(['inbox', 'phone', 'offline', 'other'])],
+            'source_store' => ['nullable', 'string', Rule::in(['lokkisona'])],
+            'source_type' => ['nullable', 'string', Rule::in(['inbox', 'phone', 'offline', 'other'])],
             'reference_note' => ['nullable', 'string', 'max:500'],
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['required', 'string', 'max:50'],

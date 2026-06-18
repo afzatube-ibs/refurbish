@@ -14,6 +14,10 @@ use Illuminate\Support\Collection;
 
 class OperationalFinanceService
 {
+    public function __construct(
+        protected OperationalDefaultsService $defaults,
+    ) {}
+
     /**
      * @param  array{supplier_id?: int|null, connection_id?: int|null, from?: string|null, to?: string|null}  $filters
      */
@@ -363,10 +367,7 @@ class OperationalFinanceService
 
     protected function defaultConnectionId(): int
     {
-        $connection = Connection::query()->where('is_active', true)->first()
-            ?? Connection::query()->first();
-
-        return (int) ($connection?->id ?? 0);
+        return $this->defaults->defaultConnectionId();
     }
 
     protected function storeLabel(Connection $connection): string

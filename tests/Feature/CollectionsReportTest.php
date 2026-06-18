@@ -58,14 +58,13 @@ class CollectionsReportTest extends TestCase
     {
         $this->actingAs($this->admin)
             ->post(route('reports.collections.store'), [
-                'supplier_id' => $this->supplier->id,
                 'entry_type' => 'received_by_supplier',
                 'collection_source' => 'cod',
                 'entry_date' => '2026-06-15',
                 'amount' => 500,
                 'reference' => 'COD-001',
             ])
-            ->assertRedirect(route('reports.collections', ['supplier_id' => $this->supplier->id]))
+            ->assertRedirect(route('reports.collections'))
             ->assertSessionHas('success');
 
         $this->assertDatabaseHas('settlement_entries', [

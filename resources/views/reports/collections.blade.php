@@ -8,28 +8,39 @@
 <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
     <div class="xl:col-span-1 bg-white rounded-lg border border-slate-200 p-6">
         <h2 class="font-medium text-slate-900 mb-4">Record Entry</h2>
+        @if (($singleSupplier ?? false) && ($singleStore ?? false))
+            <p class="text-xs text-slate-500 mb-4">
+                Supplier: {{ $defaultSupplierName }} · Store: {{ $defaultStoreLabel }}
+            </p>
+        @endif
         <form method="POST" action="{{ route('reports.collections.store') }}" class="space-y-4">
             @csrf
-            <div>
-                <label for="supplier_id" class="block text-xs font-medium text-slate-600 mb-1">Supplier</label>
-                <select name="supplier_id" id="supplier_id" required class="w-full rounded-md border-slate-300 text-sm">
-                    <option value="">Select supplier</option>
-                    @foreach ($suppliers as $supplier)
-                        <option value="{{ $supplier->id }}" @selected(old('supplier_id', $selectedSupplierId) == $supplier->id)>{{ $supplier->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label for="connection_id" class="block text-xs font-medium text-slate-600 mb-1">Store</label>
-                <select name="connection_id" id="connection_id" class="w-full rounded-md border-slate-300 text-sm">
-                    <option value="">Default store</option>
-                    @foreach ($stores as $store)
-                        <option value="{{ $store->id }}" @selected(old('connection_id', $selectedConnectionId) == $store->id)>
-                            {{ parse_url($store->store_url, PHP_URL_HOST) ?: $store->store_url }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+            @if ($singleSupplier ?? false)
+                <input type="hidden" name="supplier_id" value="{{ $defaultSupplierId }}">
+            @else
+                <div>
+                    <label for="supplier_id" class="block text-xs font-medium text-slate-600 mb-1">Supplier</label>
+                    <select name="supplier_id" id="supplier_id" required class="w-full rounded-md border-slate-300 text-sm">
+                        @foreach ($suppliers as $supplier)
+                            <option value="{{ $supplier->id }}" @selected(old('supplier_id', $selectedSupplierId) == $supplier->id)>{{ $supplier->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
+            @if ($singleStore ?? false)
+                <input type="hidden" name="connection_id" value="{{ $defaultConnectionId }}">
+            @else
+                <div>
+                    <label for="connection_id" class="block text-xs font-medium text-slate-600 mb-1">Store</label>
+                    <select name="connection_id" id="connection_id" class="w-full rounded-md border-slate-300 text-sm">
+                        @foreach ($stores as $store)
+                            <option value="{{ $store->id }}" @selected(old('connection_id', $selectedConnectionId) == $store->id)>
+                                {{ parse_url($store->store_url, PHP_URL_HOST) ?: $store->store_url }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
             <div>
                 <label for="entry_type" class="block text-xs font-medium text-slate-600 mb-1">Type</label>
                 <select name="entry_type" id="entry_type" required class="w-full rounded-md border-slate-300 text-sm">
@@ -71,15 +82,18 @@
 
     <div class="xl:col-span-2">
         <form method="GET" action="{{ route('reports.collections') }}" class="mb-4 flex flex-wrap items-end gap-3">
-            <div>
-                <label for="filter_supplier_id" class="block text-xs font-medium text-slate-600 mb-1">Supplier</label>
-                <select name="supplier_id" id="filter_supplier_id" class="rounded-md border-slate-300 text-sm">
-                    <option value="">All</option>
-                    @foreach ($suppliers as $supplier)
-                        <option value="{{ $supplier->id }}" @selected($selectedSupplierId == $supplier->id)>{{ $supplier->name }}</option>
-                    @endforeach
-                </select>
-            </div>
+            @if (! ($singleSupplier ?? false))
+                <div>
+                    <label for="filter_supplier_id" class="block text-xs font-medium text-slate-600 mb-1">Supplier</label>
+                    <select name="supplier_id" id="filter_supplier_id" class="rounded-md border-slate-300 text-sm">
+                        @foreach ($suppliers as $supplier)
+                            <option value="{{ $supplier->id }}" @selected($selectedSupplierId == $supplier->id)>{{ $supplier->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @else
+                <input type="hidden" name="supplier_id" value="{{ $defaultSupplierId }}">
+            @endif
             <div>
                 <label for="filter_entry_type" class="block text-xs font-medium text-slate-600 mb-1">Type</label>
                 <select name="entry_type" id="filter_entry_type" class="rounded-md border-slate-300 text-sm">

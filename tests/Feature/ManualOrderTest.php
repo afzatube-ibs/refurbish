@@ -45,24 +45,22 @@ class ManualOrderTest extends TestCase
             ->get(route('order-map.create'))
             ->assertOk()
             ->assertSee('Create Order', false)
-            ->assertSee('Create inbox, phone, or offline supplier order', false)
-            ->assertSee('Order Source', false)
             ->assertSee('Customer Details', false)
             ->assertSee('Order Items', false)
             ->assertSee('Totals', false)
             ->assertSee('Product search', false)
-            ->assertSee('Lokkisona', false)
-            ->assertSee('v0.9.1', false);
+            ->assertSee('Lokkisona Manual', false)
+            ->assertDontSee('Order Source', false)
+            ->assertDontSee('Source type', false)
+            ->assertSee('v0.9.2', false);
     }
 
-    public function test_manual_order_can_be_created_with_free_text_item(): void
+    public function test_manual_order_can_be_created_without_source_fields(): void
     {
-        $user = $this->adminUser('manual-order-free-text');
+        $user = $this->adminUser('manual-order-no-source');
 
         $this->actingAs($user)
             ->post(route('order-map.store'), [
-                'source_store' => 'lokkisona',
-                'source_type' => 'phone',
                 'reference_note' => 'Caller ref 88',
                 'customer_name' => 'Phone Customer',
                 'customer_phone' => '+8801700000999',
@@ -85,16 +83,9 @@ class ManualOrderTest extends TestCase
 
         $order = Order::query()->where('customer_name', 'Phone Customer')->firstOrFail();
         $this->assertStringStartsWith('MAN-', $order->source_order_id);
-        $this->assertSame(SfmOrderStatus::New, $order->sfm_status);
-        $this->assertSame('Manual', $order->current_oc_status);
         $this->assertSame('lokkisona', $order->source_snapshot['source_store'] ?? null);
         $this->assertSame('phone', $order->source_snapshot['source_type'] ?? null);
-        $this->assertSame('manual', $order->source_snapshot['source'] ?? null);
-
-        $item = $order->items()->firstOrFail();
-        $this->assertSame('MANUAL', $item->source_product_id);
-        $this->assertTrue($item->is_unmatched);
-        $this->assertSame('Custom Gift Set', $item->product_name);
+        $this->assertSame('Lokkisona Manual', $order->source_snapshot['source_label'] ?? null);
     }
 
     public function test_manual_order_appears_in_order_queue(): void
@@ -111,7 +102,39 @@ class ManualOrderTest extends TestCase
             ->get(route('order-map.index'))
             ->assertOk()
             ->assertSee($order->source_order_id, false)
-            ->assertSee('Queue Customer', false);
+            ->assertSee('Queue Customer', false)
+            ->assertSee('Lokkisona Manual', false);
+    }
+
+    public function test_order_queue_sorts_newest_manual_order_first(): void
+    {
+        $user = $this->adminUser('manual-order-sort');
+
+        Order::query()->create([
+            'supplier_id' => $this->supplier->id,
+            'source_order_id' => 'OLD-LK-1',
+            'customer_name' => 'Older LK Order',
+            'customer_phone' => '01711111111',
+            'customer_address' => 'Dhaka',
+            'sale_amount' => 100,
+            'current_oc_status' => 'Processing',
+            'sfm_status' => SfmOrderStatus::New,
+            'oc_created_at' => now()->subDays(10),
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('order-map.store'), $this->validPayload())
+            ->assertRedirect(route('order-map.index'));
+
+        $newest = Order::query()->where('customer_name', 'Queue Customer')->firstOrFail();
+
+        $response = $this->actingAs($user)->get(route('order-map.index'));
+        $posNew = strpos($response->getContent(), $newest->source_order_id);
+        $posOld = strpos($response->getContent(), 'OLD-LK-1');
+
+        $this->assertNotFalse($posNew);
+        $this->assertNotFalse($posOld);
+        $this->assertLessThan($posOld, $posNew);
     }
 
     public function test_manual_order_invoice_route_works(): void

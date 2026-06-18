@@ -25,31 +25,15 @@
 @section('content')
 <form method="POST" action="{{ route('order-map.store') }}" class="manual-order-builder" id="manual-order-form" data-product-search-url="{{ $searchUrl }}">
     @csrf
+    <input type="hidden" name="source_store" value="lokkisona">
+    <input type="hidden" name="source_type" value="phone">
 
     <section class="manual-order-section order-map-list-card">
         <header class="manual-order-section-head">
-            <h2>Order Source</h2>
+            <h2>Order Details</h2>
+            <p class="text-xs text-slate-500 mt-1">Source: Lokkisona Manual</p>
         </header>
-        <div class="manual-order-section-body manual-order-grid-3">
-            <div>
-                <label for="source_store" class="manual-order-label">Store</label>
-                <select name="source_store" id="source_store" class="form-input w-full" required>
-                    @foreach ($sourceStores as $value => $label)
-                        <option value="{{ $value }}" @selected(old('source_store', 'lokkisona') === $value)>{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label for="source_type" class="manual-order-label">Source type</label>
-                <select name="source_type" id="source_type" class="form-input w-full" required>
-                    @foreach ($sourceTypes as $value => $label)
-                        <option value="{{ $value }}" @selected(old('source_type', 'phone') === $value)>{{ $label }}</option>
-                    @endforeach
-                </select>
-                @error('source_type')
-                    <p class="manual-order-error">{{ $message }}</p>
-                @enderror
-            </div>
+        <div class="manual-order-section-body">
             <div>
                 <label for="reference_note" class="manual-order-label">Reference note <span class="manual-order-optional">optional</span></label>
                 <input type="text" name="reference_note" id="reference_note" value="{{ old('reference_note') }}" class="form-input w-full" placeholder="Inbox thread, call ref, etc.">

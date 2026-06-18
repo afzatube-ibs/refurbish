@@ -3,17 +3,17 @@
 namespace App\Services\OpenCart;
 
 use App\Models\Connection;
-use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Models\SupplierProductVariant;
-use RuntimeException;
+use App\Services\OperationalDefaultsService;
 
 class ProductSyncService
 {
     protected bool $lastHasMore = false;
 
     public function __construct(
-        protected OpenCartHttpClient $client
+        protected OpenCartHttpClient $client,
+        protected OperationalDefaultsService $defaults,
     ) {}
 
     /**
@@ -23,7 +23,7 @@ class ProductSyncService
     {
         app(ConnectionService::class)->assertSyncAllowed();
         $connection = Connection::getInstance();
-        $supplier = $this->resolveSupplier($connection);
+        $supplier = $this->defaults->defaultSupplier($connection);
         $batchSize = (int) config('dropflow.product_batch_size', 50);
 
         $response = $this->client->get($connection->product_api_endpoint, [
@@ -87,7 +87,7 @@ class ProductSyncService
     {
         app(ConnectionService::class)->assertSyncAllowed();
         $connection = Connection::getInstance();
-        $supplier = $this->resolveSupplier($connection);
+        $supplier = $this->defaults->defaultSupplier($connection);
         $batchSize = (int) config('dropflow.product_batch_size', 50);
 
         $response = $this->client->get($connection->product_api_endpoint, [
@@ -155,30 +155,8 @@ class ProductSyncService
         $this->lastHasMore = false;
     }
 
-    protected function resolveSupplier(Connection $connection): Supplier
+    protected function syncVariants(SupplierProduct $product, array $variants): void
     {
-        $supplier = Supplier::query()
-            ->where('is_active', true)
-            ->where(function ($query) use ($connection) {
-                $query->where('code', $connection->supplier_filter)
-                    ->orWhere('code', strtoupper($connection->supplier_filter));
-            })
-            ->first();
-
-        if ($supplier) {
-            return $supplier;
-        }
-
-        $fallback = Supplier::query()->where('is_active', true)->first();
-
-        if (! $fallback) {
-            throw new RuntimeException('No active supplier configured for product sync.');
-        }
-
-        return $fallback;
-    }
-
-    protected function syncVariants(SupplierProduct $product, array $variants): void {
         foreach ($variants as $variantData) {
             $key = (string) ($variantData['source_variant_key'] ?? '');
 

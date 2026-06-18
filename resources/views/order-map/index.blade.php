@@ -62,6 +62,7 @@
                         </th>
                     @endif
                     <th>Order No</th>
+                    <th>Source</th>
                     <th>Customer</th>
                     <th>LK Status</th>
                     <th>Product Card</th>
@@ -90,6 +91,7 @@
                             </td>
                         @endif
                         <td class="order-map-order-no">#{{ $order->source_order_id }}</td>
+                        <td class="order-map-source text-slate-600 text-xs">{{ $row['source_label'] ?? 'Lokkisona' }}</td>
                         <td class="order-map-customer">
                             <div class="order-map-customer-name">{{ $order->customer_name }}</div>
                             <div class="order-map-customer-phone">{{ $order->customer_phone }}</div>
@@ -111,7 +113,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="{{ auth()->user()->isSupplier() ? 10 : 9 }}" class="order-map-empty">
+                        <td colspan="{{ auth()->user()->isSupplier() ? 11 : 10 }}" class="order-map-empty">
                             No orders in queue yet.@if (auth()->user()->isAdmin()) Click Load Orders after mapping import statuses.@endif
                         </td>
                     </tr>

@@ -1,28 +1,5 @@
 <form method="GET" action="{{ url()->current() }}" class="mb-4 flex flex-wrap items-end gap-3">
-    @if (auth()->user()->isAdmin())
-        <div>
-            <label for="supplier_id" class="block text-xs font-medium text-slate-600 mb-1">Supplier</label>
-            <select name="supplier_id" id="supplier_id"
-                    class="rounded-md border-slate-300 text-sm shadow-sm focus:border-slate-500 focus:ring-slate-500">
-                <option value="">All suppliers</option>
-                @foreach ($suppliers ?? [] as $supplier)
-                    <option value="{{ $supplier->id }}" @selected(request('supplier_id') == $supplier->id)>{{ $supplier->name }}</option>
-                @endforeach
-            </select>
-        </div>
-        @if (isset($stores))
-            <div>
-                <label for="connection_id" class="block text-xs font-medium text-slate-600 mb-1">Store</label>
-                <select name="connection_id" id="connection_id"
-                        class="rounded-md border-slate-300 text-sm shadow-sm focus:border-slate-500 focus:ring-slate-500">
-                    <option value="">All stores</option>
-                    @foreach ($stores as $store)
-                        <option value="{{ $store->id }}" @selected(request('connection_id') == $store->id)>{{ $store->store_url ?: 'Store #'.$store->id }}</option>
-                    @endforeach
-                </select>
-            </div>
-        @endif
-    @endif
+    @include('reports.partials.scope-filters')
     <div>
         <label for="from" class="block text-xs font-medium text-slate-600 mb-1">From</label>
         <input type="date" name="from" id="from" value="{{ request('from') }}"

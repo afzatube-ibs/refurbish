@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\OrderMap\OrderMapLoadLogService;
 use App\Services\OrderMap\OrderMapProductMatcher;
 use App\Services\OrderMap\OrderMapStockService;
+use App\Services\OperationalDefaultsService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -27,6 +28,7 @@ class OrderSyncService
         protected OrderMapProductMatcher $productMatcher,
         protected OrderMapStockService $stockService,
         protected OrderMapLoadLogService $loadLogService,
+        protected OperationalDefaultsService $defaults,
     ) {}
 
     /**
@@ -97,7 +99,7 @@ class OrderSyncService
     {
         app(ConnectionService::class)->assertSyncAllowed();
         $connection = Connection::getInstance();
-        $supplier = $this->resolveSupplier($connection);
+        $supplier = $this->defaults->defaultSupplier($connection);
         $user = $this->resolveUser($user);
 
         $fetchResult = $this->fetchOrdersForImport();
@@ -779,26 +781,4 @@ class OrderSyncService
         }
     }
 
-    protected function resolveSupplier(Connection $connection): Supplier
-    {
-        $supplier = Supplier::query()
-            ->where('is_active', true)
-            ->where(function ($query) use ($connection) {
-                $query->where('code', $connection->supplier_filter)
-                    ->orWhere('code', strtoupper($connection->supplier_filter));
-            })
-            ->first();
-
-        if ($supplier) {
-            return $supplier;
-        }
-
-        $fallback = Supplier::query()->where('is_active', true)->first();
-
-        if (! $fallback) {
-            throw new RuntimeException('No active supplier configured for order sync.');
-        }
-
-        return $fallback;
-    }
 }

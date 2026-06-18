@@ -3,7 +3,7 @@
 
     $status = $order->sfm_status ?? SfmOrderStatus::New;
     $isManualOrder = str_starts_with((string) $order->source_order_id, 'MAN-');
-    $orderSource = $isManualOrder ? 'Manual' : 'LK';
+    $orderSource = $queueRow['source_label'] ?? ($isManualOrder ? 'Lokkisona Manual' : 'Lokkisona');
     $showSupplierActions = auth()->user()->isSupplier();
 @endphp
 

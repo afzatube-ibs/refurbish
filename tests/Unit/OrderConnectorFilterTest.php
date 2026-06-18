@@ -52,6 +52,7 @@ class OrderConnectorFilterTest extends TestCase
             app(\App\Services\OrderMap\OrderMapProductMatcher::class),
             app(\App\Services\OrderMap\OrderMapStockService::class),
             app(\App\Services\OrderMap\OrderMapLoadLogService::class),
+            app(\App\Services\OperationalDefaultsService::class),
         );
 
         $reflection = new \ReflectionClass($service);

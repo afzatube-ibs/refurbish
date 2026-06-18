@@ -12,6 +12,7 @@ use App\Models\ReturnModel;
 use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Services\DispatchReportService;
+use App\Services\OperationalDefaultsService;
 use App\Services\OperationalFinanceService;
 use App\Services\PayableService;
 use Illuminate\Http\Request;
@@ -23,6 +24,7 @@ class ReportController extends Controller
         private readonly PayableService $payableService,
         private readonly OperationalFinanceService $operationalFinance,
         private readonly DispatchReportService $dispatchReport,
+        private readonly OperationalDefaultsService $defaults,
     ) {}
 
     public function dispatch(Request $request): View
@@ -30,18 +32,14 @@ class ReportController extends Controller
         $filters = $this->reportFilters($request);
         $lines = $this->dispatchReport->lines($filters);
 
-        return view('reports.dispatch.index', [
+        return view('reports.dispatch.index', array_merge([
             'lines' => $lines,
             'totals' => $this->dispatchReport->totals($lines),
-            'suppliers' => $this->suppliersForFilter($request),
-            'stores' => $request->user()->isAdmin()
-                ? Connection::query()->orderBy('store_url')->get()
-                : collect(),
             'from' => $request->query('from'),
             'to' => $request->query('to'),
             'courier' => $request->query('courier'),
             'search' => $request->query('search'),
-        ]);
+        ], $this->reportFilterViewData($request)));
     }
 
     public function stock(Request $request): View
@@ -93,13 +91,15 @@ class ReportController extends Controller
 
     public function returns(Request $request): View
     {
+        $filters = $this->reportFilters($request);
+
         $query = ReturnModel::with(['order', 'supplier', 'returnItems.orderItem', 'confirmedBy'])
             ->orderByDesc('created_at');
 
         if ($request->user()->isSupplier()) {
             $query->where('supplier_id', $request->user()->supplier_id);
-        } elseif ($supplierId = $request->query('supplier_id')) {
-            $query->where('supplier_id', $supplierId);
+        } elseif (isset($filters['supplier_id'])) {
+            $query->where('supplier_id', $filters['supplier_id']);
         }
 
         if ($status = $request->query('status')) {
@@ -141,20 +141,17 @@ class ReportController extends Controller
             ];
         });
 
-        $filters = $this->reportFilters($request);
-
-        return view('reports.returns', [
+        return view('reports.returns', array_merge([
             'rows' => $rows,
             'totals' => [
                 'orders' => $rows->count(),
                 'qty' => (int) $rows->sum('qty'),
                 'return_cost' => $this->operationalFinance->returnCost($filters),
             ],
-            'suppliers' => $this->suppliersForFilter($request),
             'statusFilter' => $status ?? 'confirmed',
             'from' => $from ?? null,
             'to' => $to ?? null,
-        ]);
+        ], $this->reportFilterViewData($request)));
     }
 
     public function ledger(Request $request): View
@@ -202,16 +199,31 @@ class ReportController extends Controller
     {
         $filters = $this->reportFilters($request);
 
-        return view('reports.payables', [
+        return view('reports.payables', array_merge([
             'rows' => $this->operationalFinance->buildPayableReportRows($filters),
+            'from' => $request->query('from'),
+            'to' => $request->query('to'),
+            'selectedConnectionId' => $filters['connection_id'] ?? null,
+        ], $this->reportFilterViewData($request)));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function reportFilterViewData(Request $request): array
+    {
+        return [
             'suppliers' => $this->suppliersForFilter($request),
             'stores' => $request->user()->isAdmin()
                 ? Connection::query()->orderBy('store_url')->get()
                 : collect(),
-            'from' => $request->query('from'),
-            'to' => $request->query('to'),
-            'selectedConnectionId' => $filters['connection_id'] ?? null,
-        ]);
+            'defaultSupplierId' => $this->defaults->defaultSupplierId(),
+            'defaultConnectionId' => $this->defaults->defaultConnectionId(),
+            'singleSupplier' => $this->defaults->hasSingleSupplier(),
+            'singleStore' => $this->defaults->hasSingleStore(),
+            'defaultSupplierName' => $this->defaults->defaultSupplier()->name,
+            'defaultStoreLabel' => $this->defaults->storeLabel(),
+        ];
     }
 
     /**
@@ -219,19 +231,7 @@ class ReportController extends Controller
      */
     private function reportFilters(Request $request): array
     {
-        $user = $request->user();
-
-        return array_filter([
-            'supplier_id' => $user->isSupplier()
-                ? $user->supplier_id
-                : ($request->query('supplier_id') ? (int) $request->query('supplier_id') : null),
-            'connection_id' => $request->query('connection_id') ? (int) $request->query('connection_id') : null,
-            'from' => $request->query('from'),
-            'to' => $request->query('to'),
-            'courier' => $request->query('courier'),
-            'search' => $request->query('search'),
-            'user_supplier_id' => $user->isSupplier() ? $user->supplier_id : null,
-        ], fn ($value) => $value !== null && $value !== '');
+        return $this->defaults->applyReportFilters($request);
     }
 
     public function productMovement(Request $request): View

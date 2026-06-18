@@ -156,6 +156,7 @@ class OrderMapLoadTest extends TestCase
             app(\App\Services\OrderMap\OrderMapProductMatcher::class),
             app(\App\Services\OrderMap\OrderMapStockService::class),
             app(\App\Services\OrderMap\OrderMapLoadLogService::class),
+            app(\App\Services\OperationalDefaultsService::class),
         );
 
         $service->loadNewOrders($this->adminUser('order-map'));
@@ -194,6 +195,7 @@ class OrderMapLoadTest extends TestCase
             app(\App\Services\OrderMap\OrderMapProductMatcher::class),
             app(\App\Services\OrderMap\OrderMapStockService::class),
             app(\App\Services\OrderMap\OrderMapLoadLogService::class),
+            app(\App\Services\OperationalDefaultsService::class),
         );
 
         $service->syncStatusUpdates($this->adminUser('order-map'));
@@ -383,6 +385,7 @@ class OrderMapLoadTest extends TestCase
             app(\App\Services\OrderMap\OrderMapProductMatcher::class),
             app(\App\Services\OrderMap\OrderMapStockService::class),
             app(\App\Services\OrderMap\OrderMapLoadLogService::class),
+            app(\App\Services\OperationalDefaultsService::class),
         );
 
         $result = $service->loadNewOrders($this->adminUser('order-map'));

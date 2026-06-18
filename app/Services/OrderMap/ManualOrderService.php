@@ -4,20 +4,20 @@ namespace App\Services\OrderMap;
 
 use App\Enums\OrderItemStatus;
 use App\Enums\SfmOrderStatus;
-use App\Models\Connection;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Services\OperationalDefaultsService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use RuntimeException;
 
 class ManualOrderService
 {
     public function __construct(
         protected OrderMapProductMatcher $productMatcher,
         protected OrderMapStockService $stockService,
+        protected OperationalDefaultsService $defaults,
     ) {}
 
     /**
@@ -25,9 +25,10 @@ class ManualOrderService
      */
     public function create(array $data, User $user): Order
     {
-        $supplier = $this->resolveSupplier(Connection::getInstance());
+        $supplier = $this->defaults->defaultSupplier();
+        $manualDefaults = $this->defaults->manualOrderDefaults();
 
-        $order = DB::transaction(function () use ($supplier, $data, $user) {
+        $order = DB::transaction(function () use ($supplier, $data, $user, $manualDefaults) {
             $saleAmount = 0.0;
 
             foreach ($data['items'] as $item) {
@@ -59,8 +60,9 @@ class ManualOrderService
                 'source_snapshot' => [
                     'manual' => true,
                     'source' => 'manual',
-                    'source_store' => (string) ($data['source_store'] ?? 'lokkisona'),
-                    'source_type' => (string) ($data['source_type'] ?? 'other'),
+                    'source_label' => $manualDefaults['source_label'],
+                    'source_store' => (string) ($data['source_store'] ?? $manualDefaults['source_store']),
+                    'source_type' => (string) ($data['source_type'] ?? $manualDefaults['source_type']),
                     'reference_note' => trim((string) ($data['reference_note'] ?? '')) ?: null,
                     'city_zone' => $cityZone !== '' ? $cityZone : null,
                     'delivery_note' => trim((string) ($data['delivery_note'] ?? '')) ?: null,
@@ -170,26 +172,4 @@ class ManualOrderService
         }
     }
 
-    protected function resolveSupplier(Connection $connection): Supplier
-    {
-        $supplier = Supplier::query()
-            ->where('is_active', true)
-            ->where(function ($query) use ($connection) {
-                $query->where('code', $connection->supplier_filter)
-                    ->orWhere('code', strtoupper($connection->supplier_filter));
-            })
-            ->first();
-
-        if ($supplier) {
-            return $supplier;
-        }
-
-        $fallback = Supplier::query()->where('is_active', true)->first();
-
-        if (! $fallback) {
-            throw new RuntimeException('No active supplier configured for manual orders.');
-        }
-
-        return $fallback;
-    }
 }

@@ -20,6 +20,7 @@ use App\Services\SupplierLedgerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class OrderController extends Controller
@@ -46,7 +47,7 @@ class OrderController extends Controller
         }
 
         $query = Order::with(['items'])
-            ->orderByDesc('oc_created_at')
+            ->orderByDesc(DB::raw('COALESCE(oc_created_at, created_at)'))
             ->orderByDesc('id');
 
         if ($request->user()->isSupplier()) {
@@ -124,17 +125,7 @@ class OrderController extends Controller
     {
         $this->authorize('viewAny', Order::class);
 
-        return view('order-map.create', [
-            'sourceStores' => [
-                'lokkisona' => 'Lokkisona',
-            ],
-            'sourceTypes' => [
-                'inbox' => 'Inbox',
-                'phone' => 'Phone',
-                'offline' => 'Offline',
-                'other' => 'Other',
-            ],
-        ]);
+        return view('order-map.create');
     }
 
     public function searchManualProducts(Request $request): JsonResponse

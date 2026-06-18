@@ -89,14 +89,13 @@ class PayablesOperationalReportSeparationTest extends TestCase
             ->assertSee('staging.lokkisona.com', false);
     }
 
-    public function test_payables_report_empty_state_message(): void
+    public function test_payables_report_shows_default_supplier_row_with_zeros(): void
     {
-        Supplier::query()->update(['is_active' => false]);
-
         $this->actingAs($this->admin)
             ->get(route('reports.payables'))
             ->assertOk()
-            ->assertSee('No payable summary found for selected filters.', false);
+            ->assertSee($this->supplier->name, false)
+            ->assertSee('0.00', false);
     }
 
     public function test_account_statement_still_loads(): void

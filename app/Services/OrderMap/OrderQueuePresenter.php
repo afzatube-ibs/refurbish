@@ -33,9 +33,31 @@ class OrderQueuePresenter
             'has_unmatched' => $hasUnmatched,
             'already_batched' => $alreadyBatched,
             'is_batchable' => $isBatchable,
+            'source_label' => $this->sourceLabel($order),
             'oc_status_label' => $this->ocStatusLabel($order),
             'product_cards' => $this->productCards($order->items),
         ];
+    }
+
+    protected function sourceLabel(Order $order): string
+    {
+        if (is_array($order->source_snapshot)) {
+            $label = trim((string) ($order->source_snapshot['source_label'] ?? ''));
+
+            if ($label !== '') {
+                return $label;
+            }
+
+            if (! empty($order->source_snapshot['manual'])) {
+                return 'Lokkisona Manual';
+            }
+        }
+
+        if (str_starts_with((string) $order->source_order_id, 'MAN-')) {
+            return 'Lokkisona Manual';
+        }
+
+        return 'Lokkisona';
     }
 
     protected function ocStatusLabel(Order $order): string

@@ -2,14 +2,16 @@
 
 namespace App\Services\OrderMap;
 
-use App\Models\Connection;
 use App\Models\ProductMap\ProductControlState;
 use App\Models\ProductMap\ProductMapProduct;
-use App\Models\Supplier;
-use RuntimeException;
+use App\Services\OperationalDefaultsService;
 
 class ManualOrderProductSearchService
 {
+    public function __construct(
+        protected OperationalDefaultsService $defaults,
+    ) {}
+
     /**
      * @return list<array{
      *     source_product_id: string,
@@ -30,7 +32,7 @@ class ManualOrderProductSearchService
             return [];
         }
 
-        $supplier = $this->resolveSupplier(Connection::getInstance());
+        $supplier = $this->defaults->defaultSupplier();
 
         $controlStates = ProductControlState::query()
             ->where('supplier_id', $supplier->id)
@@ -118,28 +120,5 @@ class ManualOrderProductSearchService
         $haystack = mb_strtolower(implode(' ', array_filter($fields, fn ($value) => trim($value) !== '')));
 
         return $haystack !== '' && str_contains($haystack, $needle);
-    }
-
-    protected function resolveSupplier(Connection $connection): Supplier
-    {
-        $supplier = Supplier::query()
-            ->where('is_active', true)
-            ->where(function ($query) use ($connection) {
-                $query->where('code', $connection->supplier_filter)
-                    ->orWhere('code', strtoupper((string) $connection->supplier_filter));
-            })
-            ->first();
-
-        if ($supplier) {
-            return $supplier;
-        }
-
-        $fallback = Supplier::query()->where('is_active', true)->first();
-
-        if (! $fallback) {
-            throw new RuntimeException('No active supplier configured for product search.');
-        }
-
-        return $fallback;
     }
 }
